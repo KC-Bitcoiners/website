@@ -1,26 +1,77 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+  --bitcoin-orange: rgb(214, 117, 47);
+  --bitcoin-orange-hover: rgb(184, 94, 29);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+/* Disable dark theme (for now) */
+/* @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
+  }
+} */
+
+/* Apply fonts globally */
+body {
+  font-family:
+    var(--font-source-sans-3), "Source Sans Pro", system-ui, sans-serif;
+  color: rgb(var(--foreground-rgb));
+  background: rgb(var(--background-end-rgb));
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family:
+    var(--font-archivo-black), "Archivo Black", system-ui, sans-serif;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .font-archivo-black {
+    font-family:
+      var(--font-archivo-black), "Archivo Black", system-ui, sans-serif;
+  }
+
+  .font-source-sans-3 {
+    font-family:
+      var(--font-source-sans-3), "Source Sans Pro", system-ui, sans-serif;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Custom Bitcoin-themed styles with original colors */
+.bitcoin-orange {
+  color: var(--bitcoin-orange);
+}
+
+.bg-bitcoin-orange {
+  background-color: var(--bitcoin-orange);
+}
+
+.bitcoin-orange-hover {
+  color: var(--bitcoin-orange-hover);
+}
+
+.bg-bitcoin-orange-hover {
+  background-color: var(--bitcoin-orange-hover);
+}
+
+/* Smooth transitions for better UX */
+* {
+  transition-property:
+    color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
 }
