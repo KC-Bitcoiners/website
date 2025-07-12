@@ -8,17 +8,24 @@ on:
 
   workflow_dispatch:
 
+permissions:
+  id-token: write # Required for OIDC authentication
+  contents: read # Required to checkout your repository code
+
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Run a one-line script
-        run: echo Hello, world!
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-2 
 
-      - name: Run a multi-line script
+      - name: Run AWS CLI Command (Example)
         run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+          ls -lah
+          aws s3 sync . s3://dev.kcbitcoiners.com/
