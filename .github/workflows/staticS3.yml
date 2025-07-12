@@ -44,4 +44,5 @@ jobs:
       - name: Run AWS CLI Command (Example)
         run: |
           ls -lah
-          aws s3 sync out/  s3://dev.kcbitcoiners.com/
+          ls -lah out
+          aws s3 sync out/  s3://dev.kcbitcoiners.com/ --delete
