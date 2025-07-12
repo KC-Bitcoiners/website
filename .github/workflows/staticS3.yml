@@ -18,6 +18,23 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # Or your project's Node.js version
+
+      - name: Install dependencies ⬅️ IMPORTANT STEP
+        run: npm install # Or 'yarn install' if you use Yarn
+
+      - name: Build and export Next.js application
+        run: |
+          npm run build
+          npm run export 
+        env:
+          # If your Next.js app needs environment variables at build time,
+          # add them here (e.g., NEXT_PUBLIC_API_KEY: ${{ secrets.API_KEY }})
+          NEXT_SHARP_REQUIRE_CDN: 1 # Optional: For Next.js image optimization in CI
+
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
