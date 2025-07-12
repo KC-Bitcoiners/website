@@ -29,7 +29,6 @@ jobs:
       - name: Build and export Next.js application
         run: |
           npm run build
-          npm run dev 
         env:
           # If your Next.js app needs environment variables at build time,
           # add them here (e.g., NEXT_PUBLIC_API_KEY: ${{ secrets.API_KEY }})
