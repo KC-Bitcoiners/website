@@ -28,4 +28,6 @@ jobs:
       - name: Run AWS CLI Command (Example)
         run: |
           ls -lah
+          npm run dev
+          ls -lah
           aws s3 sync . s3://dev.kcbitcoiners.com/
