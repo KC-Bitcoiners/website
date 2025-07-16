@@ -116,13 +116,6 @@ export default function Layout({ children }: LayoutProps) {
                 >
                   Block Party
                 </Link>
-                <Link
-                  href="/contact"
-                  className="hover:bitcoin-orange font-semibold py-2 transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Contact
-                </Link>
               </div>
             </div>
           )}
