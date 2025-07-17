@@ -3,6 +3,8 @@ name: staticS3Deploy
 on:
   push:
     branches: ["master"]
+  schedule:
+    - cron: "0 0 * * 0"
   pull_request:
     branches: ["master"]
 
@@ -21,10 +23,10 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
 
       - name: Install dependencies
-        run: npm install 
+        run: npm install
 
       - name: Build and export Next.js application
         run: |
@@ -32,12 +34,11 @@ jobs:
         env:
           NEXT_SHARP_REQUIRE_CDN: 1
 
-
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: us-east-2 
+          aws-region: us-east-2
 
       - name: Run AWS CLI Command (Example)
         run: |
