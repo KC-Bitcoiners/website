@@ -1,6 +1,47 @@
 import React, { useState } from "react";
 import Link from "next/link";
 
+function NavLinks() {
+  return (
+    <>
+      <Link
+        href="/"
+        className="hover:bitcoin-orange font-semibold transition-colors"
+      >
+        Home
+      </Link>
+      <Link
+        href="/events"
+        className="hover:bitcoin-orange font-semibold transition-colors"
+      >
+        Events
+      </Link>
+      <a
+        href="https://www.meetup.com/kansas-city-bitcoin-meetup-group/"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="hover:bitcoin-orange font-semibold transition-colors"
+      >
+        Meetup.com
+      </a>
+      <a
+        href="https://btcpay0.voltageapp.io/apps/26q7Q6PpDTZFoUBfpMko6jSzm4od/pos"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="hover:bitcoin-orange font-semibold transition-colors"
+      >
+        Donations
+      </a>
+      <Link
+        href="/block-party"
+        className="hover:bitcoin-orange font-semibold transition-colors"
+      >
+        Block Party
+      </Link>
+    </>
+  );
+}
+
 interface LayoutProps {
   children: React.ReactNode;
 }
@@ -28,34 +69,7 @@ export default function Layout({ children }: LayoutProps) {
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex space-x-8">
-              <Link
-                href="/"
-                className="hover:bitcoin-orange font-semibold transition-colors"
-              >
-                Home
-              </Link>
-              <a
-                href="https://www.meetup.com/kansas-city-bitcoin-meetup-group/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:bitcoin-orange font-semibold transition-colors"
-              >
-                Meetings
-              </a>
-              <a
-                href="https://btcpay0.voltageapp.io/apps/26q7Q6PpDTZFoUBfpMko6jSzm4od/pos"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:bitcoin-orange font-semibold transition-colors"
-              >
-                Donations
-              </a>
-              <Link
-                href="/block-party"
-                className="hover:bitcoin-orange font-semibold transition-colors"
-              >
-                Block Party
-              </Link>
+              <NavLinks />
             </div>
 
             {/* Mobile menu button */}
@@ -83,39 +97,11 @@ export default function Layout({ children }: LayoutProps) {
           {/* Mobile Navigation Menu */}
           {mobileMenuOpen && (
             <div className="md:hidden mt-4 pb-4 border-t border-gray-200">
-              <div className="flex flex-col space-y-3 pt-4">
-                <Link
-                  href="/"
-                  className="hover:bitcoin-orange font-semibold py-2 transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Home
-                </Link>
-                <a
-                  href="https://www.meetup.com/kansas-city-bitcoin-meetup-group/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:bitcoin-orange font-semibold py-2 transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Meetings
-                </a>
-                <a
-                  href="https://btcpay0.voltageapp.io/apps/26q7Q6PpDTZFoUBfpMko6jSzm4od/pos"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:bitcoin-orange font-semibold py-2 transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Donations
-                </a>
-                <Link
-                  href="/block-party"
-                  className="hover:bitcoin-orange font-semibold py-2 transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Block Party
-                </Link>
+              <div
+                className="flex flex-col space-y-3 pt-4"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <NavLinks />
               </div>
             </div>
           )}
