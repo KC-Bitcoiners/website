@@ -35,7 +35,8 @@ export default function EventCard({
           <p className="text-gray-600 mb-4">{location}</p>
           <div className="text-gray-700 space-y-4">
             {description.map((paragraph, index) => (
-              <p key={index}>{paragraph}</p>
+              // Strip out extra backslashes added by Meetup
+              <p key={index}>{paragraph.replaceAll("\\", "")}</p>
             ))}
           </div>
         </div>
