@@ -1,50 +1,11 @@
-import { GraphQLClient, gql } from "graphql-request";
 import { GetStaticProps, InferGetStaticPropsType } from "next";
 import EventCard from "../components/EventCard";
-
-// TypeScript interfaces for the GraphQL response
-interface Venue {
-  id: string;
-  lat: number;
-  lon: number;
-  postalCode: string;
-  city: string;
-  state: string;
-  address: string;
-  country: string;
-}
-
-interface EventNode {
-  id: string;
-  description: string;
-  title: string;
-  dateTime: string;
-  endTime: string;
-  eventUrl: string;
-  createdTime: string;
-  howToFindUs: string;
-  venues: Venue[];
-}
-
-interface EventEdge {
-  node: EventNode;
-}
-
-interface MeetupGroup {
-  name: string;
-  urlname: string;
-  lat: number;
-  lon: number;
-  link: string;
-  description: string;
-  events: {
-    edges: EventEdge[];
-  };
-}
-
-interface GraphQLResponse {
-  groupByUrlname: MeetupGroup;
-}
+import { generateICalendarFile } from "../utils/icalendar";
+import {
+  fetchMeetupEvents,
+  getVenueAddress,
+  MeetupGroup,
+} from "../utils/meetup";
 
 interface EventsPageProps {
   group: MeetupGroup | null;
@@ -71,14 +32,6 @@ const formatTime = (dateString: string): string => {
   });
 };
 
-// Helper function to get venue address
-const getVenueAddress = (venues: Venue[]): string => {
-  if (!venues || venues.length === 0) return "Venue TBA";
-  const venue = venues[0];
-  if (!venue.address) return "Venue TBA";
-  return `${venue.address}, ${venue.city}, ${venue.state}`;
-};
-
 // Helper function to split description into paragraphs
 const splitDescription = (description: string): string[] => {
   if (!description) return ["No description available."];
@@ -90,53 +43,15 @@ const splitDescription = (description: string): string[] => {
 
 export const getStaticProps: GetStaticProps<EventsPageProps> = async () => {
   try {
-    // GraphQL query
-    const query = gql`
-      query GetGroupEvents {
-        groupByUrlname(urlname: "kansas-city-bitcoin-meetup-group") {
-          name
-          urlname
-          lat
-          lon
-          link
-          description
-          events {
-            edges {
-              node {
-                id
-                description
-                title
-                dateTime
-                endTime
-                eventUrl
-                createdTime
-                howToFindUs
-                venues {
-                  id
-                  lat
-                  lon
-                  postalCode
-                  city
-                  state
-                  address
-                  country
-                }
-              }
-            }
-          }
-        }
-      }
-    `;
+    // Fetch meetup events data
+    const group = await fetchMeetupEvents();
 
-    // Create GraphQL client
-    const client = new GraphQLClient("https://api.meetup.com/gql-ext");
-
-    // Fetch data
-    const data: GraphQLResponse = await client.request(query);
+    // Generate iCalendar file in public directory
+    generateICalendarFile(group);
 
     return {
       props: {
-        group: data.groupByUrlname,
+        group,
       },
     };
   } catch (error) {
@@ -291,14 +206,26 @@ export default function EventsPage({
           opportunities. Join our Meetup group to get notified about new events
           and connect with fellow Bitcoin enthusiasts in Kansas City.
         </p>
-        <a
-          href="https://www.meetup.com/kansas-city-bitcoin-meetup-group/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-block bg-bitcoin-orange text-white px-8 py-3 rounded-lg font-semibold hover:bg-bitcoin-orange-hover transition-colors"
-        >
-          Join Our Meetup Group
-        </a>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <a
+            href="https://www.meetup.com/kansas-city-bitcoin-meetup-group/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block bg-bitcoin-orange text-white px-8 py-3 rounded-lg font-semibold hover:bg-bitcoin-orange-hover transition-colors"
+          >
+            Join Our Meetup Group
+          </a>
+          {/* Only show in dev mode for testing */}
+          {process.env.NODE_ENV === "development" && (
+            <a
+              href="webcal://kcbitcoiners.com/events.ics"
+              download="kansas-city-bitcoin-events.ics"
+              className="inline-block bg-gray-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-gray-700 transition-colors"
+            >
+              📅 Add to Calendar
+            </a>
+          )}
+        </div>
       </section>
     </div>
   );
