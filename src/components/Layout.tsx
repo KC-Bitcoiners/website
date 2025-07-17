@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
+import clsx from "clsx";
+import { HamburgerIcon } from "./Icons";
 
 function NavLinks() {
   return (
@@ -43,10 +45,11 @@ function NavLinks() {
 }
 
 interface LayoutProps {
+  className?: string;
   children: React.ReactNode;
 }
 
-export default function Layout({ children }: LayoutProps) {
+export default function Layout({ children, className }: LayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const toggleMobileMenu = () => {
@@ -54,7 +57,7 @@ export default function Layout({ children }: LayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className={clsx("min-h-screen bg-white", className)}>
       {/* Header */}
       <header className="bg-white text-black sticky top-0 z-50 border-b border-gray-200">
         <nav className="container mx-auto px-6 py-4">
@@ -78,19 +81,7 @@ export default function Layout({ children }: LayoutProps) {
               onClick={toggleMobileMenu}
               aria-label="Toggle mobile menu"
             >
-              <svg
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
+              <HamburgerIcon />
             </button>
           </div>
 
@@ -98,7 +89,7 @@ export default function Layout({ children }: LayoutProps) {
           {mobileMenuOpen && (
             <div className="md:hidden mt-4 pb-4 border-t border-gray-200">
               <div
-                className="flex flex-col space-y-3 pt-4"
+                className="flex flex-col pt-4 space-y-4"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <NavLinks />

@@ -17,12 +17,10 @@ const archivoBlack = Archivo_Black({
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
-    <div
+    <Layout
       className={`${sourceSans3.variable} ${archivoBlack.variable} font-sans`}
     >
-      <Layout>
-        <Component {...pageProps} />
-      </Layout>
-    </div>
+      <Component {...pageProps} />
+    </Layout>
   );
 }
