@@ -42,4 +42,5 @@ jobs:
         run: |
           ls -lah
           ls -lah out
-          aws s3 sync out/  s3://dev.kcbitcoiners.com/ --delete
+          aws s3 sync out/ s3://dev.kcbitcoiners.com/ --delete
+          aws cloudfront create-invalidation --distribution-id E1MUWYLHGG5S4S 
