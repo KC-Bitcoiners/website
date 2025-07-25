@@ -73,7 +73,7 @@ export default function EventsPage({
 }: InferGetStaticPropsType<typeof getStaticProps>) {
   if (error) {
     return (
-      <div className="container mx-auto px-6 py-12">
+      <div className="container mx-auto px-4 py-12">
         <div className="text-center">
           <h1 className="text-4xl font-bold mb-8 font-archivo-black">Events</h1>
           <div className="bg-red-50 border border-red-200 rounded-lg p-6">
@@ -89,7 +89,7 @@ export default function EventsPage({
 
   if (!group) {
     return (
-      <div className="container mx-auto px-6 py-12">
+      <div className="container mx-auto px-4 py-12">
         <div className="text-center">
           <h1 className="text-4xl font-bold mb-8 font-archivo-black">Events</h1>
           <p className="text-gray-600">No group data available.</p>
@@ -106,7 +106,7 @@ export default function EventsPage({
   const pastEvents = events.filter((event) => new Date(event.dateTime) <= now);
 
   return (
-    <div className="container mx-auto px-6 py-12">
+    <div className="container mx-auto px-4 py-12">
       {/* Page Header */}
       <div className="text-center mb-12">
         <h1 className="text-5xl font-bold mb-6 font-archivo-black">Events</h1>
