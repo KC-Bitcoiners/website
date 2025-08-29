@@ -175,6 +175,7 @@ export default function EventsPage({
                 endTime={event.endTime ? formatTime(event.endTime) : "TBA"}
                 location={getVenueAddress(event.venues)}
                 description={splitDescription(event.description)}
+                link={event.eventUrl}
               />
             ))}
           </div>
