@@ -7,6 +7,7 @@ interface EventCardProps {
   startTime: string;
   endTime: string;
   location: string;
+  link: string;
   description: string[];
 }
 
@@ -17,6 +18,7 @@ export default function EventCard({
   endTime,
   location,
   description,
+  link,
 }: EventCardProps) {
   return (
     <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-4 sm:p-6 lg:p-8 w-full overflow-hidden">
@@ -24,11 +26,16 @@ export default function EventCard({
       <div className="space-y-4 sm:space-y-6">
         {/* Header section with date and title */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-6">
-          <div className="order-2 sm:order-1 flex-1">
+          <a
+            className="order-2 sm:order-1 flex-1 hover:underline"
+            href={link}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             <h4 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 mb-2 font-archivo-black leading-tight">
               {title}
             </h4>
-          </div>
+          </a>
           <div className="order-1 sm:order-2 flex-shrink-0">
             <h3 className="text-2xl sm:text-3xl font-bold bitcoin-orange font-archivo-black">
               {date}
