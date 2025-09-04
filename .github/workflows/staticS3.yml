@@ -50,12 +50,11 @@ jobs:
         run: |
           ls -lah
           ls -lah out
+          did="E1MUWYLHGG5S4S"
           if [[ "${{ inputs.env }}" == "prod" ]]; then
             bucket=kcbitcoiners.com/
-            did="NA"
           else
             bucket=dev.kcbitcoiners.com/
-            did="E1MUWYLHGG5S4S"
           fi
           aws s3 sync out/ s3://${bucket} --delete
           aws cloudfront create-invalidation --distribution-id $did --paths "/*"
