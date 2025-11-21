@@ -319,6 +319,16 @@ export default function ShopPage({
           Bitcoin, let us know so we can add them to our directory.
         </p>
       </section>
+      <iframe
+        id="btcmap"
+        title="BTC Map"
+        width="100%"
+        height="600"
+        allowfullscreen="true"
+        allow="geolocation"
+        src="https://btcmap.org/map#11/39.03219/-94.58101"
+      >
+      </iframe>
     </div>
   );
 }
