@@ -18,6 +18,12 @@ function NavLinks() {
       >
         Events
       </Link>
+            <Link
+        href="/shop"
+        className="hover:bitcoin-orange font-semibold transition-colors"
+      >
+        Shop
+      </Link>
       <a
         href="https://www.meetup.com/kansas-city-bitcoin-meetup-group/"
         target="_blank"
