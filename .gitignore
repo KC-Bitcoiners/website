@@ -44,5 +44,5 @@ next-env.d.ts
 public/events.ics
 
 terraform/.terraform
-terraform/*.tfstate
-# terraform/*.tfstate.backup
+# terraform/*.tfstate
+terraform/*.tfstate.backup
