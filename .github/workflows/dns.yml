@@ -31,7 +31,7 @@ jobs:
       - run: cd terraform; terraform init
 
       - id: plan
-        run: pwd; ls -lah; terraform plan -no-color --var-file=envs/prod.tfvars
+        run: cd terraform; pwd; ls -lah; terraform plan -no-color --var-file=envs/prod.tfvars
 
       - run: echo ${{ steps.plan.outputs.stdout }}
       - run: echo ${{ steps.plan.outputs.stderr }}
