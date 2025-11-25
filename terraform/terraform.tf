@@ -8,10 +8,13 @@ terraform {
 }
 
 provider "dreamhost" {
-    api_key = "NJTB8N3Y3DNRF6A9"
+    api_key = var.api_key
 }
 
 variable "cnames" {}
+variable "api_key" {
+  sensitive = true
+} #"NJTB8N3Y3DNRF6A9"
 
 resource "dreamhost_dns_record" "cnames" {
   for_each = var.cnames
