@@ -18,7 +18,7 @@ function NavLinks() {
       >
         Events
       </Link>
-            <Link
+      <Link
         href="/shop"
         className="hover:bitcoin-orange font-semibold transition-colors"
       >
