@@ -218,7 +218,7 @@ export default function ShopPage({
       </div>
 
       {/* Table Section */}
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+      <div className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b-2 border-gray-200">
@@ -324,11 +324,10 @@ export default function ShopPage({
         title="BTC Map"
         width="100%"
         height="600"
-        allowfullscreen="true"
+        allowFullScreen={true}
         allow="geolocation"
         src="https://btcmap.org/map#11/39.03219/-94.58101"
-      >
-      </iframe>
+      ></iframe>
     </div>
   );
 }
