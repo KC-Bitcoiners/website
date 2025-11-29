@@ -1,26 +1,45 @@
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import clsx from "clsx";
 import { HamburgerIcon } from "./Icons";
 
-function NavLinks() {
+function NavLinks({ currentPath }: { currentPath: string }) {
   return (
     <>
       <Link
         href="/"
-        className="hover:bitcoin-orange font-semibold transition-colors"
+        className={clsx(
+          "font-semibold transition-colors",
+          currentPath === "/" ? "bitcoin-orange" : "hover:text-bitcoin-orange"
+        )}
       >
         Home
       </Link>
       <Link
         href="/events"
-        className="hover:bitcoin-orange font-semibold transition-colors"
+        className={clsx(
+          "font-semibold transition-colors",
+          currentPath === "/events" ? "bitcoin-orange" : "hover:text-bitcoin-orange"
+        )}
       >
         Events
       </Link>
-            <Link
+      <Link
+        href="/calendar"
+        className={clsx(
+          "font-semibold transition-colors",
+          currentPath === "/calendar" ? "bitcoin-orange" : "hover:text-bitcoin-orange"
+        )}
+      >
+        Calendar
+      </Link>
+      <Link
         href="/shop"
-        className="hover:bitcoin-orange font-semibold transition-colors"
+        className={clsx(
+          "font-semibold transition-colors",
+          currentPath === "/shop" ? "bitcoin-orange" : "hover:text-bitcoin-orange"
+        )}
       >
         Shop
       </Link>
@@ -28,7 +47,7 @@ function NavLinks() {
         href="https://www.meetup.com/kansas-city-bitcoin-meetup-group/"
         target="_blank"
         rel="noopener noreferrer"
-        className="hover:bitcoin-orange font-semibold transition-colors"
+        className="hover:text-bitcoin-orange font-semibold transition-colors"
       >
         Meetup.com
       </a>
@@ -36,16 +55,10 @@ function NavLinks() {
         href="https://btcpay0.voltageapp.io/apps/26q7Q6PpDTZFoUBfpMko6jSzm4od/pos"
         target="_blank"
         rel="noopener noreferrer"
-        className="hover:bitcoin-orange font-semibold transition-colors"
+        className="hover:text-bitcoin-orange font-semibold transition-colors"
       >
         Donations
       </a>
-      <Link
-        href="/block-party"
-        className="hover:bitcoin-orange font-semibold transition-colors"
-      >
-        Block Party
-      </Link>
     </>
   );
 }
@@ -57,6 +70,8 @@ interface LayoutProps {
 
 export default function Layout({ children, className }: LayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const router = useRouter();
+  const currentPath = router.pathname;
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
@@ -78,7 +93,7 @@ export default function Layout({ children, className }: LayoutProps) {
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex space-x-8">
-              <NavLinks />
+              <NavLinks currentPath={currentPath} />
             </div>
 
             {/* Mobile menu button */}
@@ -98,7 +113,7 @@ export default function Layout({ children, className }: LayoutProps) {
                 className="flex flex-col pt-4 space-y-4"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                <NavLinks />
+                <NavLinks currentPath={currentPath} />
               </div>
             </div>
           )}

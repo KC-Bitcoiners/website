@@ -324,7 +324,7 @@ export default function ShopPage({
         title="BTC Map"
         width="100%"
         height="600"
-        allowfullscreen="true"
+        allowFullScreen={true}
         allow="geolocation"
         src="https://btcmap.org/map#11/39.03219/-94.58101"
       >
