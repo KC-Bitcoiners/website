@@ -219,63 +219,60 @@ export default function CalendarPage({ meetupGroup, meetupError }: InferGetStati
           </div>
         </div>
 
-        {/* Calendar View - Always show CalendarView to get its built-in buttons */}
+        {/* Always show view selector */}
+        <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setViewMode('month')}
+              className={`px-4 py-2 text-sm font-medium transition-colors rounded-l-lg ${
+                viewMode === 'month'
+                  ? 'bg-bitcoin-orange text-white'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Month
+            </button>
+            <button
+              onClick={() => setViewMode('week')}
+              className={`px-4 py-2 text-sm font-medium transition-colors ${
+                viewMode === 'week'
+                  ? 'bg-bitcoin-orange text-white'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Week
+            </button>
+            <button
+              onClick={() => setViewMode('day')}
+              className={`px-4 py-2 text-sm font-medium transition-colors rounded-r-lg ${
+                viewMode === 'day'
+                  ? 'bg-bitcoin-orange text-white'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Day
+            </button>
+            
+            <button
+              onClick={() => setViewMode('list')}
+              className={`px-4 py-2 text-sm font-medium transition-colors rounded-lg border border-gray-200 bg-white ml-2 ${
+                viewMode === 'list'
+                  ? 'bg-bitcoin-orange text-white'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              List
+            </button>
+          </div>
+        </div>
+
+        {/* Calendar View */}
         {viewMode !== 'list' && (
           <CalendarView
             events={events}
             onEventClick={setSelectedEvent}
-            onViewChange={(view) => setViewMode(view === 'list' ? 'list' : 'month')}
-            currentView="calendar"
+            currentView={viewMode}
           />
-        )}
-
-        {/* Always show a simple list button when in list mode */}
-        {viewMode === 'list' && (
-          <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setViewMode('month')}
-                className={`px-4 py-2 text-sm font-medium transition-colors rounded-l-lg ${
-                  false
-                    ? 'bg-bitcoin-orange text-white'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Month
-              </button>
-              <button
-                onClick={() => setViewMode('week')}
-                className={`px-4 py-2 text-sm font-medium transition-colors ${
-                  false
-                    ? 'bg-bitcoin-orange text-white'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Week
-              </button>
-              <button
-                onClick={() => setViewMode('day')}
-                className={`px-4 py-2 text-sm font-medium transition-colors rounded-r-lg ${
-                  false
-                    ? 'bg-bitcoin-orange text-white'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Day
-              </button>
-              
-              <button
-                onClick={() => setViewMode('list')}
-                className={`px-4 py-2 text-sm font-medium transition-colors rounded-lg border border-gray-200 bg-white ml-2 ${
-                  true
-                    ? 'bg-bitcoin-orange text-white'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                List
-              </button>
-            </div>
-          </div>
         )}
 
         {viewMode === 'list' && (

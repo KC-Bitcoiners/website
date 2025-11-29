@@ -7,13 +7,12 @@ type ViewType = 'month' | 'week' | 'day';
 interface CalendarViewProps {
   events: CalendarEvent[];
   onEventClick?: (event: CalendarEvent) => void;
-  onViewChange?: (view: 'calendar' | 'list') => void;
-  currentView?: 'calendar' | 'list';
+  currentView?: 'month' | 'week' | 'day';
 }
 
-export default function CalendarView({ events, onEventClick, onViewChange, currentView }: CalendarViewProps) {
+export default function CalendarView({ events, onEventClick, currentView }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewType, setViewType] = useState<ViewType>('month');
+  const viewType = currentView || 'month';
   const weekScrollRef = useRef<HTMLDivElement>(null);
   const dayScrollRef = useRef<HTMLDivElement>(null);
 
@@ -159,10 +158,11 @@ export default function CalendarView({ events, onEventClick, onViewChange, curre
     const weekDays = [];
     const startOfWeek = new Date(date);
     startOfWeek.setDate(date.getDate() - date.getDay());
+    const startOfDay = new Date(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate());
     
     for (let i = 0; i < 7; i++) {
-      const day = new Date(startOfWeek);
-      day.setDate(startOfWeek.getDate() + i);
+      const day = new Date(startOfDay);
+      day.setDate(startOfDay.getDate() + i);
       weekDays.push(day);
     }
     
@@ -555,54 +555,13 @@ export default function CalendarView({ events, onEventClick, onViewChange, curre
       {/* Calendar Controls */}
       <div className="bg-white border border-gray-200 rounded-lg p-4">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          {/* View Type Selector */}
+          {/* View Type Display */}
           <div className="flex items-center gap-2">
-            <div className="flex rounded-lg border border-gray-200 bg-white">
-              <button
-                onClick={() => setViewType('month')}
-                className={`px-4 py-2 text-sm font-medium transition-colors rounded-l-lg ${
-                  viewType === 'month'
-                    ? 'bg-bitcoin-orange text-white'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Month
-              </button>
-              <button
-                onClick={() => setViewType('week')}
-                className={`px-4 py-2 text-sm font-medium transition-colors ${
-                  viewType === 'week'
-                    ? 'bg-bitcoin-orange text-white'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Week
-              </button>
-              <button
-                onClick={() => setViewType('day')}
-                className={`px-4 py-2 text-sm font-medium transition-colors rounded-r-lg ${
-                  viewType === 'day'
-                    ? 'bg-bitcoin-orange text-white'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Day
-              </button>
+            <div className="text-sm font-medium text-gray-700">
+              {viewType === 'month' && 'Month View'}
+              {viewType === 'week' && 'Week View'}
+              {viewType === 'day' && 'Day View'}
             </div>
-            
-            {/* List View Selector */}
-            {onViewChange && (
-              <button
-                onClick={() => onViewChange('list')}
-                className={`px-4 py-2 text-sm font-medium transition-colors rounded-lg border border-gray-200 bg-white ${
-                  currentView === 'list'
-                    ? 'bg-bitcoin-orange text-white'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                List
-              </button>
-            )}
           </div>
 
           {/* Navigation */}
