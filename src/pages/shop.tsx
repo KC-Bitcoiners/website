@@ -184,11 +184,11 @@ export default function ShopPage({
       <div className="container mx-auto px-4 py-12">
         <div className="text-center">
           <h1 className="text-4xl font-bold mb-8 font-archivo-black">Shop</h1>
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-            <p className="text-red-600">
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
+            <p className="text-red-600 dark:text-red-400">
               Unable to load shop data at this time. Please try again later.
             </p>
-            <p className="text-sm text-red-500 mt-2">{error}</p>
+            <p className="text-sm text-red-500 dark:text-red-400 mt-2">{error}</p>
           </div>
         </div>
       </div>
@@ -211,22 +211,22 @@ export default function ShopPage({
         <h1 className="text-5xl font-bold mb-6 font-archivo-black">
           Bitcoin-Accepting Shops
         </h1>
-        <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+        <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto leading-relaxed">
           Support local businesses that accept Bitcoin! Filter and sort to find
           vendors that accept Lightning or on-chain payments.
         </p>
       </div>
 
       {/* Table Section */}
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b-2 border-gray-200">
+            <thead className="bg-gray-50 dark:bg-gray-700 border-b-2 border-gray-200 dark:border-gray-600">
               <tr>
                 {columns.map((column) => (
                   <th
                     key={column}
-                    className="px-4 py-3 text-left text-sm font-semibold text-gray-700"
+                    className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300"
                   >
                     <button
                       onClick={() => handleSort(column)}
@@ -238,7 +238,7 @@ export default function ShopPage({
                   </th>
                 ))}
               </tr>
-              <tr className="bg-gray-100">
+              <tr className="bg-gray-100 dark:bg-gray-600">
                 {columns.map((column) => (
                   <th key={`filter-${column}`} className="px-4 py-2">
                     <input
@@ -248,41 +248,41 @@ export default function ShopPage({
                       onChange={(e) =>
                         handleFilterChange(column, e.target.value)
                       }
-                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
+                      className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                     />
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {filteredAndSortedItems.length > 0 ? (
                 filteredAndSortedItems.map((item, index) => (
                   <tr
                     key={index}
-                    className="hover:bg-gray-50 transition-colors"
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                   >
-                    <td className="px-4 py-3 text-sm">{item.Category}</td>
-                    <td className="px-4 py-3 text-sm font-medium">
+                    <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{item.Category}</td>
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
                       {item.Vendor}
                     </td>
                     <td className="px-4 py-3 text-sm text-center">
                       {item.Lightning === "1" ? (
                         <span className="text-green-600 font-bold">✓</span>
                       ) : (
-                        <span className="text-gray-300">✗</span>
+                        <span className="text-gray-300 dark:text-gray-500">✗</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-sm text-center">
                       {item["On-Chain"] === "1" ? (
                         <span className="text-green-600 font-bold">✓</span>
                       ) : (
-                        <span className="text-gray-300">✗</span>
+                        <span className="text-gray-300 dark:text-gray-500">✗</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">
+                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                       {item.Notes}
                     </td>
-                    <td className="px-4 py-3 text-sm">
+                    <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
                       {renderContact(item.Contact)}
                     </td>
                   </tr>
@@ -291,7 +291,7 @@ export default function ShopPage({
                 <tr>
                   <td
                     colSpan={columns.length}
-                    className="px-4 py-8 text-center text-gray-500"
+                    className="px-4 py-8 text-center text-gray-500 dark:text-gray-400"
                   >
                     No shops match your filters. Try adjusting your search.
                   </td>
@@ -303,18 +303,18 @@ export default function ShopPage({
       </div>
 
       {/* Stats Section */}
-      <div className="mt-8 text-center text-gray-600">
+      <div className="mt-8 text-center text-gray-600 dark:text-gray-400">
         <p>
           Showing {filteredAndSortedItems.length} of {items.length} shops
         </p>
       </div>
 
       {/* Call to Action */}
-      <section className="mt-16 bg-gradient-to-r from-gray-50 to-orange-50 border border-gray-200 rounded-lg p-8 text-center">
+      <section className="mt-16 bg-gradient-to-r from-gray-50 to-orange-50 dark:from-gray-800 dark:to-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-8 text-center">
         <h3 className="text-2xl font-bold mb-4 font-archivo-black">
           Know a Bitcoin-Accepting Business?
         </h3>
-        <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
+        <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-2xl mx-auto">
           Help us grow this list! If you know of a local business that accepts
           Bitcoin, let us know so we can add them to our directory.
         </p>

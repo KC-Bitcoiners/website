@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import clsx from "clsx";
 import { HamburgerIcon } from "./Icons";
+import ThemeToggle from "./ThemeToggle";
 
 function NavLinks({ currentPath }: { currentPath: string }) {
   return (
@@ -78,9 +79,9 @@ export default function Layout({ children, className }: LayoutProps) {
   };
 
   return (
-    <div className={clsx("min-h-screen bg-white", className)}>
+    <div className={clsx("min-h-screen bg-white dark:bg-black", className)}>
       {/* Header */}
-      <header className="bg-white text-black sticky top-0 z-50 border-b border-gray-200">
+      <header className="bg-white dark:bg-black text-black dark:text-white sticky top-0 z-50 border-b border-gray-200 dark:border-gray-700">
         <nav className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             {/* Logo */}
@@ -92,18 +93,22 @@ export default function Layout({ children, className }: LayoutProps) {
             </Link>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex space-x-8">
+            <div className="hidden md:flex items-center space-x-8">
               <NavLinks currentPath={currentPath} />
+              <ThemeToggle />
             </div>
 
-            {/* Mobile menu button */}
-            <button
-              className="md:hidden p-2"
-              onClick={toggleMobileMenu}
-              aria-label="Toggle mobile menu"
-            >
-              <HamburgerIcon />
-            </button>
+            {/* Mobile menu button and theme toggle */}
+            <div className="flex items-center space-x-2 md:hidden">
+              <ThemeToggle />
+              <button
+                className="p-2"
+                onClick={toggleMobileMenu}
+                aria-label="Toggle mobile menu"
+              >
+                <HamburgerIcon />
+              </button>
+            </div>
           </div>
 
           {/* Mobile Navigation Menu */}
@@ -124,7 +129,7 @@ export default function Layout({ children, className }: LayoutProps) {
       <main>{children}</main>
 
       {/* Footer */}
-      <footer className="bg-black text-gray-400 py-8">
+      <footer className="bg-black dark:bg-black text-gray-400 dark:text-gray-400 py-8">
         <div className="container mx-auto px-6 text-center">
           <p>&copy; 2025 KC Bitcoin Meetup Group - All Rights Reserved.</p>
         </div>

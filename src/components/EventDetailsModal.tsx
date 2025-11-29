@@ -54,13 +54,13 @@ export default function EventDetailsModal({ event, onClose }: EventDetailsModalP
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-900">Event Details</h2>
+        <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Event Details</h2>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           >
             <XIcon className="w-6 h-6" />
           </button>
@@ -69,11 +69,11 @@ export default function EventDetailsModal({ event, onClose }: EventDetailsModalP
         {/* Content */}
         <div className="p-6">
           {/* Title */}
-          <h3 className="text-3xl font-bold text-gray-900 mb-4">{event.title}</h3>
+          <h3 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">{event.title}</h3>
 
           {/* Date and Time */}
           <div className="mb-6">
-            <div className="flex items-center gap-2 text-gray-700">
+            <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
@@ -84,27 +84,27 @@ export default function EventDetailsModal({ event, onClose }: EventDetailsModalP
           {/* Summary */}
           {event.summary && (
             <div className="mb-6">
-              <h4 className="font-semibold text-gray-900 mb-2">Summary</h4>
-              <p className="text-gray-600">{event.summary}</p>
+              <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Summary</h4>
+              <p className="text-gray-600 dark:text-gray-300">{event.summary}</p>
             </div>
           )}
 
           {/* Description */}
           {event.description && (
             <div className="mb-6">
-              <h4 className="font-semibold text-gray-900 mb-2">Description</h4>
-              <div className="text-gray-600 whitespace-pre-wrap">{event.description}</div>
+              <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Description</h4>
+              <div className="text-gray-600 dark:text-gray-300 whitespace-pre-wrap">{event.description}</div>
             </div>
           )}
 
           {/* Image */}
           {event.image && (
             <div className="mb-6">
-              <h4 className="font-semibold text-gray-900 mb-2">Image</h4>
+              <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Image</h4>
               <img 
                 src={event.image} 
                 alt={event.title}
-                className="max-w-full h-auto rounded-lg border border-gray-200"
+                className="max-w-full h-auto rounded-lg border border-gray-200 dark:border-gray-700"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
                 }}
@@ -115,10 +115,10 @@ export default function EventDetailsModal({ event, onClose }: EventDetailsModalP
           {/* Locations */}
           {(event.location || (event.locations && event.locations.length > 0)) && (
             <div className="mb-6">
-              <h4 className="font-semibold text-gray-900 mb-2">Location{event.locations && event.locations.length > 1 ? 's' : ''}</h4>
+              <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Location{event.locations && event.locations.length > 1 ? 's' : ''}</h4>
               <div className="space-y-2">
                 {event.location && (
-                  <div className="flex items-center gap-2 text-gray-600">
+                  <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -127,7 +127,7 @@ export default function EventDetailsModal({ event, onClose }: EventDetailsModalP
                   </div>
                 )}
                 {event.locations && event.locations.map((location, index) => (
-                  <div key={index} className="flex items-center gap-2 text-gray-600">
+                  <div key={index} className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -142,7 +142,7 @@ export default function EventDetailsModal({ event, onClose }: EventDetailsModalP
           {/* Hashtags */}
           {event.hashtags && event.hashtags.length > 0 && (
             <div className="mb-6">
-              <h4 className="font-semibold text-gray-900 mb-2">Tags</h4>
+              <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Tags</h4>
               <div className="flex flex-wrap gap-2">
                 {event.hashtags.map((tag, index) => (
                   <span 
@@ -159,8 +159,8 @@ export default function EventDetailsModal({ event, onClose }: EventDetailsModalP
           {/* Meetup Link */}
           {event.id && event.id.startsWith('meetup-') && event.references && event.references.length > 0 && (
             <div className="mb-6">
-              <h4 className="font-semibold text-gray-900 mb-2">Meetup Event</h4>
-              <div className="text-gray-600">
+              <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Meetup Event</h4>
+              <div className="text-gray-600 dark:text-gray-300">
                 <a 
                   href={event.references[0]} 
                   target="_blank" 
@@ -179,10 +179,10 @@ export default function EventDetailsModal({ event, onClose }: EventDetailsModalP
           {/* References */}
           {event.references && event.references.length > 0 && (
             <div className="mb-6">
-              <h4 className="font-semibold text-gray-900 mb-2">References</h4>
+              <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">References</h4>
               <div className="space-y-1">
                 {event.references.map((ref, index) => (
-                  <div key={index} className="text-gray-600">
+                  <div key={index} className="text-gray-600 dark:text-gray-300">
                     <a 
                       href={ref} 
                       target="_blank" 
@@ -198,7 +198,7 @@ export default function EventDetailsModal({ event, onClose }: EventDetailsModalP
           )}
 
           {/* Event Type */}
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-gray-500 dark:text-gray-400">
             Event Type: {event.kind === 31922 ? 'All-Day Event' : 'Timed Event'}
           </div>
         </div>

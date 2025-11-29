@@ -16,7 +16,7 @@ export default function Home() {
       </Head>
 
       {/* Main Content Section - White Background */}
-      <section className="bg-white text-black py-16">
+      <section className="bg-white dark:bg-black text-black dark:text-white py-16">
         <div className="container mx-auto px-6 max-w-6xl ">
           {/* Title */}
           <h1 className="text-4xl md:text-6xl font-black bitcoin-orange mb-16 text-center font-archivo-black">
@@ -43,7 +43,7 @@ export default function Home() {
                 is for you. Meetups include discussions on topics such as:
               </p>
 
-              <ul className="list-disc list-inside space-y-1 ml-4 text-gray-700 leading-relaxed">
+              <ul className="list-disc list-inside space-y-1 ml-4 text-gray-700 dark:text-gray-300 leading-relaxed">
                 <li>Economics</li>
                 <li>Protocol & Software</li>
                 <li>Digital Wallets</li>
@@ -57,17 +57,17 @@ export default function Home() {
       </section>
 
       {/* Call to Action Section - Orange Background */}
-      <section className="bg-bitcoin-orange text-white py-16">
+      <section className="bg-bitcoin-orange text-white py-16 call-to-action-section">
         <div className="container mx-auto px-6 text-center">
           <h2 className="text-3xl font-bold mb-8 font-archivo-black">
-            Ready to Join the Community?
+            Ready to Join Community?
           </h2>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
               href="https://www.meetup.com/kansas-city-bitcoin-meetup-group/"
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-white bitcoin-orange px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+              className="text-white bg-white border-2 border-white px-8 py-3 rounded-lg font-semibold transition-colors"
             >
               Join Our Meetups
             </a>
@@ -75,13 +75,40 @@ export default function Home() {
               href="https://btcpay0.voltageapp.io/apps/26q7Q6PpDTZFoUBfpMko6jSzm4od/pos"
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-transparent border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:bitcoin-orange hover:text-gray-700 transition-colors"
+              className="text-white bg-white border-2 border-white px-8 py-3 rounded-lg font-semibold transition-colors"
             >
               Support Us
             </a>
           </div>
         </div>
       </section>
+
+      <style jsx global>{`
+        html:not(.dark) .call-to-action-section,
+        html:not(.dark) .call-to-action-section > div {
+          background-color: rgb(214, 117, 47) !important;
+        }
+        html:not(.dark) .call-to-action-section h2 {
+          color: white !important;
+        }
+        html:not(.dark) .call-to-action-section a {
+          background-color: white !important;
+          color: white !important;
+          border-color: white !important;
+        }
+        .dark .call-to-action-section,
+        .dark .call-to-action-section > div {
+          background-color: rgb(251, 146, 60) !important;
+        }
+        .dark .call-to-action-section h2 {
+          color: white !important;
+        }
+        .dark .call-to-action-section a {
+          background-color: white !important;
+          color: white !important;
+          border-color: white !important;
+        }
+      `}</style>
     </>
   );
 }

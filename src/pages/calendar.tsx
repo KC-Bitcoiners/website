@@ -188,11 +188,11 @@ export default function CalendarPage({ meetupGroup, meetupError }: InferGetStati
     return (
       <div className="container mx-auto px-4 py-12">
         <div className="text-center">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-            <p className="text-red-600">
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
+            <p className="text-red-600 dark:text-red-400">
               Unable to load meetup events at this time. Please try again later.
             </p>
-            <p className="text-sm text-red-500 mt-2">{meetupError}</p>
+            <p className="text-sm text-red-500 dark:text-red-400 mt-2">{meetupError}</p>
           </div>
         </div>
       </div>
@@ -204,30 +204,30 @@ export default function CalendarPage({ meetupGroup, meetupError }: InferGetStati
         {/* Statistics */}
         <div className="mb-8">
           <div className="grid grid-cols-3 gap-6">
-            <div className="bg-white border border-gray-200 rounded-lg p-6 text-center">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 text-center">
               <div className="text-3xl font-bold text-bitcoin-orange mb-2">{events.length}</div>
-              <div className="text-gray-600">Total Events</div>
+              <div className="text-gray-600 dark:text-gray-400">Total Events</div>
             </div>
-            <div className="bg-white border border-gray-200 rounded-lg p-6 text-center">
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 text-center">
               <div className="text-3xl font-bold text-green-600 mb-2">{upcomingEvents.length}</div>
-              <div className="text-gray-600">Upcoming</div>
+              <div className="text-gray-600 dark:text-gray-400">Upcoming</div>
             </div>
-            <div className="bg-white border border-gray-200 rounded-lg p-6 text-center">
-              <div className="text-3xl font-bold text-gray-600 mb-2">{pastEvents.length}</div>
-              <div className="text-gray-600">Past Events</div>
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 text-center">
+              <div className="text-3xl font-bold text-gray-600 dark:text-gray-400 mb-2">{pastEvents.length}</div>
+              <div className="text-gray-600 dark:text-gray-400">Past Events</div>
             </div>
           </div>
         </div>
 
         {/* Always show view selector */}
-        <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-6">
           <div className="flex items-center gap-2">
             <button
               onClick={() => setViewMode('month')}
               className={`px-4 py-2 text-sm font-medium transition-colors rounded-l-lg ${
                 viewMode === 'month'
                   ? 'bg-bitcoin-orange text-white'
-                  : 'text-gray-600 hover:text-gray-900'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
               }`}
             >
               Month
@@ -237,7 +237,7 @@ export default function CalendarPage({ meetupGroup, meetupError }: InferGetStati
               className={`px-4 py-2 text-sm font-medium transition-colors ${
                 viewMode === 'week'
                   ? 'bg-bitcoin-orange text-white'
-                  : 'text-gray-600 hover:text-gray-900'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
               }`}
             >
               Week
@@ -247,7 +247,7 @@ export default function CalendarPage({ meetupGroup, meetupError }: InferGetStati
               className={`px-4 py-2 text-sm font-medium transition-colors rounded-r-lg ${
                 viewMode === 'day'
                   ? 'bg-bitcoin-orange text-white'
-                  : 'text-gray-600 hover:text-gray-900'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
               }`}
             >
               Day
@@ -255,10 +255,10 @@ export default function CalendarPage({ meetupGroup, meetupError }: InferGetStati
             
             <button
               onClick={() => setViewMode('list')}
-              className={`px-4 py-2 text-sm font-medium transition-colors rounded-lg border border-gray-200 bg-white ml-2 ${
+              className={`px-4 py-2 text-sm font-medium transition-colors rounded-lg ml-2 ${
                 viewMode === 'list'
                   ? 'bg-bitcoin-orange text-white'
-                  : 'text-gray-600 hover:text-gray-900'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
               }`}
             >
               List
@@ -300,7 +300,7 @@ export default function CalendarPage({ meetupGroup, meetupError }: InferGetStati
             {/* Past Events Section */}
             {pastEvents.length > 0 && (
               <section>
-                <h2 className="text-3xl font-bold mb-8 font-archivo-black text-gray-700">
+                <h2 className="text-3xl font-bold mb-8 font-archivo-black text-gray-700 dark:text-gray-300">
                   Past Events
                 </h2>
                 <div className="space-y-8 opacity-75">
@@ -322,11 +322,11 @@ export default function CalendarPage({ meetupGroup, meetupError }: InferGetStati
 
             {events.length === 0 && (
               <div className="text-center py-12">
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-8">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-4">
+                <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-8">
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
                     No Events Yet
                   </h3>
-                  <p className="text-gray-600 mb-6">
+                  <p className="text-gray-600 dark:text-gray-400 mb-6">
                     Start by creating your first community event.
                   </p>
                   <button
@@ -344,7 +344,7 @@ export default function CalendarPage({ meetupGroup, meetupError }: InferGetStati
 
         {/* Page Description and Actions */}
       <div className="mt-12 text-center">
-        <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed mb-8">
+        <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto leading-relaxed mb-8">
           Create and manage community events. All events are stored locally and can be 
           created anonymously without requiring a login.
         </p>

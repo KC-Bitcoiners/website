@@ -16,6 +16,19 @@ export default function CalendarView({ events, onEventClick, currentView }: Cale
   const weekScrollRef = useRef<HTMLDivElement>(null);
   const dayScrollRef = useRef<HTMLDivElement>(null);
 
+  // Unified NoEvents component for consistent styling across all views
+  const NoEvents: React.FC<{ message: string; submessage: string }> = ({ message, submessage }) => {
+    return (
+      <div className="absolute inset-0 flex items-start justify-center pt-16 bg-gray-50 dark:bg-gray-800/90">
+        <div className="text-center">
+          <div className="text-gray-400 dark:text-gray-600 text-6xl mb-4">📅</div>
+          <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">{message}</h3>
+          <p className="text-gray-500 dark:text-gray-400">{submessage}</p>
+        </div>
+      </div>
+    );
+  };
+
   // Smart time range: show limited time range around events instead of full 24 hours
   useEffect(() => {
     const calculateTimeRange = (events: CalendarEvent[]) => {
@@ -311,11 +324,11 @@ export default function CalendarView({ events, onEventClick, currentView }: Cale
     const hasEvents = monthEvents.length > 0;
     
     return (
-      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden relative">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden relative">
         {/* Weekday headers */}
-        <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-200">
+        <div className="grid grid-cols-7 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
           {weekDays.map(day => (
-            <div key={day} className="p-2 text-center text-xs font-semibold text-gray-700">
+            <div key={day} className="p-2 text-center text-xs font-semibold text-gray-700 dark:text-gray-300">
               {day}
             </div>
           ))}
@@ -331,14 +344,14 @@ export default function CalendarView({ events, onEventClick, currentView }: Cale
             return (
               <div
                 key={index}
-                className={`min-h-[100px] p-2 border-r border-b border-gray-200 ${
+                className={`min-h-[100px] p-2 border-r border-b border-gray-200 dark:border-gray-700 ${
                   isToday ? 'bg-bitcoin-orange/20' : ''
-                } ${!isCurrentMonth ? 'bg-gray-50' : ''}`}
+                } ${!isCurrentMonth ? 'bg-gray-50 dark:bg-gray-700' : ''}`}
               >
                 {day && (
                   <>
                     <div className={`text-sm font-medium mb-1 ${
-                      isToday ? 'text-bitcoin-orange' : 'text-gray-900'
+                      isToday ? 'text-bitcoin-orange' : 'text-gray-900 dark:text-gray-100'
                     }`}>
                       {day.getDate()}
                     </div>
@@ -375,13 +388,10 @@ export default function CalendarView({ events, onEventClick, currentView }: Cale
         </div>
         
         {!hasEvents && (
-          <div className="absolute inset-0 flex items-start justify-center pt-16 bg-gray-50/90">
-            <div className="text-center">
-              <div className="text-gray-400 text-6xl mb-4">�️</div>
-              <h3 className="text-xl font-semibold text-gray-700 mb-2">No Events This Month</h3>
-              <p className="text-gray-500">There are no events scheduled for this month.</p>
-            </div>
-          </div>
+          <NoEvents 
+            message="No Events This Month"
+            submessage="There are no events scheduled for this month."
+          />
         )}
       </div>
     );
@@ -424,12 +434,12 @@ export default function CalendarView({ events, onEventClick, currentView }: Cale
     const timeRange = calculateTimeRange(weekEvents);
     
     return (
-      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
         {/* Week grid - no separate header to avoid duplication */}
         <div className="grid grid-cols-8">
           {/* Time column header */}
-          <div className="p-2 border-r border-b border-gray-200 bg-gray-50">
-            <div className="text-xs font-semibold text-gray-700">Time</div>
+          <div className="p-2 border-r border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+            <div className="text-xs font-semibold text-gray-700 dark:text-gray-300">Time</div>
           </div>
           
           {/* Day headers */}
@@ -438,16 +448,16 @@ export default function CalendarView({ events, onEventClick, currentView }: Cale
             const isToday = day.toDateString() === new Date().toDateString();
             
             return (
-              <div key={index} className={`p-2 border-r border-b border-gray-200 ${
-                isToday ? 'bg-bitcoin-orange/20' : 'bg-gray-50'
+              <div key={index} className={`p-2 border-r border-b border-gray-200 dark:border-gray-700 ${
+                isToday ? 'bg-bitcoin-orange/20' : 'bg-gray-50 dark:bg-gray-700'
               }`}>
                 <div className={`text-xs font-semibold ${
-                  isToday ? 'text-bitcoin-orange' : 'text-gray-700'
+                  isToday ? 'text-bitcoin-orange' : 'text-gray-700 dark:text-gray-300'
                 }`}>
                   {day.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                 </div>
                 {dayEvents.length > 0 && (
-                  <div className="text-xs text-gray-600 mt-1">
+                  <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                     {dayEvents.length} event{dayEvents.length !== 1 ? 's' : ''}
                   </div>
                 )}
@@ -457,15 +467,12 @@ export default function CalendarView({ events, onEventClick, currentView }: Cale
         </div>
         
         {/* Week grid */}
-        <div ref={weekScrollRef} className="h-[600px] relative overflow-y-auto"> {/* Reduced height to enable scrolling */}
+        <div ref={weekScrollRef} className="h-[600px] relative overflow-y-auto">
           {!hasEvents && (
-            <div className="absolute inset-0 flex items-start justify-center pt-16 bg-gray-50/90">
-              <div className="text-center">
-                <div className="text-gray-400 text-6xl mb-4">�️</div>
-                <h3 className="text-xl font-semibold text-gray-700 mb-2">No Events This Week</h3>
-                <p className="text-gray-500">There are no events scheduled for this week.</p>
-              </div>
-            </div>
+            <NoEvents 
+              message="No Events This Week"
+              submessage="There are no events scheduled for this week."
+            />
           )}
           {(() => {
             // Calculate layout for each day once, outside the hour loop
@@ -576,10 +583,10 @@ export default function CalendarView({ events, onEventClick, currentView }: Cale
     const timeRange = calculateTimeRange(dayEvents);
     
     return (
-      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
         {/* Day header - no separate controls to avoid duplication */}
-        <div className="p-4 border-b border-gray-200 bg-gray-50">
-          <h3 className="text-lg font-semibold text-gray-900">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
             {currentDate.toLocaleDateString('en-US', { 
               weekday: 'long', 
               year: 'numeric', 
@@ -587,16 +594,16 @@ export default function CalendarView({ events, onEventClick, currentView }: Cale
               day: 'numeric' 
             })}
           </h3>
-          <div className="text-sm text-gray-600 mt-1">
+          <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
             {dayEvents.length} event{dayEvents.length !== 1 ? 's' : ''} scheduled
           </div>
         </div>
         
-        <div className="flex" style={{ height: `${Math.min((timeRange.endHour - timeRange.startHour + 1) * 60 + 80, 800)}px` }}> {/* Dynamic height based on time range */}
+        <div className="flex" style={{ height: `${Math.min((timeRange.endHour - timeRange.startHour + 1) * 60 + 80, 800)}px` }}>
           {/* Fixed time column - CRITICAL: This provides the time labels on the left side */}
-          <div className="w-20 flex-shrink-0 border-r border-gray-200 bg-gray-50">
+          <div className="w-20 flex-shrink-0 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
             {timeRange.hours.map((hour: number) => (
-              <div key={hour} className="h-[60px] p-2 text-sm text-gray-600 border-b border-gray-100 flex items-start">
+              <div key={hour} className="h-[60px] p-2 text-sm text-gray-600 dark:text-gray-400 border-b border-gray-100 dark:border-gray-600 flex items-start">
                 {formatTime(new Date(2000, 0, 1, hour, 0, 0, 0))}
               </div>
             ))}
@@ -605,13 +612,10 @@ export default function CalendarView({ events, onEventClick, currentView }: Cale
           {/* Content area - enable scrolling */}
           <div ref={dayScrollRef} className="flex-1 relative overflow-y-auto">
             {!hasEvents && (
-              <div className="absolute inset-0 flex items-start justify-center pt-16 bg-gray-50/90">
-                <div className="text-center">
-                  <div className="text-gray-400 text-6xl mb-4">�️</div>
-                  <h3 className="text-xl font-semibold text-gray-700 mb-2">No Events Today</h3>
-                  <p className="text-gray-500">There are no events scheduled for this day.</p>
-                </div>
-              </div>
+              <NoEvents 
+                message="No Events Today"
+                submessage="There are no events scheduled for this day."
+              />
             )}
             {/* Render hour grid lines for visual reference - only for displayed time range */}
             {timeRange.hours.map((hour: number, index: number) => (
@@ -680,10 +684,10 @@ export default function CalendarView({ events, onEventClick, currentView }: Cale
               <div
                 key={event.id}
                 onClick={() => onEventClick?.(event)}
-                className="absolute top-2 left-2 right-2 bg-gray-100 text-gray-800 p-2 rounded cursor-pointer hover:bg-gray-200 transition-colors overflow-hidden z-10"
+                className="absolute top-2 left-2 right-2 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 p-2 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors overflow-hidden z-10"
               >
                 <div className="font-semibold text-sm truncate">{event.title}</div>
-                <div className="text-xs text-gray-600">All day</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">All day</div>
               </div>
             ))}
           </div>
@@ -695,11 +699,11 @@ export default function CalendarView({ events, onEventClick, currentView }: Cale
   return (
     <div className="space-y-6">
       {/* Calendar Controls */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4">
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           {/* View Type Display */}
           <div className="flex items-center gap-2">
-            <div className="text-sm font-medium text-gray-700">
+            <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
               {viewType === 'month' && 'Month View'}
               {viewType === 'week' && 'Week View'}
               {viewType === 'day' && 'Day View'}
@@ -708,7 +712,7 @@ export default function CalendarView({ events, onEventClick, currentView }: Cale
 
           {/* Navigation */}
           <div className="flex items-center gap-4">
-            <div className="text-lg font-semibold text-gray-900 min-w-[200px] text-center">
+            <div className="text-lg font-semibold text-gray-900 dark:text-gray-100 min-w-[200px] text-center">
               {viewType === 'month' && formatMonthYear(currentDate)}
               {viewType === 'week' && formatWeekRange(currentDate)}
               {viewType === 'day' && formatDayDate(currentDate)}
@@ -717,20 +721,20 @@ export default function CalendarView({ events, onEventClick, currentView }: Cale
             <div className="flex items-center gap-2">
               <button
                 onClick={() => navigateDate('prev')}
-                className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
+                className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
                 aria-label="Previous"
               >
                 <ChevronLeftIcon className="w-5 h-5" />
               </button>
               <button
                 onClick={goToToday}
-                className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900 transition-colors border border-gray-300 rounded"
+                className="px-3 py-1 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors border border-gray-300 dark:border-gray-600 rounded"
               >
                 Today
               </button>
               <button
                 onClick={() => navigateDate('next')}
-                className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
+                className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
                 aria-label="Next"
               >
                 <ChevronRightIcon className="w-5 h-5" />

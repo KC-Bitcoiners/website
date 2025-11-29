@@ -76,11 +76,11 @@ export default function EventsPage({
       <div className="container mx-auto px-4 py-12">
         <div className="text-center">
           <h1 className="text-4xl font-bold mb-8 font-archivo-black">Events</h1>
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-            <p className="text-red-600">
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
+            <p className="text-red-600 dark:text-red-400">
               Unable to load events at this time. Please try again later.
             </p>
-            <p className="text-sm text-red-500 mt-2">{error}</p>
+            <p className="text-sm text-red-500 dark:text-red-400 mt-2">{error}</p>
           </div>
         </div>
       </div>
@@ -92,7 +92,7 @@ export default function EventsPage({
       <div className="container mx-auto px-4 py-12">
         <div className="text-center">
           <h1 className="text-4xl font-bold mb-8 font-archivo-black">Events</h1>
-          <p className="text-gray-600">No group data available.</p>
+          <p className="text-gray-600 dark:text-gray-400">No group data available.</p>
         </div>
       </div>
     );
@@ -110,7 +110,7 @@ export default function EventsPage({
       {/* Page Header */}
       <div className="text-center mb-12">
         <h1 className="text-5xl font-bold mb-6 font-archivo-black">Events</h1>
-        <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+        <p className="text-xl text-gray-600 dark:text-gray-400 max-w-3xl mx-auto leading-relaxed">
           Join us for Bitcoin meetups, educational sessions, and community
           building in Kansas City. All skill levels welcome - from Bitcoin
           beginners to seasoned hodlers!
@@ -139,11 +139,11 @@ export default function EventsPage({
             ))}
           </div>
         ) : (
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
-            <p className="text-gray-600 text-lg mb-4">
+          <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-8 text-center">
+            <p className="text-gray-600 dark:text-gray-400 text-lg mb-4">
               No upcoming events scheduled at the moment.
             </p>
-            <p className="text-gray-500">
+            <p className="text-gray-500 dark:text-gray-400">
               Check back soon or follow us on{" "}
               <a
                 href="https://www.meetup.com/kansas-city-bitcoin-meetup-group/"
@@ -153,7 +153,7 @@ export default function EventsPage({
               >
                 Meetup.com
               </a>{" "}
-              for the latest updates!
+              for latest updates!
             </p>
           </div>
         )}
@@ -162,7 +162,7 @@ export default function EventsPage({
       {/* Past Events Section */}
       {pastEvents.length > 0 && (
         <section>
-          <h2 className="text-3xl font-bold mb-8 font-archivo-black text-gray-700">
+          <h2 className="text-3xl font-bold mb-8 font-archivo-black text-gray-700 dark:text-gray-300">
             Past Events
           </h2>
           <div className="space-y-8 opacity-75">
@@ -182,8 +182,8 @@ export default function EventsPage({
 
           {pastEvents.length > 5 && (
             <div className="text-center mt-8">
-              <p className="text-gray-500">
-                Showing the 5 most recent past events.{" "}
+              <p className="text-gray-500 dark:text-gray-400">
+                Showing 5 most recent past events.{" "}
                 <a
                   href="https://www.meetup.com/kansas-city-bitcoin-meetup-group/events/past/"
                   target="_blank"
@@ -199,11 +199,11 @@ export default function EventsPage({
       )}
 
       {/* Call to Action */}
-      <section className="mt-16 bg-gradient-to-r from-gray-50 to-orange-50 border border-gray-200 rounded-lg p-8 text-center">
+      <section className="mt-16 bg-gradient-to-r from-gray-50 to-orange-50 dark:from-gray-800 dark:to-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-8 text-center">
         <h3 className="text-2xl font-bold mb-4 font-archivo-black">
           Stay Connected
         </h3>
-        <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
+        <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-2xl mx-auto">
           Don't miss out on any Bitcoin discussions and networking
           opportunities. Join our Meetup group to get notified about new events
           and connect with fellow Bitcoin enthusiasts in Kansas City.

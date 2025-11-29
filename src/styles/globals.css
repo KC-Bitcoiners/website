@@ -1,28 +1,94 @@
 @import "tailwindcss";
 
+/* Light mode colors */
 :root {
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 214, 219, 220;
   --background-end-rgb: 255, 255, 255;
   --bitcoin-orange: rgb(214, 117, 47);
   --bitcoin-orange-hover: rgb(184, 94, 29);
+  --border-color: rgb(229, 231, 235);
+  --card-bg: rgb(255, 255, 255);
+  --text-muted: rgb(107, 114, 128);
+  --footer-bg: rgb(0, 0, 0);
+  --footer-text: rgb(156, 163, 175);
 }
 
-/* Disable dark theme (for now) */
-/* @media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
-} */
+/* Dark mode colors */
+.dark {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 0, 0, 0;
+  --background-end-rgb: 0, 0, 0;
+  --bitcoin-orange: rgb(251, 146, 60);
+  --bitcoin-orange-hover: rgb(214, 117, 47);
+  --border-color: rgb(55, 55, 55);
+  --card-bg: rgb(20, 20, 20);
+  --text-muted: rgb(180, 180, 180);
+  --footer-bg: rgb(0, 0, 0);
+  --footer-text: rgb(180, 180, 180);
+}
 
 /* Apply fonts globally */
 body {
   font-family:
     var(--font-source-sans-3), "Source Sans Pro", system-ui, sans-serif;
-  color: rgb(var(--foreground-rgb));
-  background: rgb(var(--background-end-rgb));
+}
+
+/* Set background and text based on theme */
+html:not(.dark) body {
+  background: rgb(255, 255, 255);
+  color: rgb(0, 0, 0);
+}
+
+html.dark body {
+  background: rgb(0, 0, 0);
+  color: rgb(255, 255, 255);
+}
+
+/* Ensure light mode has white background */
+html:not(.dark) body {
+  background: rgb(255, 255, 255) !important;
+}
+
+/* Ensure header is white in light mode */
+html:not(.dark) header {
+  background: rgb(255, 255, 255) !important;
+}
+
+/* Ensure main content area is white in light mode */
+html:not(.dark) main {
+  background: rgb(255, 255, 255) !important;
+}
+
+/* Ensure sections are white in light mode, but preserve Bitcoin orange sections */
+html:not(.dark) section:not(.bg-bitcoin-orange) {
+  background: rgb(255, 255, 255) !important;
+}
+
+/* Ensure containers are white in light mode, but preserve gray-50 for specific elements */
+html:not(.dark) .container:not(.bg-gray-50) {
+  background: rgb(255, 255, 255) !important;
+}
+
+/* Preserve gray-50 background in light mode */
+html:not(.dark) .bg-gray-50 {
+  background-color: rgb(249, 250, 251) !important;
+}
+
+/* Preserve gray-50 background with opacity in light mode */
+html:not(.dark) .bg-gray-50\/90 {
+  background-color: rgb(249, 250, 251) !important;
+  opacity: 0.9 !important;
+}
+
+/* Override black backgrounds in light mode, but preserve Bitcoin orange */
+html:not(.dark) .bg-black:not(.bg-bitcoin-orange) {
+  background: rgb(255, 255, 255) !important;
+}
+
+/* Ensure main layout div is white in light mode */
+html:not(.dark) .min-h-screen {
+  background: rgb(255, 255, 255) !important;
 }
 
 h1,
@@ -53,19 +119,200 @@ h6 {
 
 /* Custom Bitcoin-themed styles with original colors */
 .bitcoin-orange {
-  color: var(--bitcoin-orange);
+  color: var(--bitcoin-orange) !important;
 }
 
 .bg-bitcoin-orange {
-  background-color: var(--bitcoin-orange);
+  background-color: var(--bitcoin-orange) !important;
 }
 
 .bitcoin-orange-hover {
-  color: var(--bitcoin-orange-hover);
+  color: var(--bitcoin-orange-hover) !important;
 }
 
 .bg-bitcoin-orange-hover {
-  background-color: var(--bitcoin-orange-hover);
+  background-color: var(--bitcoin-orange-hover) !important;
+}
+
+/* Ensure Bitcoin orange is preserved in all themes */
+html:not(.dark) .bitcoin-orange,
+html:not(.dark) .text-bitcoin-orange {
+  color: rgb(214, 117, 47) !important;
+}
+
+html:not(.dark) .bg-bitcoin-orange {
+  background-color: rgb(214, 117, 47) !important;
+}
+
+.dark .bitcoin-orange,
+.dark .text-bitcoin-orange {
+  color: rgb(251, 146, 60) !important;
+}
+
+.dark .bg-bitcoin-orange {
+  background-color: rgb(251, 146, 60) !important;
+}
+
+/* Light mode text colors - preserve Bitcoin orange */
+html:not(.dark) .text-black:not(.text-bitcoin-orange):not(.bitcoin-orange) {
+  color: rgb(0, 0, 0) !important;
+}
+
+html:not(.dark) .text-white:not(.text-bitcoin-orange):not(.bitcoin-orange) {
+  color: rgb(0, 0, 0) !important;
+}
+
+html:not(.dark) .text-gray-400:not(.text-bitcoin-orange):not(.bitcoin-orange) {
+  color: rgb(107, 114, 128) !important;
+}
+
+html:not(.dark) .text-gray-500:not(.text-bitcoin-orange):not(.bitcoin-orange) {
+  color: rgb(107, 114, 128) !important;
+}
+
+html:not(.dark) .text-gray-600:not(.text-bitcoin-orange):not(.bitcoin-orange) {
+  color: rgb(107, 114, 128) !important;
+}
+
+html:not(.dark) .text-gray-700:not(.text-bitcoin-orange):not(.bitcoin-orange) {
+  color: rgb(55, 65, 81) !important;
+}
+
+html:not(.dark) .text-gray-900:not(.text-bitcoin-orange):not(.bitcoin-orange) {
+  color: rgb(0, 0, 0) !important;
+}
+
+/* Dark mode utility classes - preserve Bitcoin orange elements */
+.dark .bg-white:not(.bg-bitcoin-orange):not([class*="bitcoin-orange"]):not([class*="bitcoin-orange-hover"]) {
+  background-color: var(--card-bg) !important;
+}
+
+/* Exception: Keep white background for elements with bitcoin-orange text */
+.dark .bg-white.bitcoin-orange,
+.dark .bg-white.text-bitcoin-orange,
+.dark .bg-white[class*="bitcoin-orange"] {
+  background-color: rgb(255, 255, 255) !important;
+}
+
+/* Preserve white background for elements with bitcoin-orange text in dark mode */
+.dark .bg-white.bitcoin-orange,
+.dark .bg-white.text-bitcoin-orange,
+.dark .bg-white[class*="bitcoin-orange"] {
+  background-color: rgb(255, 255, 255) !important;
+}
+
+/* Preserve white background for elements with bitcoin-orange class in light mode */
+html:not(.dark) .bg-white.bitcoin-orange,
+html:not(.dark) .bg-white.text-bitcoin-orange,
+html:not(.dark) .bg-white[class*="bitcoin-orange"] {
+  background-color: rgb(255, 255, 255) !important;
+}
+
+.dark .bg-black {
+  background-color: var(--footer-bg) !important;
+}
+
+.dark .bg-gray-50 {
+  background-color: var(--card-bg) !important;
+}
+
+.dark .bg-gray-100 {
+  background-color: var(--card-bg) !important;
+}
+
+/* Preserve green colors in dark mode */
+.dark .text-green-600 {
+  color: rgb(34, 197, 94) !important;
+}
+
+.dark .text-black:not(.text-bitcoin-orange):not(.bitcoin-orange) {
+  color: rgb(var(--foreground-rgb)) !important;
+}
+
+.dark .text-white:not(.text-bitcoin-orange):not(.bitcoin-orange) {
+  color: rgb(var(--foreground-rgb)) !important;
+}
+
+.dark .text-gray-400:not(.text-bitcoin-orange):not(.bitcoin-orange) {
+  color: var(--footer-text) !important;
+}
+
+.dark .text-gray-500:not(.text-bitcoin-orange):not(.bitcoin-orange) {
+  color: var(--text-muted) !important;
+}
+
+.dark .text-gray-600:not(.text-bitcoin-orange):not(.bitcoin-orange) {
+  color: var(--text-muted) !important;
+}
+
+.dark .text-gray-700:not(.text-bitcoin-orange):not(.bitcoin-orange) {
+  color: var(--text-muted) !important;
+}
+
+.dark .text-gray-900:not(.text-bitcoin-orange):not(.bitcoin-orange) {
+  color: rgb(var(--foreground-rgb)) !important;
+}
+
+.dark .border-gray-200 {
+  border-color: var(--border-color) !important;
+}
+
+.dark .border-gray-300 {
+  border-color: var(--border-color) !important;
+}
+
+/* Dark mode hover states */
+.dark .hover\:bg-gray-100:hover {
+  background-color: rgb(40, 40, 40) !important;
+}
+
+.dark .hover\:bg-white:hover {
+  background-color: rgb(30, 30, 30) !important;
+}
+
+/* Specific rules for calendar statistics boxes */
+html:not(.dark) .bg-white.border.border-gray-200.rounded-lg.p-6.text-center {
+  background-color: rgb(255, 255, 255) !important;
+}
+
+.dark .bg-white.border.border-gray-200.rounded-lg.p-6.text-center {
+  background-color: rgb(20, 20, 20) !important;
+}
+
+/* Specific rules for calendar view selector */
+html:not(.dark) .bg-white.border.border-gray-200.rounded-lg.p-4.mb-6 {
+  background-color: rgb(255, 255, 255) !important;
+}
+
+.dark .bg-white.border.border-gray-200.rounded-lg.p-4.mb-6 {
+  background-color: rgb(20, 20, 20) !important;
+}
+
+/* Specific rules for list button */
+html:not(.dark) .bg-white.border.border-gray-200.dark\:border-gray-600 {
+  background-color: rgb(255, 255, 255) !important;
+}
+
+.dark .bg-white.border.border-gray-200.dark\:border-gray-600 {
+  background-color: rgb(55, 55, 55) !important;
+}
+
+/* Fix view type display text color */
+html:not(.dark) .text-sm.font-medium.text-gray-700 {
+  color: rgb(55, 65, 81) !important;
+}
+
+.dark .text-sm.font-medium.text-gray-700 {
+  color: rgb(209, 213, 219) !important;
+}
+
+/* Fix calendar controls section background */
+html:not(.dark) .bg-white.dark\:bg-gray-800.border.border-gray-200.dark\:border-gray-700.rounded-lg.p-4 {
+  background-color: rgb(255, 255, 255) !important;
+}
+
+.dark .bg-white.dark\:bg-gray-800.border.border-gray-200.dark\:border-gray-700.rounded-lg.p-4 {
+  background-color: rgb(20, 20, 20) !important;
 }
 
 /* Smooth transitions for better UX */
