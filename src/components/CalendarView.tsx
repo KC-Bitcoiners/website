@@ -16,34 +16,49 @@ export default function CalendarView({ events, onEventClick, currentView }: Cale
   const weekScrollRef = useRef<HTMLDivElement>(null);
   const dayScrollRef = useRef<HTMLDivElement>(null);
 
-  // Scroll to 7am when week/day view loads (only calendar container, not the page)
+  // Smart time range: show limited time range around events instead of full 24 hours
   useEffect(() => {
-    if (viewType === 'week' && weekScrollRef.current) {
-      setTimeout(() => {
-        const scrollElement = weekScrollRef.current;
-        const sevenAmElement = scrollElement?.querySelector('[data-hour="7"]');
-        if (sevenAmElement && scrollElement) {
-          // Calculate the position and scroll directly within the container
-          const elementRect = sevenAmElement.getBoundingClientRect();
-          const containerRect = scrollElement.getBoundingClientRect();
-          const scrollTop = elementRect.top - containerRect.top;
-          scrollElement.scrollTop = scrollTop;
+    const calculateTimeRange = (events: CalendarEvent[]) => {
+      if (events.length === 0) {
+        // No events - show 6am to 10pm range
+        return { startHour: 6, endHour: 22, totalHours: 16 };
+      }
+
+      // Find earliest and latest event times
+      let earliestHour = 18; // Default to 6pm
+      let latestHour = 8; // Default to 8am
+
+      events.forEach(event => {
+        if (event.kind === 31922) return; // Skip all-day events
+
+        let startTime: number;
+        if (event.start?.includes('-')) {
+          startTime = new Date(event.start).getTime() / 1000;
+        } else {
+          startTime = parseInt(event.start || '0');
         }
-      }, 100); // Small delay to ensure DOM is ready
-    } else if (viewType === 'day' && dayScrollRef.current) {
-      setTimeout(() => {
-        const scrollElement = dayScrollRef.current;
-        const sevenAmElement = scrollElement?.querySelector('[data-hour="7"]');
-        if (sevenAmElement && scrollElement) {
-          // Calculate the position and scroll directly within the container
-          const elementRect = sevenAmElement.getBoundingClientRect();
-          const containerRect = scrollElement.getBoundingClientRect();
-          const scrollTop = elementRect.top - containerRect.top;
-          scrollElement.scrollTop = scrollTop;
+
+        const eventDate = new Date(startTime * 1000);
+        const eventHour = eventDate.getHours();
+
+        if (eventHour < earliestHour) {
+          earliestHour = eventHour;
         }
-      }, 100); // Small delay to ensure DOM is ready
-    }
-  }, [viewType, currentDate]);
+        if (eventHour > latestHour) {
+          latestHour = eventHour;
+        }
+      });
+
+      // Show 2 hours before earliest and 2 hours after latest
+      const startHour = Math.max(0, earliestHour - 2);
+      const endHour = Math.min(23, latestHour + 2);
+      const totalHours = endHour - startHour + 1;
+
+      return { startHour, endHour, totalHours };
+    };
+
+    // Time range calculation is now handled within each view's render function
+  }, [viewType, currentDate, events]);
 
   const navigateDate = (direction: 'prev' | 'next') => {
     const newDate = new Date(currentDate);
@@ -102,31 +117,37 @@ export default function CalendarView({ events, onEventClick, currentView }: Cale
   };
 
   const getEventsForDate = (date: Date): CalendarEvent[] => {
-    const dateStr = date.toISOString().split('T')[0];
-    const dateTimestamp = Math.floor(date.getTime() / 1000);
+    // Use local timezone for date comparison
+    const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0);
+    const endOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+    const startOfDayTimestamp = Math.floor(startOfDay.getTime() / 1000);
+    const endOfDayTimestamp = Math.floor(endOfDay.getTime() / 1000);
     
     return events.filter(event => {
       if (event.kind === 31922) {
-        // All-day event
+        // All-day event - check if event date matches the calendar date
         if (event.start && event.end) {
           const eventStart = new Date(event.start);
           const eventEnd = new Date(event.end);
-          return date.getTime() >= eventStart.getTime() && date.getTime() <= eventEnd.getTime();
+          // Check if the event spans the current date
+          return eventStart <= endOfDay && eventEnd >= startOfDay;
         } else if (event.start) {
           const eventStart = new Date(event.start);
-          return dateStr === eventStart.toISOString().split('T')[0];
+          // Compare dates in local timezone
+          return eventStart.getFullYear() === date.getFullYear() &&
+                 eventStart.getMonth() === date.getMonth() &&
+                 eventStart.getDate() === date.getDate();
         }
         return false;
       } else {
         // Timed event
         const eventStart = parseInt(event.start || '0');
-        const eventEnd = parseInt(event.end || '0');
-        const dayStart = dateTimestamp;
-        const dayEnd = dateTimestamp + 86400; // 24 hours later
+        const eventEnd = parseInt(event.end || eventStart.toString());
         
-        return (eventStart >= dayStart && eventStart < dayEnd) || 
-               (eventEnd > dayStart && eventEnd <= dayEnd) ||
-               (eventStart <= dayStart && eventEnd >= dayEnd);
+        // Check if event overlaps with the current day (using local timezone timestamps)
+        return (eventStart >= startOfDayTimestamp && eventStart <= endOfDayTimestamp) || 
+               (eventEnd >= startOfDayTimestamp && eventEnd <= endOfDayTimestamp) ||
+               (eventStart <= startOfDayTimestamp && eventEnd >= endOfDayTimestamp);
       }
     });
   };
@@ -286,9 +307,11 @@ export default function CalendarView({ events, onEventClick, currentView }: Cale
   const renderMonthView = () => {
     const days = getDaysInMonth(currentDate);
     const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const monthEvents = days.flatMap(day => day ? getEventsForDate(day) : []);
+    const hasEvents = monthEvents.length > 0;
     
     return (
-      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden relative">
         {/* Weekday headers */}
         <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-200">
           {weekDays.map(day => (
@@ -350,13 +373,55 @@ export default function CalendarView({ events, onEventClick, currentView }: Cale
             );
           })}
         </div>
+        
+        {!hasEvents && (
+          <div className="absolute inset-0 flex items-start justify-center pt-16 bg-gray-50/90">
+            <div className="text-center">
+              <div className="text-gray-400 text-6xl mb-4">�️</div>
+              <h3 className="text-xl font-semibold text-gray-700 mb-2">No Events This Month</h3>
+              <p className="text-gray-500">There are no events scheduled for this month.</p>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
 
   const renderWeekView = () => {
     const weekDays = getWeekDays(currentDate);
-    const hours = Array.from({ length: 24 }, (_, hour) => hour);
+    const weekEvents = weekDays.flatMap(day => getEventsForDate(day));
+    const hasEvents = weekEvents.length > 0;
+    
+    // Calculate time range for this view
+    const calculateTimeRange = (events: CalendarEvent[]) => {
+      if (events.length === 0) {
+        return { startHour: 6, endHour: 22, hours: Array.from({ length: 16 }, (_, i) => 6 + i) };
+      }
+
+      let earliestHour = 18;
+      let latestHour = 8;
+
+      events.forEach(event => {
+        if (event.kind === 31922) return;
+        let startTime: number;
+        if (event.start?.includes('-')) {
+          startTime = new Date(event.start).getTime() / 1000;
+        } else {
+          startTime = parseInt(event.start || '0');
+        }
+        const eventHour = new Date(startTime * 1000).getHours();
+        if (eventHour < earliestHour) earliestHour = eventHour;
+        if (eventHour > latestHour) latestHour = eventHour;
+      });
+
+      const startHour = Math.max(0, earliestHour - 2);
+      const endHour = Math.min(23, latestHour + 2);
+      const hours = Array.from({ length: endHour - startHour + 1 }, (_, i) => startHour + i);
+
+      return { startHour, endHour, hours };
+    };
+
+    const timeRange = calculateTimeRange(weekEvents);
     
     return (
       <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
@@ -392,7 +457,16 @@ export default function CalendarView({ events, onEventClick, currentView }: Cale
         </div>
         
         {/* Week grid */}
-        <div ref={weekScrollRef} className="h-[1440px] relative"> {/* 24 hours * 60px = 1440px - full day without scrolling */}
+        <div ref={weekScrollRef} className="h-[600px] relative overflow-y-auto"> {/* Reduced height to enable scrolling */}
+          {!hasEvents && (
+            <div className="absolute inset-0 flex items-start justify-center pt-16 bg-gray-50/90">
+              <div className="text-center">
+                <div className="text-gray-400 text-6xl mb-4">�️</div>
+                <h3 className="text-xl font-semibold text-gray-700 mb-2">No Events This Week</h3>
+                <p className="text-gray-500">There are no events scheduled for this week.</p>
+              </div>
+            </div>
+          )}
           {(() => {
             // Calculate layout for each day once, outside the hour loop
             const dayLayouts = weekDays.map(day => {
@@ -400,8 +474,8 @@ export default function CalendarView({ events, onEventClick, currentView }: Cale
               return calculateEventLayout(dayEvents);
             });
             
-            return hours.map(hour => (
-              <div key={hour} data-hour={hour} className="grid grid-cols-8 border-b border-gray-100">
+            return timeRange.hours.map((hour: number) => (
+              <div key={hour} data-hour={hour} className="grid grid-cols-8 border-b border-gray-300">
                 {/* Time column */}
                 <div className="w-20 p-2 border-r border-gray-200 text-sm text-gray-600">
                   {formatTime(new Date(2000, 0, 1, hour, 0, 0, 0))}
@@ -468,6 +542,38 @@ export default function CalendarView({ events, onEventClick, currentView }: Cale
 
   const renderDayView = () => {
     const dayEvents = getEventsForDate(currentDate);
+    const hasEvents = dayEvents.length > 0;
+    
+    // Calculate time range for this view
+    const calculateTimeRange = (events: CalendarEvent[]) => {
+      if (events.length === 0) {
+        return { startHour: 6, endHour: 22, hours: Array.from({ length: 16 }, (_, i) => 6 + i) };
+      }
+
+      let earliestHour = 18;
+      let latestHour = 8;
+
+      events.forEach(event => {
+        if (event.kind === 31922) return;
+        let startTime: number;
+        if (event.start?.includes('-')) {
+          startTime = new Date(event.start).getTime() / 1000;
+        } else {
+          startTime = parseInt(event.start || '0');
+        }
+        const eventHour = new Date(startTime * 1000).getHours();
+        if (eventHour < earliestHour) earliestHour = eventHour;
+        if (eventHour > latestHour) latestHour = eventHour;
+      });
+
+      const startHour = Math.max(0, earliestHour - 2);
+      const endHour = Math.min(23, latestHour + 2);
+      const hours = Array.from({ length: endHour - startHour + 1 }, (_, i) => startHour + i);
+
+      return { startHour, endHour, hours };
+    };
+
+    const timeRange = calculateTimeRange(dayEvents);
     
     return (
       <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
@@ -486,21 +592,30 @@ export default function CalendarView({ events, onEventClick, currentView }: Cale
           </div>
         </div>
         
-        <div className="flex h-[1440px]"> {/* 24 hours * 60px = 1440px - full day without scrolling */}
+        <div className="flex" style={{ height: `${Math.min((timeRange.endHour - timeRange.startHour + 1) * 60 + 80, 800)}px` }}> {/* Dynamic height based on time range */}
           {/* Fixed time column - CRITICAL: This provides the time labels on the left side */}
           <div className="w-20 flex-shrink-0 border-r border-gray-200 bg-gray-50">
-            {Array.from({ length: 24 }, (_, hour) => (
+            {timeRange.hours.map((hour: number) => (
               <div key={hour} className="h-[60px] p-2 text-sm text-gray-600 border-b border-gray-100 flex items-start">
                 {formatTime(new Date(2000, 0, 1, hour, 0, 0, 0))}
               </div>
             ))}
           </div>
           
-          {/* Content area - no scrolling needed */}
-          <div ref={dayScrollRef} className="flex-1 relative">
-            {/* Render hour grid lines for visual reference */}
-            {Array.from({ length: 24 }, (_, hour) => (
-              <div key={hour} data-hour={hour} className="absolute left-0 right-0 border-b border-gray-100" style={{ top: `${(hour / 24) * 100}%` }} />
+          {/* Content area - enable scrolling */}
+          <div ref={dayScrollRef} className="flex-1 relative overflow-y-auto">
+            {!hasEvents && (
+              <div className="absolute inset-0 flex items-start justify-center pt-16 bg-gray-50/90">
+                <div className="text-center">
+                  <div className="text-gray-400 text-6xl mb-4">�️</div>
+                  <h3 className="text-xl font-semibold text-gray-700 mb-2">No Events Today</h3>
+                  <p className="text-gray-500">There are no events scheduled for this day.</p>
+                </div>
+              </div>
+            )}
+            {/* Render hour grid lines for visual reference - only for displayed time range */}
+            {timeRange.hours.map((hour: number, index: number) => (
+              <div key={hour} data-hour={hour} className="absolute left-0 right-0 border-b border-gray-300" style={{ top: `${index * 60}px` }} />
             ))}
             
             {/* Render events with layout to avoid overlapping */}
@@ -509,7 +624,34 @@ export default function CalendarView({ events, onEventClick, currentView }: Cale
               const eventLayout = calculateEventLayout(timedEvents);
               
               return eventLayout.map(({ event, position }) => {
-                const eventStart = event.start?.includes('-') ? new Date(event.start) : new Date(parseInt(event.start || '0') * 1000);
+                // Calculate position relative to the dynamic time range
+                let startTime: number;
+                let endTime: number;
+                
+                if (event.start?.includes('-')) {
+                  startTime = new Date(event.start).getTime() / 1000;
+                  endTime = event.end ? new Date(event.end).getTime() / 1000 : startTime + 3600;
+                } else {
+                  startTime = parseInt(event.start || '0');
+                  endTime = parseInt(event.end || startTime.toString());
+                }
+                
+                const start = new Date(startTime * 1000);
+                const end = new Date(endTime * 1000);
+                
+                const startMinutes = start.getHours() * 60 + start.getMinutes();
+                const endMinutes = end.getHours() * 60 + end.getMinutes();
+                const duration = endMinutes - startMinutes;
+                
+                // Position relative to the start of our time range
+                const rangeStartMinutes = timeRange.startHour * 60;
+                const topPosition = (startMinutes - rangeStartMinutes) * 1; // 1px per minute (60px per hour)
+                const heightPixels = duration * 1; // 1px per minute
+                
+                // Only render if the event is within our display range
+                if (topPosition + heightPixels < 0 || topPosition > ((timeRange.endHour - timeRange.startHour + 1) * 60)) {
+                  return null;
+                }
                 
                 return (
                   <div
@@ -517,16 +659,16 @@ export default function CalendarView({ events, onEventClick, currentView }: Cale
                     onClick={() => onEventClick?.(event)}
                     className="absolute bg-bitcoin-orange text-white p-2 rounded cursor-pointer hover:bg-bitcoin-orange-hover transition-colors overflow-hidden z-10"
                     style={{
-                      top: `${position.top}px`,
+                      top: `${topPosition}px`,
                       left: `${2 + position.left}%`,
                       width: `${position.width - 4}%`,
-                      height: `${position.height}px`
+                      height: `${Math.max(heightPixels, 30)}px` // Minimum 30px height
                     }}
                   >
                     <div className="font-semibold text-sm truncate">{event.title}</div>
                     <div className="text-xs opacity-90">
-                      {formatTime(eventStart)}
-                      {event.end && ` - ${formatTime(event.end?.includes('-') ? new Date(event.end) : new Date(parseInt(event.end || '0') * 1000))}`}
+                      {formatTime(start)}
+                      {event.end && ` - ${formatTime(end)}`}
                     </div>
                   </div>
                 );

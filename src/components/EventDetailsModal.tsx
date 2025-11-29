@@ -156,6 +156,26 @@ export default function EventDetailsModal({ event, onClose }: EventDetailsModalP
             </div>
           )}
 
+          {/* Meetup Link */}
+          {event.id && event.id.startsWith('meetup-') && event.references && event.references.length > 0 && (
+            <div className="mb-6">
+              <h4 className="font-semibold text-gray-900 mb-2">Meetup Event</h4>
+              <div className="text-gray-600">
+                <a 
+                  href={event.references[0]} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 bg-bitcoin-orange text-white px-4 py-2 rounded-lg hover:bg-bitcoin-orange-hover transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M19.244 2.664H21a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1h-1.756l-2.563-2.563a3 3 0 0 0-4.242 0L11 19.756V20a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h7.756l2.563-2.563a3 3 0 0 1 4.242 0L19.244 2.664zM15 6.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm-6 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/>
+                  </svg>
+                  View on Meetup.com
+                </a>
+              </div>
+            </div>
+          )}
+
           {/* References */}
           {event.references && event.references.length > 0 && (
             <div className="mb-6">

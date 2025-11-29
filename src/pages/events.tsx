@@ -224,7 +224,7 @@ export default function EventsPage({
               download="kansas-city-bitcoin-events.ics"
               className="inline-block bg-gray-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-gray-700 transition-colors"
             >
-              📅 Add to Calendar
+              🗓️ Add to Calendar
             </a>
           )}
         </div>
