@@ -9,6 +9,7 @@ interface EventCardProps {
   location: string;
   link?: string;
   description: string[];
+  className?: string; // Allow custom background color
 }
 
 export default function EventCard({
@@ -19,9 +20,10 @@ export default function EventCard({
   location,
   description,
   link,
+  className,
 }: EventCardProps) {
   return (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-4 sm:p-6 lg:p-8 w-full overflow-hidden">
+    <div className={`${className || 'bg-white border border-gray-200'} rounded-lg shadow-lg p-4 sm:p-6 lg:p-8 w-full overflow-hidden`}>
       {/* Mobile-first layout */}
       <div className="space-y-4 sm:space-y-6">
         {/* Header section with date and title */}
@@ -59,7 +61,19 @@ export default function EventCard({
           </div>
           <div className="flex items-center gap-2">
             <MarkerIcon className="size-6 text-gray-500" />
-            <span className="text-sm sm:text-base">{location}</span>
+            {location && location !== "Location TBD" ? (
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm sm:text-base text-blue-600 hover:text-blue-800 underline hover:underline-offset-2"
+                title="Open in Google Maps"
+              >
+                {location}
+              </a>
+            ) : (
+              <span className="text-sm sm:text-base">{location}</span>
+            )}
           </div>
         </div>
 

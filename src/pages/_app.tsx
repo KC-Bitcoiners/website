@@ -1,6 +1,7 @@
 import "@/styles/globals.css";
 import type { AppProps } from "next/app";
 import Layout from "@/components/Layout";
+import { NostrProvider } from "@/contexts/NostrContext";
 import { Source_Sans_3, Archivo_Black } from "next/font/google";
 
 const sourceSans3 = Source_Sans_3({
@@ -17,10 +18,12 @@ const archivoBlack = Archivo_Black({
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
-    <Layout
-      className={`${sourceSans3.variable} ${archivoBlack.variable} font-sans`}
-    >
-      <Component {...pageProps} />
-    </Layout>
+    <NostrProvider>
+      <Layout
+        className={`${sourceSans3.variable} ${archivoBlack.variable} font-sans`}
+      >
+        <Component {...pageProps} />
+      </Layout>
+    </NostrProvider>
   );
 }
