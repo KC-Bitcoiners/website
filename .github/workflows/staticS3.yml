@@ -10,11 +10,11 @@ on:
     inputs:
       env:
         required: true
-        default: 'dev'
+        default: "dev"
         type: choice
         options:
-        - prod
-        - dev
+          - prod
+          - dev
 
 permissions:
   id-token: write # Required for OIDC authentication

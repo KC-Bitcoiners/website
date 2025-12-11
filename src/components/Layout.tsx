@@ -11,7 +11,7 @@ function NavLinks({ currentPath }: { currentPath: string }) {
         href="/"
         className={clsx(
           "font-semibold transition-colors",
-          currentPath === "/" ? "bitcoin-orange" : "hover:text-bitcoin-orange"
+          currentPath === "/" ? "bitcoin-orange" : "hover:text-bitcoin-orange",
         )}
       >
         Home
@@ -20,7 +20,9 @@ function NavLinks({ currentPath }: { currentPath: string }) {
         href="/events"
         className={clsx(
           "font-semibold transition-colors",
-          currentPath === "/events" ? "bitcoin-orange" : "hover:text-bitcoin-orange"
+          currentPath === "/events"
+            ? "bitcoin-orange"
+            : "hover:text-bitcoin-orange",
         )}
       >
         Events
@@ -29,7 +31,9 @@ function NavLinks({ currentPath }: { currentPath: string }) {
         href="/calendar"
         className={clsx(
           "font-semibold transition-colors",
-          currentPath === "/calendar" ? "bitcoin-orange" : "hover:text-bitcoin-orange"
+          currentPath === "/calendar"
+            ? "bitcoin-orange"
+            : "hover:text-bitcoin-orange",
         )}
       >
         Calendar
@@ -38,7 +42,9 @@ function NavLinks({ currentPath }: { currentPath: string }) {
         href="/shop"
         className={clsx(
           "font-semibold transition-colors",
-          currentPath === "/shop" ? "bitcoin-orange" : "hover:text-bitcoin-orange"
+          currentPath === "/shop"
+            ? "bitcoin-orange"
+            : "hover:text-bitcoin-orange",
         )}
       >
         Shop

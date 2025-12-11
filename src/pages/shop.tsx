@@ -327,8 +327,7 @@ export default function ShopPage({
         allowFullScreen={true}
         allow="geolocation"
         src="https://btcmap.org/map#11/39.03219/-94.58101"
-      >
-      </iframe>
+      ></iframe>
     </div>
   );
 }

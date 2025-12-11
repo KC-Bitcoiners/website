@@ -20,7 +20,6 @@ on:
 #   id-token: write # Required for OIDC authentication
 #   contents: read # Required to checkout your repository code
 
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
