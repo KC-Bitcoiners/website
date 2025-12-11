@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Head from "next/head";
 import CalendarEventCard from "../components/CalendarEventCard";
 import EventCard from "../components/EventCard";
 import EventForm from "../components/EventForm";
@@ -220,246 +221,258 @@ export default function CalendarPage({
   }
 
   return (
-    <div className="container mx-auto px-4 py-12">
-      {/* Statistics */}
-      <div className="mb-8">
-        <div className="grid grid-cols-3 gap-6">
-          <div className="bg-white border border-gray-200 rounded-lg p-6 text-center">
-            <div className="text-3xl font-bold text-bitcoin-orange mb-2">
-              {events.length}
-            </div>
-            <div className="text-gray-600">Total Events</div>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-lg p-6 text-center">
-            <div className="text-3xl font-bold text-green-600 mb-2">
-              {upcomingEvents.length}
-            </div>
-            <div className="text-gray-600">Upcoming</div>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-lg p-6 text-center">
-            <div className="text-3xl font-bold text-gray-600 mb-2">
-              {pastEvents.length}
-            </div>
-            <div className="text-gray-600">Past Events</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Always show view selector */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setViewMode("month")}
-            className={`px-4 py-2 text-sm font-medium transition-colors rounded-l-lg ${
-              viewMode === "month"
-                ? "bg-bitcoin-orange text-white"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Month
-          </button>
-          <button
-            onClick={() => setViewMode("week")}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
-              viewMode === "week"
-                ? "bg-bitcoin-orange text-white"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Week
-          </button>
-          <button
-            onClick={() => setViewMode("day")}
-            className={`px-4 py-2 text-sm font-medium transition-colors rounded-r-lg ${
-              viewMode === "day"
-                ? "bg-bitcoin-orange text-white"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Day
-          </button>
-
-          <button
-            onClick={() => setViewMode("list")}
-            className={`px-4 py-2 text-sm font-medium transition-colors rounded-lg border border-gray-200 bg-white ml-2 ${
-              viewMode === "list"
-                ? "bg-bitcoin-orange text-white"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            List
-          </button>
-        </div>
-      </div>
-
-      {/* Calendar View */}
-      {viewMode !== "list" && (
-        <CalendarView
-          events={events}
-          onEventClick={setSelectedEvent}
-          currentView={viewMode}
+    <>
+      <Head>
+        <title>Calendar - KC Bitcoin Meetup Group</title>
+        <meta
+          name="description"
+          content="Upcoming Bitcoin meetup events in Kansas City"
         />
-      )}
+      </Head>
 
-      {viewMode === "list" && (
-        <div className="space-y-8">
-          {/* Upcoming Events Section */}
-          {upcomingEvents.length > 0 && (
-            <section className="mb-16">
-              <div className="space-y-8">
-                {upcomingEvents.map((event) => (
-                  <EventCard
-                    key={event.id}
-                    date={formatDate(event.start)}
-                    title={event.title || "Untitled Event"}
-                    startTime={formatTime(event.start)}
-                    endTime={event.end ? formatTime(event.end) : "TBA"}
-                    location={event.location || "Location TBD"}
-                    description={splitDescription(event.description || "")}
-                    link={event.references?.[0]}
-                  />
-                ))}
+      <div className="container mx-auto px-4 py-12">
+        {/* Statistics */}
+        <div className="mb-8">
+          <div className="grid grid-cols-3 gap-6">
+            <div className="bg-white border border-gray-200 rounded-lg p-6 text-center">
+              <div className="text-3xl font-bold text-bitcoin-orange mb-2">
+                {events.length}
               </div>
-            </section>
-          )}
-
-          {/* Past Events Section */}
-          {pastEvents.length > 0 && (
-            <section>
-              <h2 className="text-3xl font-bold mb-8 font-archivo-black text-gray-700">
-                Past Events
-              </h2>
-              <div className="space-y-8 opacity-75">
-                {pastEvents.slice(0, 5).map((event) => (
-                  <EventCard
-                    key={event.id}
-                    date={formatDate(event.start)}
-                    title={event.title || "Untitled Event"}
-                    startTime={formatTime(event.start)}
-                    endTime={event.end ? formatTime(event.end) : "TBA"}
-                    location={event.location || "Location TBD"}
-                    description={splitDescription(event.description || "")}
-                    link={event.references?.[0]}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {events.length === 0 && (
-            <div className="text-center py-12">
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-8">
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">
-                  No Events Yet
-                </h3>
-                <p className="text-gray-600 mb-6">
-                  Start by creating your first community event.
-                </p>
-                <button
-                  onClick={() => setShowCreateForm(true)}
-                  className="inline-flex items-center gap-2 bg-bitcoin-orange text-white px-6 py-3 rounded-lg font-semibold hover:bg-bitcoin-orange-hover transition-colors"
-                >
-                  <PlusIcon className="w-5 h-5" />
-                  Create Your First Event
-                </button>
-              </div>
+              <div className="text-gray-600">Total Events</div>
             </div>
-          )}
-        </div>
-      )}
-
-      {/* Page Description and Actions */}
-      <div className="mt-12 text-center">
-        <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed mb-8">
-          Create and manage community events. All events are stored locally and
-          can be created anonymously without requiring a login.
-        </p>
-
-        {/* Action Buttons */}
-        <div className="flex justify-center gap-4">
-          <button
-            onClick={() => setShowCreateForm(true)}
-            className="inline-flex items-center gap-2 bg-bitcoin-orange text-white px-6 py-3 rounded-lg font-semibold hover:bg-bitcoin-orange-hover transition-colors"
-          >
-            <PlusIcon className="w-5 h-5" />
-            Create New Event
-          </button>
-        </div>
-      </div>
-
-      {/* Create/Edit Event Modal */}
-      {(showCreateForm || editingEvent) && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <EventForm
-              initialData={
-                editingEvent
-                  ? {
-                      title: editingEvent.title,
-                      description: editingEvent.description,
-                      summary: editingEvent.summary,
-                      image: editingEvent.image,
-                      locations:
-                        editingEvent.locations ||
-                        (editingEvent.location ? [editingEvent.location] : []),
-                      startDate:
-                        editingEvent.kind === 31922
-                          ? editingEvent.start || ""
-                          : editingEvent.start
-                            ? new Date(parseInt(editingEvent.start) * 1000)
-                                .toISOString()
-                                .split("T")[0]
-                            : "",
-                      endDate:
-                        editingEvent.kind === 31922
-                          ? editingEvent.end || ""
-                          : editingEvent.end
-                            ? new Date(parseInt(editingEvent.end) * 1000)
-                                .toISOString()
-                                .split("T")[0]
-                            : "",
-                      startTime:
-                        editingEvent.kind === 31923
-                          ? editingEvent.start
-                            ? new Date(parseInt(editingEvent.start) * 1000)
-                                .toTimeString()
-                                .slice(0, 5)
-                            : ""
-                          : "",
-                      endTime:
-                        editingEvent.kind === 31923
-                          ? editingEvent.end
-                            ? new Date(parseInt(editingEvent.end) * 1000)
-                                .toTimeString()
-                                .slice(0, 5)
-                            : ""
-                          : "",
-                      timezone:
-                        editingEvent.timezone ||
-                        Intl.DateTimeFormat().resolvedOptions().timeZone,
-                      hashtags: editingEvent.hashtags || [],
-                      references: editingEvent.references || [],
-                      eventType:
-                        editingEvent.kind === 31922 ? "all-day" : "timed",
-                    }
-                  : undefined
-              }
-              onSubmit={editingEvent ? handleUpdateEvent : handleCreateEvent}
-              onCancel={() => {
-                setShowCreateForm(false);
-                setEditingEvent(null);
-              }}
-              isSubmitting={isSubmitting}
-            />
+            <div className="bg-white border border-gray-200 rounded-lg p-6 text-center">
+              <div className="text-3xl font-bold text-green-600 mb-2">
+                {upcomingEvents.length}
+              </div>
+              <div className="text-gray-600">Upcoming</div>
+            </div>
+            <div className="bg-white border border-gray-200 rounded-lg p-6 text-center">
+              <div className="text-3xl font-bold text-gray-600 mb-2">
+                {pastEvents.length}
+              </div>
+              <div className="text-gray-600">Past Events</div>
+            </div>
           </div>
         </div>
-      )}
 
-      {/* Event Details Modal */}
-      <EventDetailsModal
-        event={selectedEvent}
-        onClose={() => setSelectedEvent(null)}
-      />
-    </div>
+        {/* Always show view selector */}
+        <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setViewMode("month")}
+              className={`px-4 py-2 text-sm font-medium transition-colors rounded-l-lg ${
+                viewMode === "month"
+                  ? "bg-bitcoin-orange text-white"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              Month
+            </button>
+            <button
+              onClick={() => setViewMode("week")}
+              className={`px-4 py-2 text-sm font-medium transition-colors ${
+                viewMode === "week"
+                  ? "bg-bitcoin-orange text-white"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              Week
+            </button>
+            <button
+              onClick={() => setViewMode("day")}
+              className={`px-4 py-2 text-sm font-medium transition-colors rounded-r-lg ${
+                viewMode === "day"
+                  ? "bg-bitcoin-orange text-white"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              Day
+            </button>
+
+            <button
+              onClick={() => setViewMode("list")}
+              className={`px-4 py-2 text-sm font-medium transition-colors rounded-lg border border-gray-200 bg-white ml-2 ${
+                viewMode === "list"
+                  ? "bg-bitcoin-orange text-white"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              List
+            </button>
+          </div>
+        </div>
+
+        {/* Calendar View */}
+        {viewMode !== "list" && (
+          <CalendarView
+            events={events}
+            onEventClick={setSelectedEvent}
+            currentView={viewMode}
+          />
+        )}
+
+        {viewMode === "list" && (
+          <div className="space-y-8">
+            {/* Upcoming Events Section */}
+            {upcomingEvents.length > 0 && (
+              <section className="mb-16">
+                <div className="space-y-8">
+                  {upcomingEvents.map((event) => (
+                    <EventCard
+                      key={event.id}
+                      date={formatDate(event.start)}
+                      title={event.title || "Untitled Event"}
+                      startTime={formatTime(event.start)}
+                      endTime={event.end ? formatTime(event.end) : "TBA"}
+                      location={event.location || "Location TBD"}
+                      description={splitDescription(event.description || "")}
+                      link={event.references?.[0]}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Past Events Section */}
+            {pastEvents.length > 0 && (
+              <section>
+                <h2 className="text-3xl font-bold mb-8 font-archivo-black text-gray-700">
+                  Past Events
+                </h2>
+                <div className="space-y-8 opacity-75">
+                  {pastEvents.slice(0, 5).map((event) => (
+                    <EventCard
+                      key={event.id}
+                      date={formatDate(event.start)}
+                      title={event.title || "Untitled Event"}
+                      startTime={formatTime(event.start)}
+                      endTime={event.end ? formatTime(event.end) : "TBA"}
+                      location={event.location || "Location TBD"}
+                      description={splitDescription(event.description || "")}
+                      link={event.references?.[0]}
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {events.length === 0 && (
+              <div className="text-center py-12">
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-8">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4">
+                    No Events Yet
+                  </h3>
+                  <p className="text-gray-600 mb-6">
+                    Start by creating your first community event.
+                  </p>
+                  <button
+                    onClick={() => setShowCreateForm(true)}
+                    className="inline-flex items-center gap-2 bg-bitcoin-orange text-white px-6 py-3 rounded-lg font-semibold hover:bg-bitcoin-orange-hover transition-colors"
+                  >
+                    <PlusIcon className="w-5 h-5" />
+                    Create Your First Event
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Page Description and Actions */}
+        <div className="mt-12 text-center">
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed mb-8">
+            Create and manage community events. All events are stored locally
+            and can be created anonymously without requiring a login.
+          </p>
+
+          {/* Action Buttons */}
+          <div className="flex justify-center gap-4">
+            <button
+              onClick={() => setShowCreateForm(true)}
+              className="inline-flex items-center gap-2 bg-bitcoin-orange text-white px-6 py-3 rounded-lg font-semibold hover:bg-bitcoin-orange-hover transition-colors"
+            >
+              <PlusIcon className="w-5 h-5" />
+              Create New Event
+            </button>
+          </div>
+        </div>
+
+        {/* Create/Edit Event Modal */}
+        {(showCreateForm || editingEvent) && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <EventForm
+                initialData={
+                  editingEvent
+                    ? {
+                        title: editingEvent.title,
+                        description: editingEvent.description,
+                        summary: editingEvent.summary,
+                        image: editingEvent.image,
+                        locations:
+                          editingEvent.locations ||
+                          (editingEvent.location
+                            ? [editingEvent.location]
+                            : []),
+                        startDate:
+                          editingEvent.kind === 31922
+                            ? editingEvent.start || ""
+                            : editingEvent.start
+                              ? new Date(parseInt(editingEvent.start) * 1000)
+                                  .toISOString()
+                                  .split("T")[0]
+                              : "",
+                        endDate:
+                          editingEvent.kind === 31922
+                            ? editingEvent.end || ""
+                            : editingEvent.end
+                              ? new Date(parseInt(editingEvent.end) * 1000)
+                                  .toISOString()
+                                  .split("T")[0]
+                              : "",
+                        startTime:
+                          editingEvent.kind === 31923
+                            ? editingEvent.start
+                              ? new Date(parseInt(editingEvent.start) * 1000)
+                                  .toTimeString()
+                                  .slice(0, 5)
+                              : ""
+                            : "",
+                        endTime:
+                          editingEvent.kind === 31923
+                            ? editingEvent.end
+                              ? new Date(parseInt(editingEvent.end) * 1000)
+                                  .toTimeString()
+                                  .slice(0, 5)
+                              : ""
+                            : "",
+                        timezone:
+                          editingEvent.timezone ||
+                          Intl.DateTimeFormat().resolvedOptions().timeZone,
+                        hashtags: editingEvent.hashtags || [],
+                        references: editingEvent.references || [],
+                        eventType:
+                          editingEvent.kind === 31922 ? "all-day" : "timed",
+                      }
+                    : undefined
+                }
+                onSubmit={editingEvent ? handleUpdateEvent : handleCreateEvent}
+                onCancel={() => {
+                  setShowCreateForm(false);
+                  setEditingEvent(null);
+                }}
+                isSubmitting={isSubmitting}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Event Details Modal */}
+        <EventDetailsModal
+          event={selectedEvent}
+          onClose={() => setSelectedEvent(null)}
+        />
+      </div>
+    </>
   );
 }

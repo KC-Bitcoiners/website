@@ -218,7 +218,7 @@ export default function ShopPage({
       </div>
 
       {/* Table Section */}
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+      <div className="overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b-2 border-gray-200">
