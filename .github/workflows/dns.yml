@@ -2,23 +2,7 @@ name: staticS3Deploy
 
 on:
   push:
-    branches: ["master", "automation"]
-  # schedule:
-  #   - cron: "0 0 * * 1,3,6"
-
-  # workflow_dispatch:
-  #   inputs:
-  #     env:
-  #       required: true
-  #       default: 'dev'
-  #       type: choice
-  #       options:
-  #       - prod
-  #       - dev
-
-# permissions:
-#   id-token: write # Required for OIDC authentication
-#   contents: read # Required to checkout your repository code
+    branches: ["master"]
 
 jobs:
   deploy:
