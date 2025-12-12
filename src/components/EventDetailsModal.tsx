@@ -8,22 +8,25 @@ interface EventDetailsModalProps {
   onClose: () => void;
 }
 
-export default function EventDetailsModal({ event, onClose }: EventDetailsModalProps) {
+export default function EventDetailsModal({
+  event,
+  onClose,
+}: EventDetailsModalProps) {
   if (!event) return null;
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    return new Date(dateStr).toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
   const formatTime = (timestamp: string) => {
-    return new Date(parseInt(timestamp) * 1000).toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit'
+    return new Date(parseInt(timestamp) * 1000).toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
     });
   };
 
@@ -39,18 +42,18 @@ export default function EventDetailsModal({ event, onClose }: EventDetailsModalP
       // Timed event
       if (event.start) {
         const startDate = new Date(parseInt(event.start) * 1000);
-        const dateStr = startDate.toLocaleDateString('en-US', {
-          weekday: 'long',
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
+        const dateStr = startDate.toLocaleDateString("en-US", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
         });
         const startTime = formatTime(event.start);
-        const endTime = event.end ? ` - ${formatTime(event.end)}` : '';
+        const endTime = event.end ? ` - ${formatTime(event.end)}` : "";
         return `${dateStr} at ${startTime}${endTime}`;
       }
     }
-    return 'Date TBD';
+    return "Date TBD";
   };
 
   return (
@@ -70,13 +73,25 @@ export default function EventDetailsModal({ event, onClose }: EventDetailsModalP
         {/* Content */}
         <div className="p-6">
           {/* Title */}
-          <h3 className="text-3xl font-bold text-gray-900 mb-4">{event.title}</h3>
+          <h3 className="text-3xl font-bold text-gray-900 mb-4">
+            {event.title}
+          </h3>
 
           {/* Date and Time */}
           <div className="mb-6">
             <div className="flex items-center gap-2 text-gray-700">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
               </svg>
               <span className="font-medium">{formatEventDate(event)}</span>
             </div>
@@ -94,7 +109,9 @@ export default function EventDetailsModal({ event, onClose }: EventDetailsModalP
           {event.description && (
             <div className="mb-6">
               <h4 className="font-semibold text-gray-900 mb-2">Description</h4>
-              <div className="text-gray-600 whitespace-pre-wrap">{event.description}</div>
+              <div className="text-gray-600 whitespace-pre-wrap">
+                {event.description}
+              </div>
             </div>
           )}
 
@@ -102,40 +119,78 @@ export default function EventDetailsModal({ event, onClose }: EventDetailsModalP
           {event.image && (
             <div className="mb-6">
               <h4 className="font-semibold text-gray-900 mb-2">Image</h4>
-              <img 
-                src={event.image} 
+              <img
+                src={event.image}
                 alt={event.title}
                 className="max-w-full h-auto rounded-lg border border-gray-200"
                 onError={(e) => {
-                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.style.display = "none";
                 }}
               />
             </div>
           )}
 
           {/* Locations */}
-          {(event.location || (event.locations && event.locations.length > 0)) && (
+          {(event.location ||
+            (event.locations && event.locations.length > 0)) && (
             <div className="mb-6">
-              <h4 className="font-semibold text-gray-900 mb-2">Location{event.locations && event.locations.length > 1 ? 's' : ''}</h4>
+              <h4 className="font-semibold text-gray-900 mb-2">
+                Location
+                {event.locations && event.locations.length > 1 ? "s" : ""}
+              </h4>
               <div className="space-y-2">
                 {event.location && (
                   <div className="flex items-center gap-2 text-gray-600">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
                     </svg>
                     <span>{event.location}</span>
                   </div>
                 )}
-                {event.locations && event.locations.map((location, index) => (
-                  <div key={index} className="flex items-center gap-2 text-gray-600">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span>{location}</span>
-                  </div>
-                ))}
+                {event.locations &&
+                  event.locations.map((location, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-2 text-gray-600"
+                    >
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                        />
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                        />
+                      </svg>
+                      <span>{location}</span>
+                    </div>
+                  ))}
               </div>
             </div>
           )}
@@ -146,7 +201,7 @@ export default function EventDetailsModal({ event, onClose }: EventDetailsModalP
               <h4 className="font-semibold text-gray-900 mb-2">Tags</h4>
               <div className="flex flex-wrap gap-2">
                 {event.hashtags.map((tag, index) => (
-                  <span 
+                  <span
                     key={index}
                     className="inline-block px-3 py-1 bg-bitcoin-orange/10 text-bitcoin-orange rounded-full text-sm"
                   >
@@ -158,24 +213,33 @@ export default function EventDetailsModal({ event, onClose }: EventDetailsModalP
           )}
 
           {/* Meetup Link */}
-          {event.id && event.id.startsWith('meetup-') && event.references && event.references.length > 0 && (
-            <div className="mb-6">
-              <h4 className="font-semibold text-gray-900 mb-2">Meetup Event</h4>
-              <div className="text-gray-600">
-                <a 
-                  href={event.references[0]} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 bg-bitcoin-orange text-white px-4 py-2 rounded-lg hover:bg-bitcoin-orange-hover transition-colors"
-                >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M19.244 2.664H21a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1h-1.756l-2.563-2.563a3 3 0 0 0-4.242 0L11 19.756V20a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h7.756l2.563-2.563a3 3 0 0 1 4.242 0L19.244 2.664zM15 6.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm-6 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/>
-                  </svg>
-                  View on Meetup.com
-                </a>
+          {event.id &&
+            event.id.startsWith("meetup-") &&
+            event.references &&
+            event.references.length > 0 && (
+              <div className="mb-6">
+                <h4 className="font-semibold text-gray-900 mb-2">
+                  Meetup Event
+                </h4>
+                <div className="text-gray-600">
+                  <a
+                    href={event.references[0]}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 bg-bitcoin-orange text-white px-4 py-2 rounded-lg hover:bg-bitcoin-orange-hover transition-colors"
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M19.244 2.664H21a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1h-1.756l-2.563-2.563a3 3 0 0 0-4.242 0L11 19.756V20a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h7.756l2.563-2.563a3 3 0 0 1 4.242 0L19.244 2.664zM15 6.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm-6 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z" />
+                    </svg>
+                    View on Meetup.com
+                  </a>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
           {/* Nostr/Plektos Link */}
           {event.id && event.id.startsWith('nostr-') && event.dTag && (() => {
@@ -215,9 +279,9 @@ export default function EventDetailsModal({ event, onClose }: EventDetailsModalP
               <div className="space-y-1">
                 {event.references.map((ref, index) => (
                   <div key={index} className="text-gray-600">
-                    <a 
-                      href={ref} 
-                      target="_blank" 
+                    <a
+                      href={ref}
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="text-bitcoin-orange hover:underline"
                     >
@@ -231,7 +295,7 @@ export default function EventDetailsModal({ event, onClose }: EventDetailsModalP
 
           {/* Event Type */}
           <div className="text-sm text-gray-500">
-            Event Type: {event.kind === 31922 ? 'All-Day Event' : 'Timed Event'}
+            Event Type: {event.kind === 31922 ? "All-Day Event" : "Timed Event"}
           </div>
         </div>
       </div>

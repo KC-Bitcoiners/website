@@ -47,12 +47,19 @@ export const getStaticProps: GetStaticProps<CalendarPageProps> = async () => {
   }
 };
 
-export default function CalendarPage({ meetupGroup, meetupError }: InferGetStaticPropsType<typeof getStaticProps>) {
+export default function CalendarPage({
+  meetupGroup,
+  meetupError,
+}: InferGetStaticPropsType<typeof getStaticProps>) {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
-  const [viewMode, setViewMode] = useState<'list' | 'month' | 'week' | 'day'>('month');
-  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [viewMode, setViewMode] = useState<"list" | "month" | "week" | "day">(
+    "month",
+  );
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(
+    null,
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingNostrEvents, setIsLoadingNostrEvents] = useState(false);
   const [successMessage, setSuccessMessage] = useState<{ eventId: string; naddr: string } | null>(null);
@@ -72,7 +79,7 @@ export default function CalendarPage({ meetupGroup, meetupError }: InferGetStati
         // Transform meetup events from props
         console.log('🌐 Processing meetup events from props...');
         let meetupEvents: CalendarEvent[] = [];
-        
+
         if (meetupGroup) {
           console.log(`📋 Found ${meetupGroup.events.edges.length} meetup events in group`);
           meetupEvents = meetupGroup.events.edges.map((edge) => {
@@ -86,10 +93,10 @@ export default function CalendarPage({ meetupGroup, meetupError }: InferGetStati
             return {
               id: `meetup-${event.id}`,
               kind: 31923, // Timed event
-              pubkey: 'meetup',
+              pubkey: "meetup",
               tags: [],
               content: event.description,
-              dTag: 'meetup-event',
+              dTag: "meetup-event",
               title: event.title,
               summary: event.title,
               description: event.description,
@@ -98,7 +105,9 @@ export default function CalendarPage({ meetupGroup, meetupError }: InferGetStati
               start: startTime.toString(),
               end: endTime.toString(),
               timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-              image: event.venues?.[0]?.id ? `https://secure.meetupstatic.com/photos/event/${event.venues[0].id}/450x300.jpeg` : undefined,
+              image: event.venues?.[0]?.id
+                ? `https://secure.meetupstatic.com/photos/event/${event.venues[0].id}/450x300.jpeg`
+                : undefined,
               hashtags: [],
               references: [event.eventUrl],
               created_at: Math.floor(Date.now() / 1000),
@@ -309,23 +318,28 @@ export default function CalendarPage({ meetupGroup, meetupError }: InferGetStati
 
   const handleUpdateEvent = async (formData: EventFormData) => {
     if (!editingEvent) return;
-    
+
     setIsSubmitting(true);
     try {
-      const updatedEvent = createEventFromFormData({ ...formData, eventType: editingEvent.kind === 31922 ? 'all-day' : 'timed' });
+      const updatedEvent = createEventFromFormData({
+        ...formData,
+        eventType: editingEvent.kind === 31922 ? "all-day" : "timed",
+      });
       updatedEvent.id = editingEvent.id;
       updatedEvent.dTag = editingEvent.dTag;
       updatedEvent.created_at = editingEvent.created_at;
-      
-      const updatedEvents = sortEventsByTime(events.map(event => 
-        event.id === editingEvent.id ? updatedEvent : event
-      ));
+
+      const updatedEvents = sortEventsByTime(
+        events.map((event) =>
+          event.id === editingEvent.id ? updatedEvent : event,
+        ),
+      );
       setEvents(updatedEvents);
       saveEvents(updatedEvents);
       setEditingEvent(null);
     } catch (error) {
-      console.error('Failed to update event:', error);
-      alert('Failed to update event. Please try again.');
+      console.error("Failed to update event:", error);
+      alert("Failed to update event. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
