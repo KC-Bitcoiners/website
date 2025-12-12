@@ -6,7 +6,7 @@ export interface CalendarEvent {
   created_at: number;
   tags: string[][];
   content: string;
-  
+
   // Parsed calendar data
   dTag?: string;
   title?: string;
@@ -23,7 +23,7 @@ export interface CalendarEvent {
   hashtags?: string[];
   references?: string[];
   participants?: string[];
-  
+
   // UI properties
   color?: string;
   source?: string;
@@ -43,5 +43,5 @@ export interface EventFormData {
   timezone: string;
   hashtags: string[];
   references: string[];
-  eventType: 'timed' | 'all-day';
+  eventType: "timed" | "all-day";
 }

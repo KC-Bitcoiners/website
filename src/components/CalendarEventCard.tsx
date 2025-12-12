@@ -9,9 +9,16 @@ interface CalendarEventCardProps {
   onEdit?: () => void;
 }
 
-export default function CalendarEventCard({ event, onDelete, onEdit }: CalendarEventCardProps) {
+export default function CalendarEventCard({
+  event,
+  onDelete,
+  onEdit,
+}: CalendarEventCardProps) {
   const handleDelete = () => {
-    if (onDelete && window.confirm('Are you sure you want to delete this event?')) {
+    if (
+      onDelete &&
+      window.confirm("Are you sure you want to delete this event?")
+    ) {
       onDelete(event.id);
     }
   };
@@ -26,8 +33,18 @@ export default function CalendarEventCard({ event, onDelete, onEdit }: CalendarE
             className="text-gray-400 hover:text-blue-600 transition-colors"
             aria-label="Edit event"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5m-1.414-9.414a2 2 0 1 1 0 0 2.828l8.586 8.586z" />
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5m-1.414-9.414a2 2 0 1 1 0 0 2.828l8.586 8.586z"
+              />
             </svg>
           </button>
         )}
@@ -37,8 +54,18 @@ export default function CalendarEventCard({ event, onDelete, onEdit }: CalendarE
             className="text-gray-400 hover:text-red-600 transition-colors"
             aria-label="Delete event"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         )}
@@ -55,7 +82,7 @@ export default function CalendarEventCard({ event, onDelete, onEdit }: CalendarE
               </span>
             </div>
             <h4 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 mb-2 font-archivo-black leading-tight">
-              {event.title || 'Untitled Event'}
+              {event.title || "Untitled Event"}
             </h4>
             {event.summary && (
               <p className="text-sm text-gray-600 mb-2">{event.summary}</p>
@@ -83,11 +110,16 @@ export default function CalendarEventCard({ event, onDelete, onEdit }: CalendarE
           <div className="flex items-start gap-2 text-gray-600">
             <MarkerIcon className="size-6 text-gray-500 mt-0.5 flex-shrink-0" />
             <div>
-              <span className="font-semibold text-gray-900 block">Location</span>
-              <span className="text-sm sm:text-base block">{event.location}</span>
+              <span className="font-semibold text-gray-900 block">
+                Location
+              </span>
+              <span className="text-sm sm:text-base block">
+                {event.location}
+              </span>
               {event.locations && event.locations.length > 1 && (
                 <span className="text-xs text-gray-500">
-                  +{event.locations.length - 1} more location{event.locations.length > 2 ? 's' : ''}
+                  +{event.locations.length - 1} more location
+                  {event.locations.length > 2 ? "s" : ""}
                 </span>
               )}
             </div>
@@ -122,11 +154,11 @@ export default function CalendarEventCard({ event, onDelete, onEdit }: CalendarE
           <div className="mt-4">
             <img
               src={event.image}
-              alt={event.title || 'Event image'}
+              alt={event.title || "Event image"}
               className="w-full h-48 object-cover rounded-lg"
               onError={(e) => {
                 // Hide broken images
-                (e.target as HTMLImageElement).style.display = 'none';
+                (e.target as HTMLImageElement).style.display = "none";
               }}
             />
           </div>
