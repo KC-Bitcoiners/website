@@ -46,6 +46,15 @@ function NavLinks({ currentPath }: { currentPath: string }) {
       >
         Shop
       </Link>
+      <Link
+        href="/bounties"
+        className={clsx(
+          "font-semibold transition-colors",
+          currentPath === "/bounties" ? "bitcoin-orange" : "hover:text-bitcoin-orange"
+        )}
+      >
+        Bounties
+      </Link>
       <a
         href="https://www.meetup.com/kansas-city-bitcoin-meetup-group/"
         target="_blank"
