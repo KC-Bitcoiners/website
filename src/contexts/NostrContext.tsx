@@ -73,8 +73,10 @@ export function NostrProvider({ children }: NostrProviderProps) {
   const [hasExtension, setHasExtension] = useState(false);
 
   useEffect(() => {
-    // Check for NIP-07 extension availability
-    setHasExtension(!!window.nostr);
+    // Check for NIP-07 extension availability only on client side
+    if (typeof window !== 'undefined') {
+      setHasExtension(!!window.nostr);
+    }
     
     // Check for stored user data on mount
     const storedUser = localStorage.getItem('nostr_user');

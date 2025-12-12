@@ -13,13 +13,16 @@
     "@noble/hashes": "^2.0.1",
     "@scure/base": "^2.0.0",
     "@tanstack/react-query": "^5.90.11",
+    "@types/leaflet": "^1.9.21",
     "clsx": "^2.1.1",
     "graphql": "^16.11.0",
     "graphql-request": "^7.2.0",
+    "leaflet": "^1.9.4",
     "next": "15.3.4",
     "nostr-tools": "^2.18.2",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-leaflet": "^5.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.3",
