@@ -7,11 +7,16 @@ type ViewType = "month" | "week" | "day";
 interface CalendarViewProps {
   events: CalendarEvent[];
   onEventClick?: (event: CalendarEvent) => void;
-  currentView?: 'month' | 'week' | 'day';
+  currentView?: "month" | "week" | "day";
   getEventColor?: (event: CalendarEvent) => string;
 }
 
-export default function CalendarView({ events, onEventClick, currentView, getEventColor }: CalendarViewProps) {
+export default function CalendarView({
+  events,
+  onEventClick,
+  currentView,
+  getEventColor,
+}: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const viewType = currentView || "month";
   const weekScrollRef = useRef<HTMLDivElement>(null);
@@ -383,8 +388,8 @@ export default function CalendarView({ events, onEventClick, currentView, getEve
                         <div
                           key={eventIndex}
                           onClick={() => onEventClick?.(event)}
-                          className={`text-xs p-1 text-white rounded cursor-pointer hover:opacity-90 transition-colors whitespace-normal ${getEventColor ? getEventColor(event).replace(/border-\w+/, '') : 'bg-bitcoin-orange'}`}
-                          title={`${event.title} - ${event.kind === 31923 ? (event.start?.includes('-') ? new Date(event.start).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : new Date(parseInt(event.start!) * 1000).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })) : 'All day'}`}
+                          className={`text-xs p-1 text-white rounded cursor-pointer hover:opacity-90 transition-colors whitespace-normal ${getEventColor ? getEventColor(event).replace(/border-\w+/, "") : "bg-bitcoin-orange"}`}
+                          title={`${event.title} - ${event.kind === 31923 ? (event.start?.includes("-") ? new Date(event.start).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) : new Date(parseInt(event.start!) * 1000).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })) : "All day"}`}
                         >
                           <div className="font-semibold">{event.title}</div>
                           {event.kind === 31923 && (
@@ -591,7 +596,7 @@ export default function CalendarView({ events, onEventClick, currentView, getEve
                           <div
                             key={event.id}
                             onClick={() => onEventClick?.(event)}
-                            className={`absolute text-white text-xs p-1 rounded cursor-pointer hover:opacity-90 transition-colors overflow-hidden z-10 ${getEventColor ? getEventColor(event).replace(/border-\w+/, '') : 'bg-bitcoin-orange'}`}
+                            className={`absolute text-white text-xs p-1 rounded cursor-pointer hover:opacity-90 transition-colors overflow-hidden z-10 ${getEventColor ? getEventColor(event).replace(/border-\w+/, "") : "bg-bitcoin-orange"}`}
                             style={{
                               top: `${relativeTop}px`,
                               left: `${2 + layoutItem.position.left}%`,
@@ -774,7 +779,7 @@ export default function CalendarView({ events, onEventClick, currentView, getEve
                   <div
                     key={event.id}
                     onClick={() => onEventClick?.(event)}
-                    className={`absolute text-white p-2 rounded cursor-pointer hover:opacity-90 transition-colors overflow-hidden z-10 ${getEventColor ? getEventColor(event).replace(/border-\w+/, '') : 'bg-bitcoin-orange'}`}
+                    className={`absolute text-white p-2 rounded cursor-pointer hover:opacity-90 transition-colors overflow-hidden z-10 ${getEventColor ? getEventColor(event).replace(/border-\w+/, "") : "bg-bitcoin-orange"}`}
                     style={{
                       top: `${topPosition}px`,
                       left: `${2 + position.left}%`,

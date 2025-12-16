@@ -216,17 +216,17 @@ export function sortEventsByTime(events: CalendarEvent[]): CalendarEvent[] {
 // Filter upcoming events
 export function getUpcomingEvents(events: CalendarEvent[]): CalendarEvent[] {
   const now = Date.now();
-  return events.filter(event => {
+  return events.filter((event) => {
     let startTimeMs: number;
-    
+
     if (event.kind === 31922) {
       // All-day event - start is a date string
-      startTimeMs = new Date(event.start || '0').getTime();
+      startTimeMs = new Date(event.start || "0").getTime();
     } else {
       // Timed event - start is a timestamp string
-      startTimeMs = parseInt(event.start || '0') * 1000;
+      startTimeMs = parseInt(event.start || "0") * 1000;
     }
-    
+
     return startTimeMs > now;
   });
 }
@@ -234,17 +234,17 @@ export function getUpcomingEvents(events: CalendarEvent[]): CalendarEvent[] {
 // Filter past events
 export function getPastEvents(events: CalendarEvent[]): CalendarEvent[] {
   const now = Date.now();
-  return events.filter(event => {
+  return events.filter((event) => {
     let startTimeMs: number;
-    
+
     if (event.kind === 31922) {
       // All-day event - start is a date string
-      startTimeMs = new Date(event.start || '0').getTime();
+      startTimeMs = new Date(event.start || "0").getTime();
     } else {
       // Timed event - start is a timestamp string
-      startTimeMs = parseInt(event.start || '0') * 1000;
+      startTimeMs = parseInt(event.start || "0") * 1000;
     }
-    
+
     return startTimeMs <= now;
   });
 }

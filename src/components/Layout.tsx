@@ -169,7 +169,9 @@ export default function Layout({ children, className }: LayoutProps) {
           <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-gray-900">Connect to Nostr</h2>
+                <h2 className="text-xl font-bold text-gray-900">
+                  Connect to Nostr
+                </h2>
                 <button
                   onClick={() => setShowLoginModal(false)}
                   className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
@@ -177,9 +179,7 @@ export default function Layout({ children, className }: LayoutProps) {
                   ×
                 </button>
               </div>
-              <NostrLogin
-                onLoginSuccess={() => setShowLoginModal(false)}
-              />
+              <NostrLogin onLoginSuccess={() => setShowLoginModal(false)} />
             </div>
           </div>
         </div>

@@ -57,11 +57,11 @@ export const fetchBTCMapVendors = async (bounds?: {
       minLat: 38.5,
       maxLat: 39.5,
       minLon: -95.5,
-      maxLon: -93.5
+      maxLon: -93.5,
     };
 
     const bbox = bounds || defaultBounds;
-    
+
     // BTCMap Overpass API endpoint - Fixed syntax
     const overpassQuery = `
       [out:json][timeout:25];
@@ -73,63 +73,71 @@ export const fetchBTCMapVendors = async (bounds?: {
       );
       out geom;
     `;
-    
+
     const overpassUrl = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(overpassQuery.trim())}`;
-    
-    console.log('🗺️ Fetching BTCMap vendors from:', overpassUrl);
-    
+
+    console.log("🗺️ Fetching BTCMap vendors from:", overpassUrl);
+
     const response = await fetch(overpassUrl, {
-      method: 'GET',
+      method: "GET",
       headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'BitcoinVendorDirectory/1.0'
-      }
+        Accept: "application/json",
+        "User-Agent": "BitcoinVendorDirectory/1.0",
+      },
     });
-    
+
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
-    
+
     const data: BTCMapResponse = await response.json();
-    
-    console.log('🗺️ BTCMap response features count:', data.elements.length);
-    
+
+    console.log("🗺️ BTCMap response features count:", data.elements.length);
+
     // Convert Overpass data to our vendor format
     const vendors: BTCMapVendor[] = data.elements
-      .filter(element => element.type === 'node' && element.lat && element.lon) // Only process nodes with coordinates
-      .map(element => {
-      const tags = element.tags || {};
-      
-      return {
-        id: element.id.toString(),
-        name: tags.name || tags['addr:housename'] || 'Unknown Bitcoin Vendor',
-        category: tags.shop || tags.amenity || tags.tourism || 'Other',
-        lat: element.lat!,
-        lon: element.lon!,
-        lightning: tags['payment:lightning'] === 'yes' || tags['payment:bitcoin:lightning'] === 'yes',
-        onchain: tags['payment:bitcoin'] === 'yes' || tags['payment:onchain'] === 'yes',
-        lightning_address: tags['payment:lightning:address'] || tags['lightning_address'],
-        onchain_address: tags['payment:bitcoin:address'] || tags['bitcoin_address'],
-        phone: tags.phone || tags['contact:phone'],
-        website: tags.website || tags.url,
-        email: tags.email || tags['contact:email'],
-        description: tags.description || tags.note || '',
-        opening_hours: tags.opening_hours || tags['opening_hours'],
-        address: tags['addr:housenumber'] && tags['addr:street'] 
-          ? `${tags['addr:housenumber']} ${tags['addr:street']}`
-          : tags['addr:street'] || tags['addr:full_address'],
-        city: tags['addr:city'],
-        country: tags['addr:country'],
-        state: tags['addr:state'] || tags['addr:province'],
-        postcode: tags['addr:postcode'] || tags['addr:postcode']
-      };
-    });
-    
-    console.log('🗺️ Parsed BTCMap vendors:', vendors.length);
+      .filter(
+        (element) => element.type === "node" && element.lat && element.lon,
+      ) // Only process nodes with coordinates
+      .map((element) => {
+        const tags = element.tags || {};
+
+        return {
+          id: element.id.toString(),
+          name: tags.name || tags["addr:housename"] || "Unknown Bitcoin Vendor",
+          category: tags.shop || tags.amenity || tags.tourism || "Other",
+          lat: element.lat!,
+          lon: element.lon!,
+          lightning:
+            tags["payment:lightning"] === "yes" ||
+            tags["payment:bitcoin:lightning"] === "yes",
+          onchain:
+            tags["payment:bitcoin"] === "yes" ||
+            tags["payment:onchain"] === "yes",
+          lightning_address:
+            tags["payment:lightning:address"] || tags["lightning_address"],
+          onchain_address:
+            tags["payment:bitcoin:address"] || tags["bitcoin_address"],
+          phone: tags.phone || tags["contact:phone"],
+          website: tags.website || tags.url,
+          email: tags.email || tags["contact:email"],
+          description: tags.description || tags.note || "",
+          opening_hours: tags.opening_hours || tags["opening_hours"],
+          address:
+            tags["addr:housenumber"] && tags["addr:street"]
+              ? `${tags["addr:housenumber"]} ${tags["addr:street"]}`
+              : tags["addr:street"] || tags["addr:full_address"],
+          city: tags["addr:city"],
+          country: tags["addr:country"],
+          state: tags["addr:state"] || tags["addr:province"],
+          postcode: tags["addr:postcode"] || tags["addr:postcode"],
+        };
+      });
+
+    console.log("🗺️ Parsed BTCMap vendors:", vendors.length);
     return vendors;
-    
   } catch (error) {
-    console.error('🗺️ Error fetching BTCMap vendors:', error);
+    console.error("🗺️ Error fetching BTCMap vendors:", error);
     return [];
   }
 };
@@ -137,54 +145,54 @@ export const fetchBTCMapVendors = async (bounds?: {
 // Fallback test data for development
 export const getTestBTCMapVendors = (): BTCMapVendor[] => [
   {
-    id: 'test1',
-    name: 'The Coffee House',
-    category: 'Cafe',
+    id: "test1",
+    name: "The Coffee House",
+    category: "Cafe",
     lat: 39.0997,
     lon: -94.5786,
     lightning: true,
     onchain: true,
-    lightning_address: 'coffee@bitcoin.com',
-    onchain_address: 'bc1qwerty...',
-    phone: '+1-555-123-4567',
-    website: 'https://coffeehouse.com',
-    description: 'Bitcoin-friendly coffee shop',
-    opening_hours: 'Mon-Fri 7am-6pm',
-    address: '123 Main St',
-    city: 'Kansas City',
-    state: 'MO'
+    lightning_address: "coffee@bitcoin.com",
+    onchain_address: "bc1qwerty...",
+    phone: "+1-555-123-4567",
+    website: "https://coffeehouse.com",
+    description: "Bitcoin-friendly coffee shop",
+    opening_hours: "Mon-Fri 7am-6pm",
+    address: "123 Main St",
+    city: "Kansas City",
+    state: "MO",
   },
   {
-    id: 'test2',
-    name: 'Bitcoin Pizza',
-    category: 'Restaurant',
+    id: "test2",
+    name: "Bitcoin Pizza",
+    category: "Restaurant",
     lat: 39.03219,
     lon: -94.58101,
     lightning: false,
     onchain: true,
-    onchain_address: 'bc1example...',
-    description: 'Accepts Bitcoin payments',
-    opening_hours: 'Mon-Sun 11am-10pm',
-    address: '456 Oak St',
-    city: 'Kansas City',
-    state: 'MO'
+    onchain_address: "bc1example...",
+    description: "Accepts Bitcoin payments",
+    opening_hours: "Mon-Sun 11am-10pm",
+    address: "456 Oak St",
+    city: "Kansas City",
+    state: "MO",
   },
   {
-    id: 'test3',
-    name: 'Crypto Electronics',
-    category: 'Retail',
+    id: "test3",
+    name: "Crypto Electronics",
+    category: "Retail",
     lat: 39.0833,
     lon: -94.6033,
     lightning: true,
     onchain: true,
-    lightning_address: 'crypto@lightning.com',
-    onchain_address: 'bc1crypto...',
-    phone: '+1-555-987-6543',
-    website: 'https://cryptoelectronics.com',
-    description: 'Computer store with Bitcoin payments',
-    opening_hours: 'Mon-Sat 10am-8pm',
-    address: '789 Tech Blvd',
-    city: 'Kansas City',
-    state: 'MO'
-  }
+    lightning_address: "crypto@lightning.com",
+    onchain_address: "bc1crypto...",
+    phone: "+1-555-987-6543",
+    website: "https://cryptoelectronics.com",
+    description: "Computer store with Bitcoin payments",
+    opening_hours: "Mon-Sat 10am-8pm",
+    address: "789 Tech Blvd",
+    city: "Kansas City",
+    state: "MO",
+  },
 ];

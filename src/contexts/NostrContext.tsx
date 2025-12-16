@@ -1,6 +1,12 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { nip19 } from 'nostr-tools';
-import { isWhitelisted } from '@/config/whitelist';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
+import { nip19 } from "nostr-tools";
+import { isWhitelisted } from "@/config/whitelist";
 
 // NIP-07 interface for browser extensions
 declare global {
@@ -54,7 +60,9 @@ interface NostrProviderProps {
 function generatePrivateKey(): string {
   const array = new Uint8Array(32);
   crypto.getRandomValues(array);
-  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+  return Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join(
+    "",
+  );
 }
 
 // Simple utility to derive public key from private key (simplified)
@@ -63,8 +71,10 @@ async function getPublicKey(privateKey: string): Promise<string> {
   // For demo purposes, we'll use a hash of the private key
   const encoder = new TextEncoder();
   const data = encoder.encode(privateKey);
-  const hash = await crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(hash), byte => byte.toString(16).padStart(2, '0')).join('');
+  const hash = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hash), (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("");
 }
 
 export function NostrProvider({ children }: NostrProviderProps) {
@@ -74,19 +84,19 @@ export function NostrProvider({ children }: NostrProviderProps) {
 
   useEffect(() => {
     // Check for NIP-07 extension availability only on client side
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       setHasExtension(!!window.nostr);
     }
-    
+
     // Check for stored user data on mount
-    const storedUser = localStorage.getItem('nostr_user');
+    const storedUser = localStorage.getItem("nostr_user");
     if (storedUser) {
       try {
         const userData = JSON.parse(storedUser);
         setUser(userData);
       } catch (error) {
-        console.error('Failed to parse stored user data:', error);
-        localStorage.removeItem('nostr_user');
+        console.error("Failed to parse stored user data:", error);
+        localStorage.removeItem("nostr_user");
       }
     }
     setIsLoading(false);
@@ -99,17 +109,19 @@ export function NostrProvider({ children }: NostrProviderProps) {
 
       if (privateKeyOrNsec) {
         // Try to decode as nsec first
-        if (privateKeyOrNsec.startsWith('nsec')) {
+        if (privateKeyOrNsec.startsWith("nsec")) {
           try {
             const { type, data } = nip19.decode(privateKeyOrNsec);
-            if (type === 'nsec') {
+            if (type === "nsec") {
               // Convert Uint8Array to hex string
-              privateKey = Array.from(data as Uint8Array, byte => byte.toString(16).padStart(2, '0')).join('');
+              privateKey = Array.from(data as Uint8Array, (byte) =>
+                byte.toString(16).padStart(2, "0"),
+              ).join("");
             } else {
-              throw new Error('Invalid nsec format');
+              throw new Error("Invalid nsec format");
             }
           } catch (decodeError) {
-            throw new Error('Failed to decode nsec');
+            throw new Error("Failed to decode nsec");
           }
         } else {
           // Treat as hex private key
@@ -122,17 +134,19 @@ export function NostrProvider({ children }: NostrProviderProps) {
 
       // Derive public key
       pubkey = await getPublicKey(privateKey);
-      
+
       // Create npub encoding - use the hex string directly
       const npub = nip19.npubEncode(pubkey);
 
       // Check if user is whitelisted
       if (!isWhitelisted(npub)) {
-        console.log('🚫 User not whitelisted:', npub);
-        throw new Error('This account is not whitelisted for calendar events. Only whitelisted users can access the calendar.');
+        console.log("🚫 User not whitelisted:", npub);
+        throw new Error(
+          "This account is not whitelisted for calendar events. Only whitelisted users can access the calendar.",
+        );
       }
 
-      console.log('✅ User is whitelisted:', npub);
+      console.log("✅ User is whitelisted:", npub);
 
       const userData: NostrUser = {
         pubkey,
@@ -141,62 +155,62 @@ export function NostrProvider({ children }: NostrProviderProps) {
       };
 
       setUser(userData);
-      localStorage.setItem('nostr_user', JSON.stringify(userData));
+      localStorage.setItem("nostr_user", JSON.stringify(userData));
     } catch (error) {
-      console.error('Login failed:', error);
+      console.error("Login failed:", error);
       throw error;
     }
   };
 
   const fetchUserMetadata = async (pubkey: string) => {
-    console.log('🔍 Fetching metadata for pubkey:', pubkey);
-    
+    console.log("🔍 Fetching metadata for pubkey:", pubkey);
+
     try {
       // Follow plektos implementation - use WebSocket connections to relays
       // This avoids CORS issues entirely
       const relays = [
-        'wss://relay.damus.io',
-        'wss://relay.snort.social',
-        'wss://nos.lol'
+        "wss://relay.damus.io",
+        "wss://relay.snort.social",
+        "wss://nos.lol",
       ];
 
-      console.log('🌐 Connecting to relays for metadata:', relays);
+      console.log("🌐 Connecting to relays for metadata:", relays);
 
       // Create filter for kind 0 (metadata) events
       const filter = {
         kinds: [0],
         authors: [pubkey],
-        limit: 1
+        limit: 1,
       };
 
-      console.log('📤 Using metadata filter:', filter);
+      console.log("📤 Using metadata filter:", filter);
 
       // Try each relay until we get metadata
       for (const relayUrl of relays) {
         console.log(`🔌 Connecting to relay: ${relayUrl}`);
-        
+
         try {
           // Create WebSocket connection
           const ws = new WebSocket(relayUrl);
-          
+
           // Create a promise that resolves when we get the metadata
           const metadataPromise = new Promise((resolve, reject) => {
             const timeout = setTimeout(() => {
               console.log(`⏰ Timeout on ${relayUrl}`);
               ws.close();
-              reject(new Error('Timeout'));
+              reject(new Error("Timeout"));
             }, 5000);
 
             ws.onopen = () => {
               console.log(`✅ Connected to ${relayUrl}`);
-              
+
               // Send REQ message for metadata
               const reqMessage = JSON.stringify([
-                'REQ',
-                'metadata-sub',
-                filter
+                "REQ",
+                "metadata-sub",
+                filter,
               ]);
-              
+
               console.log(`📤 Sending REQ to ${relayUrl}:`, reqMessage);
               ws.send(reqMessage);
             };
@@ -206,39 +220,53 @@ export function NostrProvider({ children }: NostrProviderProps) {
                 const message = JSON.parse(event.data);
                 console.log(`📨 Message from ${relayUrl}:`, message);
 
-                if (message[0] === 'EVENT') {
+                if (message[0] === "EVENT") {
                   const [type, subscriptionId, nostrEvent] = message;
-                  
-                  if (subscriptionId === 'metadata-sub') {
+
+                  if (subscriptionId === "metadata-sub") {
                     clearTimeout(timeout);
-                    console.log(`🎯 Found metadata event from ${relayUrl}:`, nostrEvent);
-                    
+                    console.log(
+                      `🎯 Found metadata event from ${relayUrl}:`,
+                      nostrEvent,
+                    );
+
                     try {
                       const metadata = JSON.parse(nostrEvent.content);
-                      console.log(`✅ Successfully parsed metadata from ${relayUrl}:`, metadata);
-                      
+                      console.log(
+                        `✅ Successfully parsed metadata from ${relayUrl}:`,
+                        metadata,
+                      );
+
                       if (metadata.picture) {
-                        console.log(`🖼️ Found picture URL: ${metadata.picture}`);
+                        console.log(
+                          `🖼️ Found picture URL: ${metadata.picture}`,
+                        );
                       } else {
                         console.log(`⚠️ No picture in metadata for ${pubkey}`);
                       }
-                      
+
                       ws.close();
                       resolve(metadata);
                     } catch (parseError) {
-                      console.error(`❌ Failed to parse metadata content:`, parseError);
-                      console.log('Raw content:', nostrEvent.content);
+                      console.error(
+                        `❌ Failed to parse metadata content:`,
+                        parseError,
+                      );
+                      console.log("Raw content:", nostrEvent.content);
                       reject(parseError);
                     }
                   }
-                } else if (message[0] === 'EOSE') {
+                } else if (message[0] === "EOSE") {
                   console.log(`📭 End of stored events from ${relayUrl}`);
                   clearTimeout(timeout);
                   ws.close();
-                  reject(new Error('No metadata found'));
+                  reject(new Error("No metadata found"));
                 }
               } catch (error) {
-                console.error(`💥 Error parsing message from ${relayUrl}:`, error);
+                console.error(
+                  `💥 Error parsing message from ${relayUrl}:`,
+                  error,
+                );
               }
             };
 
@@ -265,14 +293,16 @@ export function NostrProvider({ children }: NostrProviderProps) {
       console.log(`❌ No metadata found for pubkey ${pubkey} from any relay`);
       return null;
     } catch (error) {
-      console.error('💥 Critical error in fetchUserMetadata:', error);
+      console.error("💥 Critical error in fetchUserMetadata:", error);
       return null;
     }
   };
 
   const loginWithExtension = async () => {
     if (!window.nostr) {
-      throw new Error('No nostr extension found. Please install a nostr extension like Alby, Snort, or Nos2x.');
+      throw new Error(
+        "No nostr extension found. Please install a nostr extension like Alby, Snort, or Nos2x.",
+      );
     }
 
     try {
@@ -282,11 +312,13 @@ export function NostrProvider({ children }: NostrProviderProps) {
 
       // Check if the user is whitelisted
       if (!isWhitelisted(npub)) {
-        console.log('🚫 User not whitelisted:', npub);
-        throw new Error('This account is not whitelisted for calendar events. Only whitelisted users can access the calendar.');
+        console.log("🚫 User not whitelisted:", npub);
+        throw new Error(
+          "This account is not whitelisted for calendar events. Only whitelisted users can access the calendar.",
+        );
       }
 
-      console.log('✅ User is whitelisted:', npub);
+      console.log("✅ User is whitelisted:", npub);
 
       const userData: NostrUser = {
         pubkey,
@@ -295,39 +327,44 @@ export function NostrProvider({ children }: NostrProviderProps) {
       };
 
       setUser(userData);
-      localStorage.setItem('nostr_user', JSON.stringify(userData));
+      localStorage.setItem("nostr_user", JSON.stringify(userData));
 
       // Fetch metadata in background
-      fetchUserMetadata(pubkey).then(metadata => {
+      fetchUserMetadata(pubkey).then((metadata) => {
         if (metadata) {
-          setUser(prev => prev ? { ...prev, metadata } : null);
-          localStorage.setItem('nostr_user', JSON.stringify({ ...userData, metadata }));
+          setUser((prev) => (prev ? { ...prev, metadata } : null));
+          localStorage.setItem(
+            "nostr_user",
+            JSON.stringify({ ...userData, metadata }),
+          );
         }
       });
     } catch (error) {
-      console.error('Extension login failed:', error);
-      throw new Error('Failed to connect to nostr extension. Please try again.');
+      console.error("Extension login failed:", error);
+      throw new Error(
+        "Failed to connect to nostr extension. Please try again.",
+      );
     }
   };
 
   const refreshMetadata = async () => {
     if (!user?.pubkey) return;
-    
+
     try {
       const metadata = await fetchUserMetadata(user.pubkey);
       if (metadata) {
         const updatedUser = { ...user, metadata };
         setUser(updatedUser);
-        localStorage.setItem('nostr_user', JSON.stringify(updatedUser));
+        localStorage.setItem("nostr_user", JSON.stringify(updatedUser));
       }
     } catch (error) {
-      console.error('Failed to refresh metadata:', error);
+      console.error("Failed to refresh metadata:", error);
     }
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('nostr_user');
+    localStorage.removeItem("nostr_user");
   };
 
   const value: NostrContextType = {
@@ -341,16 +378,14 @@ export function NostrProvider({ children }: NostrProviderProps) {
   };
 
   return (
-    <NostrContext.Provider value={value}>
-      {children}
-    </NostrContext.Provider>
+    <NostrContext.Provider value={value}>{children}</NostrContext.Provider>
   );
 }
 
 export function useNostr(): NostrContextType {
   const context = useContext(NostrContext);
   if (context === undefined) {
-    throw new Error('useNostr must be used within a NostrProvider');
+    throw new Error("useNostr must be used within a NostrProvider");
   }
   return context;
 }

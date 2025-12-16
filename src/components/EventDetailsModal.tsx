@@ -1,7 +1,7 @@
-import React from 'react';
-import { CalendarEvent } from '../types/calendar';
-import { XIcon } from './Icons';
-import { encodeNaddr } from '../utils/nostrEvents';
+import React from "react";
+import { CalendarEvent } from "../types/calendar";
+import { XIcon } from "./Icons";
+import { encodeNaddr } from "../utils/nostrEvents";
 
 interface EventDetailsModalProps {
   event: CalendarEvent | null;
@@ -242,35 +242,44 @@ export default function EventDetailsModal({
             )}
 
           {/* Nostr/Plektos Link */}
-          {event.id && event.id.startsWith('nostr-') && event.dTag && (() => {
-            const naddr = encodeNaddr(event.kind, event.pubkey, event.dTag);
-            console.log('🔗 Generated naddr for nostr event:', {
-              eventId: event.id,
-              kind: event.kind,
-              pubkey: event.pubkey,
-              dTag: event.dTag,
-              naddr: naddr,
-              plektosUrl: `https://plektos.app/event/${naddr}`
-            });
-            return naddr;
-          })() && (
-            <div className="mb-6">
-              <h4 className="font-semibold text-gray-900 mb-2">Nostr Event</h4>
-              <div className="text-gray-600">
-                <a 
-                  href={`https://plektos.app/event/${encodeNaddr(event.kind, event.pubkey, event.dTag)}`}
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition-colors"
-                >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                  </svg>
-                  View on Plektos
-                </a>
+          {event.id &&
+            event.id.startsWith("nostr-") &&
+            event.dTag &&
+            (() => {
+              const naddr = encodeNaddr(event.kind, event.pubkey, event.dTag);
+              console.log("🔗 Generated naddr for nostr event:", {
+                eventId: event.id,
+                kind: event.kind,
+                pubkey: event.pubkey,
+                dTag: event.dTag,
+                naddr: naddr,
+                plektosUrl: `https://plektos.app/event/${naddr}`,
+              });
+              return naddr;
+            })() && (
+              <div className="mb-6">
+                <h4 className="font-semibold text-gray-900 mb-2">
+                  Nostr Event
+                </h4>
+                <div className="text-gray-600">
+                  <a
+                    href={`https://plektos.app/event/${encodeNaddr(event.kind, event.pubkey, event.dTag)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition-colors"
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                    </svg>
+                    View on Plektos
+                  </a>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
           {/* References */}
           {event.references && event.references.length > 0 && (

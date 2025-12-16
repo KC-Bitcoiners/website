@@ -1,14 +1,18 @@
-import React, { useState } from 'react';
-import { useNostr } from '@/contexts/NostrContext';
+import React, { useState } from "react";
+import { useNostr } from "@/contexts/NostrContext";
 
 interface NostrLoginProps {
   onLoginSuccess?: () => void;
   className?: string;
 }
 
-export default function NostrLogin({ onLoginSuccess, className = '' }: NostrLoginProps) {
-  const { login, loginWithExtension, logout, user, isLoading, hasExtension } = useNostr();
-  const [privateKeyInput, setPrivateKeyInput] = useState('');
+export default function NostrLogin({
+  onLoginSuccess,
+  className = "",
+}: NostrLoginProps) {
+  const { login, loginWithExtension, logout, user, isLoading, hasExtension } =
+    useNostr();
+  const [privateKeyInput, setPrivateKeyInput] = useState("");
   const [showKeyInput, setShowKeyInput] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +24,11 @@ export default function NostrLogin({ onLoginSuccess, className = '' }: NostrLogi
       await loginWithExtension();
       onLoginSuccess?.();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to connect to extension. Please try again.');
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to connect to extension. Please try again.",
+      );
     } finally {
       setIsLoggingIn(false);
     }
@@ -33,7 +41,7 @@ export default function NostrLogin({ onLoginSuccess, className = '' }: NostrLogi
       await login(); // Generate new key pair
       onLoginSuccess?.();
     } catch (err) {
-      setError('Failed to create account. Please try again.');
+      setError("Failed to create account. Please try again.");
     } finally {
       setIsLoggingIn(false);
     }
@@ -41,7 +49,7 @@ export default function NostrLogin({ onLoginSuccess, className = '' }: NostrLogi
 
   const handleKeyLogin = async () => {
     if (!privateKeyInput.trim()) {
-      setError('Please enter a private key or nsec');
+      setError("Please enter a private key or nsec");
       return;
     }
 
@@ -50,17 +58,17 @@ export default function NostrLogin({ onLoginSuccess, className = '' }: NostrLogi
     try {
       await login(privateKeyInput.trim());
       onLoginSuccess?.();
-      setPrivateKeyInput('');
+      setPrivateKeyInput("");
       setShowKeyInput(false);
     } catch (err) {
-      setError('Invalid private key format. Please check and try again.');
+      setError("Invalid private key format. Please check and try again.");
     } finally {
       setIsLoggingIn(false);
     }
   };
 
   const handleLogout = () => {
-    setPrivateKeyInput('');
+    setPrivateKeyInput("");
     setShowKeyInput(false);
     setError(null);
     // The actual logout is handled by the context
@@ -76,11 +84,15 @@ export default function NostrLogin({ onLoginSuccess, className = '' }: NostrLogi
 
   if (user) {
     return (
-      <div className={`p-4 bg-bitcoin-orange text-white rounded-lg ${className}`}>
+      <div
+        className={`p-4 bg-bitcoin-orange text-white rounded-lg ${className}`}
+      >
         <div className="flex flex-col space-y-2">
           <div className="text-sm font-semibold">Logged in as:</div>
           <div className="font-mono text-xs break-all">{user.npub}</div>
-          <div className="text-xs opacity-75">Pubkey: {user.pubkey.slice(0, 16)}...</div>
+          <div className="text-xs opacity-75">
+            Pubkey: {user.pubkey.slice(0, 16)}...
+          </div>
           <button
             onClick={() => {
               logout();
@@ -99,8 +111,12 @@ export default function NostrLogin({ onLoginSuccess, className = '' }: NostrLogi
     <div className={`p-4 bg-gray-50 rounded-lg ${className}`}>
       <div className="space-y-4">
         <div className="text-center">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Connect with Nostr</h3>
-          <p className="text-sm text-gray-600">Sign in to access nostr features</p>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            Connect with Nostr
+          </h3>
+          <p className="text-sm text-gray-600">
+            Sign in to access nostr features
+          </p>
         </div>
 
         {error && (
@@ -117,18 +133,18 @@ export default function NostrLogin({ onLoginSuccess, className = '' }: NostrLogi
                 disabled={isLoggingIn}
                 className="w-full px-4 py-3 bg-bitcoin-orange text-white rounded-lg font-semibold hover:bg-bitcoin-orange-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoggingIn ? 'Connecting...' : 'Connect with Nostr Extension'}
+                {isLoggingIn ? "Connecting..." : "Connect with Nostr Extension"}
               </button>
             )}
-            
+
             <button
               onClick={handleQuickLogin}
               disabled={isLoggingIn}
               className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoggingIn ? 'Creating Account...' : 'Create New Account'}
+              {isLoggingIn ? "Creating Account..." : "Create New Account"}
             </button>
-            
+
             <button
               onClick={() => setShowKeyInput(true)}
               className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
@@ -139,7 +155,10 @@ export default function NostrLogin({ onLoginSuccess, className = '' }: NostrLogi
         ) : (
           <div className="space-y-3">
             <div>
-              <label htmlFor="privateKey" className="block text-sm font-medium text-gray-700 mb-2">
+              <label
+                htmlFor="privateKey"
+                className="block text-sm font-medium text-gray-700 mb-2"
+              >
                 Private Key or nsec
               </label>
               <textarea
@@ -151,20 +170,20 @@ export default function NostrLogin({ onLoginSuccess, className = '' }: NostrLogi
                 rows={3}
               />
             </div>
-            
+
             <div className="flex space-x-3">
               <button
                 onClick={handleKeyLogin}
                 disabled={isLoggingIn}
                 className="flex-1 px-4 py-2 bg-bitcoin-orange text-white rounded-lg font-semibold hover:bg-bitcoin-orange-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLoggingIn ? 'Signing In...' : 'Sign In'}
+                {isLoggingIn ? "Signing In..." : "Sign In"}
               </button>
-              
+
               <button
                 onClick={() => {
                   setShowKeyInput(false);
-                  setPrivateKeyInput('');
+                  setPrivateKeyInput("");
                   setError(null);
                 }}
                 className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-100 transition-colors"

@@ -23,7 +23,9 @@ export default function EventCard({
   className,
 }: EventCardProps) {
   return (
-    <div className={`${className || 'bg-white border border-gray-200'} rounded-lg shadow-lg p-4 sm:p-6 lg:p-8 w-full overflow-hidden`}>
+    <div
+      className={`${className || "bg-white border border-gray-200"} rounded-lg shadow-lg p-4 sm:p-6 lg:p-8 w-full overflow-hidden`}
+    >
       {/* Mobile-first layout */}
       <div className="space-y-4 sm:space-y-6">
         {/* Header section with date and title */}

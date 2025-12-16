@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNostr } from '@/contexts/NostrContext';
+import React, { useState } from "react";
+import { useNostr } from "@/contexts/NostrContext";
 
 export default function UserProfile() {
   const { user, logout } = useNostr();
@@ -13,7 +13,10 @@ export default function UserProfile() {
     return `${npub.slice(0, 12)}...${npub.slice(-12)}`;
   };
 
-  const displayName = user.metadata?.display_name || user.metadata?.name || truncateNpub(user.npub);
+  const displayName =
+    user.metadata?.display_name ||
+    user.metadata?.name ||
+    truncateNpub(user.npub);
 
   return (
     <div className="relative">
@@ -28,8 +31,8 @@ export default function UserProfile() {
             className="w-6 h-6 rounded-full object-cover"
             onError={(e) => {
               // Fallback to default avatar if image fails to load
-              e.currentTarget.style.display = 'none';
-              e.currentTarget.nextElementSibling?.classList.remove('hidden');
+              e.currentTarget.style.display = "none";
+              e.currentTarget.nextElementSibling?.classList.remove("hidden");
             }}
           />
         ) : (
@@ -49,7 +52,7 @@ export default function UserProfile() {
             className="fixed inset-0 z-40"
             onClick={() => setShowProfile(false)}
           />
-          
+
           {/* Profile dropdown */}
           <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
             <div className="p-4">
@@ -62,7 +65,7 @@ export default function UserProfile() {
                   ×
                 </button>
               </div>
-              
+
               <div className="space-y-3">
                 {/* Profile picture and name */}
                 <div className="flex items-center space-x-3 pb-3 border-b border-gray-200">
@@ -72,8 +75,10 @@ export default function UserProfile() {
                       alt={displayName}
                       className="w-12 h-12 rounded-full object-cover"
                       onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                        e.currentTarget.style.display = "none";
+                        e.currentTarget.nextElementSibling?.classList.remove(
+                          "hidden",
+                        );
                       }}
                     />
                   ) : (
@@ -82,7 +87,9 @@ export default function UserProfile() {
                     </div>
                   )}
                   <div>
-                    <div className="font-semibold text-gray-900">{displayName}</div>
+                    <div className="font-semibold text-gray-900">
+                      {displayName}
+                    </div>
                     {user.metadata?.about && (
                       <div className="text-sm text-gray-600 mt-1 line-clamp-2">
                         {user.metadata.about}
@@ -90,21 +97,25 @@ export default function UserProfile() {
                     )}
                   </div>
                 </div>
-                
+
                 <div>
-                  <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Public Key</div>
+                  <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Public Key
+                  </div>
                   <div className="font-mono text-sm text-gray-900 break-all mt-1">
                     {user.npub}
                   </div>
                 </div>
-                
+
                 <div>
-                  <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Hex</div>
+                  <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Hex
+                  </div>
                   <div className="font-mono text-xs text-gray-600 break-all mt-1">
                     {user.pubkey}
                   </div>
                 </div>
-                
+
                 <div className="pt-3 border-t border-gray-200">
                   <button
                     onClick={() => {
