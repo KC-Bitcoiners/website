@@ -6,6 +6,7 @@ import { HamburgerIcon } from "./Icons";
 import { useNostr } from "@/contexts/NostrContext";
 import UserProfile from "./UserProfile";
 import NostrLogin from "./NostrLogin";
+import SocialLinks from "./SocialLinks";
 
 function NavLinks({ currentPath }: { currentPath: string }) {
   return (
@@ -190,8 +191,11 @@ export default function Layout({ children, className }: LayoutProps) {
 
       {/* Footer */}
       <footer className="bg-black text-gray-400 py-8">
-        <div className="container mx-auto px-6 text-center">
-          <p>&copy; 2025 KC Bitcoin Meetup Group - All Rights Reserved.</p>
+        <div className="container mx-auto px-6">
+          <div className="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
+            <p>&copy; 2025 KC Bitcoin Meetup Group - All Rights Reserved.</p>
+            <SocialLinks />
+          </div>
         </div>
       </footer>
     </div>
