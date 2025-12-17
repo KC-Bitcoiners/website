@@ -2,7 +2,7 @@ name: staticS3Deploy
 
 on:
   push:
-    branches: ["master", "bugFix"]
+    branches: ["master", "dev", "bugFix"]
   schedule:
     - cron: "0 0 * * 1,3,6"
 
@@ -38,6 +38,8 @@ jobs:
       - name: Build and export Next.js application
         run: |
           npm run build
+          node scripts/post-build.js
+
         env:
           NEXT_SHARP_REQUIRE_CDN: 1
 
