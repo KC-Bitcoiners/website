@@ -38,7 +38,6 @@ jobs:
       - name: Build and export Next.js application
         run: |
           npm run build
-          node scripts/post-build.js
         env:
           NEXT_SHARP_REQUIRE_CDN: 1
 
@@ -48,27 +47,15 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: us-east-2
 
-      - name: Run AWS CLI Command (Deploy to S3 and CloudFront)
+      - name: Run AWS CLI Command (Example)
         run: |
           ls -lah
           ls -lah out
-          
+          did="E1MUWYLHGG5S4S"
           if [[ "${{ inputs.env }}" == "prod" ]]; then
-            bucket="kcbitcoiners.com"
-            # Get production CloudFront distribution ID from Terraform outputs
-            cd terraform
-            did=$(terraform output -raw prod_distribution_id 2>/dev/null || echo "E1MUWYLHGG5S4S")
-            cd ..
+            bucket=kcbitcoiners.com/
           else
-            bucket="dev.kcbitcoiners.com"
-            # Get development CloudFront distribution ID from Terraform outputs
-            cd terraform
-            did=$(terraform output -raw dev_distribution_id 2>/dev/null || echo "E1MUWYLHGG5S4S")
-            cd ..
+            bucket=dev.kcbitcoiners.com/
           fi
-          
-          echo "Deploying to bucket: ${bucket}"
-          echo "Invalidating CloudFront distribution: ${did}"
-          
-          aws s3 sync out/ s3://${bucket}/ --delete
+          aws s3 sync out/ s3://${bucket} --delete
           aws cloudfront create-invalidation --distribution-id $did --paths "/*"
