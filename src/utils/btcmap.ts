@@ -21,6 +21,7 @@ export interface BTCMapVendor {
   country?: string;
   state?: string;
   postcode?: string;
+  btcmap_id?: string; // BTCMap element ID for linking to btcmap.org
 }
 
 export interface BTCMapResponse {
@@ -131,6 +132,7 @@ export const fetchBTCMapVendors = async (bounds?: {
           country: tags["addr:country"],
           state: tags["addr:state"] || tags["addr:province"],
           postcode: tags["addr:postcode"] || tags["addr:postcode"],
+          btcmap_id: element.id.toString(), // Add the BTCMap element ID for linking
         };
       });
 

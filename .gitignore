@@ -46,3 +46,5 @@ public/events.ics
 terraform/.terraform
 # terraform/*.tfstate
 terraform/*.tfstate.backup
+
+job-logs.txt
