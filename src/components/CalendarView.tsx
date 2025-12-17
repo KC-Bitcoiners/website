@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { CalendarEvent } from "../types/calendar";
 import { ChevronLeftIcon, ChevronRightIcon } from "./Icons";
 
-type ViewType = "month" | "week" | "day";
+// type ViewType = "month" | "week" | "day"; // Unused - can be removed if not needed
 
 interface CalendarViewProps {
   events: CalendarEvent[];
@@ -22,48 +22,9 @@ export default function CalendarView({
   const weekScrollRef = useRef<HTMLDivElement>(null);
   const dayScrollRef = useRef<HTMLDivElement>(null);
 
-  // Smart time range: show limited time range around events instead of full 24 hours
+  // Time range calculation is now handled within each view's render function
   useEffect(() => {
-    const calculateTimeRange = (events: CalendarEvent[]) => {
-      if (events.length === 0) {
-        // No events - show 6am to 10pm range
-        return { startHour: 6, endHour: 22, totalHours: 16 };
-      }
-
-      // Find earliest and latest event times
-      let earliestHour = 18; // Default to 6pm
-      let latestHour = 8; // Default to 8am
-
-      events.forEach((event) => {
-        if (event.kind === 31922) return; // Skip all-day events
-
-        let startTime: number;
-        if (event.start?.includes("-")) {
-          startTime = new Date(event.start).getTime() / 1000;
-        } else {
-          startTime = parseInt(event.start || "0");
-        }
-
-        const eventDate = new Date(startTime * 1000);
-        const eventHour = eventDate.getHours();
-
-        if (eventHour < earliestHour) {
-          earliestHour = eventHour;
-        }
-        if (eventHour > latestHour) {
-          latestHour = eventHour;
-        }
-      });
-
-      // Show 2 hours before earliest and 2 hours after latest
-      const startHour = Math.max(0, earliestHour - 2);
-      const endHour = Math.min(23, latestHour + 2);
-      const totalHours = endHour - startHour + 1;
-
-      return { startHour, endHour, totalHours };
-    };
-
-    // Time range calculation is now handled within each view's render function
+    // This useEffect can be used for future optimizations if needed
   }, [viewType, currentDate, events]);
 
   const navigateDate = (direction: "prev" | "next") => {

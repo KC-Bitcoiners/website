@@ -2,8 +2,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import VendorForm from "@/components/VendorForm";
 import { useNostr } from "@/contexts/NostrContext";
-import { SimplePool, Relay, getEventHash } from "nostr-tools";
-import type { Event } from "nostr-tools";
+import { SimplePool, getEventHash } from "nostr-tools";
 import { fetchBTCMapVendors, BTCMapVendor } from "@/utils/btcmap";
 
 // Relay configuration for Nostr operations
@@ -161,7 +160,7 @@ export default function ShopPage() {
             let data;
             try {
               data = JSON.parse(event.content);
-            } catch (parseError) {
+            } catch {
               // Quietly skip invalid JSON events - these are likely not vendor events
               skippedEvents++;
               continue;
@@ -414,6 +413,9 @@ export default function ShopPage() {
       };
 
       // Sign the event using the user's signing method
+      if (!window.nostr) {
+        throw new Error("Nostr extension not found. Please install a Nostr extension like Nos2x or Snort.");
+      }
       const signedEvent = await window.nostr.signEvent(deleteEventTemplate);
 
       // Add the ID to the signed event
@@ -1013,23 +1015,15 @@ export default function ShopPage() {
 
                           {btcMapVendor.btcmap_id && (
                             <div className="flex items-center gap-2 mt-2">
-                              <button
+                              <a
                                 href={`https://btcmap.org/elements/${btcMapVendor.btcmap_id}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1 text-xs bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 transition-colors"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  window.open(
-                                    `https://btcmap.org/elements/${btcMapVendor.btcmap_id}`,
-                                    "_blank",
-                                    "noopener,noreferrer",
-                                  );
-                                }}
                               >
                                 <span>🔗</span>
                                 Open in BTCMap
-                              </button>
+                              </a>
                             </div>
                           )}
                         </>
