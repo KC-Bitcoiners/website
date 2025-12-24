@@ -20,7 +20,7 @@ function NavLinks({ currentPath }: { currentPath: string }) {
       >
         Home
       </Link>
-      <Link
+      {/* <Link
         href="/events"
         className={clsx(
           "font-semibold transition-colors",
@@ -30,7 +30,7 @@ function NavLinks({ currentPath }: { currentPath: string }) {
         )}
       >
         Events
-      </Link>
+      </Link> */}
       <Link
         href="/calendar"
         className={clsx(
