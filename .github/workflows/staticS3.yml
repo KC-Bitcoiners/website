@@ -2,7 +2,7 @@ name: staticS3Deploy
 
 on:
   push:
-    branches: ["master", "dev", "bugFix"]
+    branches: ["master", "dev", "bugFix", "nsyte"]
   schedule:
     - cron: "0 0 * * 1,3,6"
 
@@ -42,22 +42,32 @@ jobs:
 
         env:
           NEXT_SHARP_REQUIRE_CDN: 1
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Deploy to Nostr/Blossom
+        uses: sandwichfarm/nsite-action@v0.2.2
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: us-east-2
+          nbunksec: ${{ secrets.NBUNKSEC }}
+          directory: './out'  # Your built website directory
+          relays: |
+            wss://relay.nsite.lol
+          servers: |
+            wss://cdn.hzrd149.com
+            wss://cdn.sovbit.host
 
-      - name: Run AWS CLI Command (Example)
-        run: |
-          ls -lah
-          ls -lah out
-          did="E1MUWYLHGG5S4S"
-          if [[ "${{ inputs.env }}" == "prod" ]]; then
-            bucket=kcbitcoiners.com/
-          else
-            bucket=dev.kcbitcoiners.com/
-          fi
-          aws s3 sync out/ s3://${bucket} --delete
-          aws cloudfront create-invalidation --distribution-id $did --paths "/*"
+      # - name: Configure AWS Credentials
+      #   uses: aws-actions/configure-aws-credentials@v4
+      #   with:
+      #     role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+      #     aws-region: us-east-2
+
+      # - name: Run AWS CLI Command (Example)
+      #   run: |
+      #     ls -lah
+      #     ls -lah out
+      #     did="E1MUWYLHGG5S4S"
+      #     if [[ "${{ inputs.env }}" == "prod" ]]; then
+      #       bucket=kcbitcoiners.com/
+      #     else
+      #       bucket=dev.kcbitcoiners.com/
+      #     fi
+      #     aws s3 sync out/ s3://${bucket} --delete
+      #     aws cloudfront create-invalidation --distribution-id $did --paths "/*"
