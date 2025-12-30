@@ -35,7 +35,7 @@ export default function Home() {
               <p className="leading-relaxed">
                 We are a Bitcoin only group focused on fostering relationships
                 and building community. We meet twice monthly throughout the
-                Kansas City metro area.
+                Kansas City metro area
               </p>
 
               <p className="leading-relaxed">

@@ -12,10 +12,7 @@ export const getStaticProps: GetStaticProps = async () => {
 
 export default function StaticHomePage() {
   return (
-    <StaticLayout 
-      title="KC Bitcoiners - Bitcoin Community in Kansas City" 
-      description="Join the Kansas City Bitcoin community for meetups, education, and Bitcoin adoption events"
-    >
+    <StaticLayout>
       <div className="min-h-screen">
         {/* Hero Section */}
         <section className="relative bg-gradient-to-br from-bitcoin-orange/10 via-purple-50 to-bitcoin-orange/5">
@@ -30,8 +27,8 @@ export default function StaticHomePage() {
                   Kansas City's Bitcoin Community
                 </p>
                 <p className="text-lg text-gray-500 max-w-2xl mx-auto">
-                  Join us for weekly meetups, educational workshops, and building the Bitcoin ecosystem 
-                  in the heart of America. All skill levels welcome - from beginners to Bitcoin experts.
+                  Join us for weekly meetups, educational workshops, and building Bitcoin ecosystem 
+                  in heart of America. All skill levels welcome - from beginners to Bitcoin experts.
                 </p>
               </div>
               
@@ -96,7 +93,7 @@ export default function StaticHomePage() {
                   </div>
                   <h3 className="text-xl font-semibold mb-4 font-archivo-black">Adoption</h3>
                   <p className="text-gray-600">
-                    Help us build the Bitcoin ecosystem in Kansas City through merchant adoption 
+                    Help us build Bitcoin ecosystem in Kansas City through merchant adoption 
                     and community outreach programs.
                   </p>
                 </div>

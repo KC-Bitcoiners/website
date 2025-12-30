@@ -1,17 +1,14 @@
 import React from "react";
+import Link from "next/link";
 import SocialLinks from "./SocialLinks";
 import BitcoinLogo from "./BitcoinLogo";
 
 interface StaticLayoutProps {
   children: React.ReactNode;
-  title?: string;
-  description?: string;
 }
 
 const StaticLayout: React.FC<StaticLayoutProps> = ({ 
-  children, 
-  title = "KC Bitcoiners",
-  description = "Kansas City Bitcoin community - meetups, education, and adoption"
+  children
 }) => {
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/';
 
@@ -31,38 +28,38 @@ const StaticLayout: React.FC<StaticLayoutProps> = ({
 
             {/* Navigation */}
             <nav className="hidden md:flex items-center space-x-8">
-              <a
+              <Link
                 href="/"
                 className={`text-sm font-medium transition-colors hover:text-bitcoin-orange ${
                   currentPath === '/' ? 'text-bitcoin-orange' : 'text-gray-600'
                 }`}
               >
                 Home
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/calendar-static"
                 className={`text-sm font-medium transition-colors hover:text-bitcoin-orange ${
                   currentPath === '/calendar-static' ? 'text-bitcoin-orange' : 'text-gray-600'
                 }`}
               >
                 Events
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/events"
                 className={`text-sm font-medium transition-colors hover:text-bitcoin-orange ${
                   currentPath === '/events' ? 'text-bitcoin-orange' : 'text-gray-600'
                 }`}
               >
                 Learn
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/shop"
                 className={`text-sm font-medium transition-colors hover:text-bitcoin-orange ${
                   currentPath === '/shop' ? 'text-bitcoin-orange' : 'text-gray-600'
                 }`}
               >
                 Shop
-              </a>
+              </Link>
             </nav>
 
             {/* Mobile Menu Button */}
@@ -101,7 +98,7 @@ const StaticLayout: React.FC<StaticLayoutProps> = ({
               </h3>
               <p className="text-gray-600 text-sm leading-relaxed">
                 We're a community of Bitcoin enthusiasts in Kansas City dedicated to 
-                education, adoption, and building the Bitcoin ecosystem. Join us for 
+                education, adoption, and building Bitcoin ecosystem. Join us for 
                 weekly meetups, workshops, and networking events.
               </p>
             </div>
@@ -113,24 +110,24 @@ const StaticLayout: React.FC<StaticLayoutProps> = ({
               </h3>
               <ul className="space-y-2 text-sm">
                 <li>
-                  <a href="/" className="text-gray-600 hover:text-bitcoin-orange transition-colors">
+                  <Link href="/" className="text-gray-600 hover:text-bitcoin-orange transition-colors">
                     Home
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="/calendar-static" className="text-gray-600 hover:text-bitcoin-orange transition-colors">
+                  <Link href="/calendar-static" className="text-gray-600 hover:text-bitcoin-orange transition-colors">
                     Events Calendar
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="/events" className="text-gray-600 hover:text-bitcoin-orange transition-colors">
+                  <Link href="/events" className="text-gray-600 hover:text-bitcoin-orange transition-colors">
                     Learn Bitcoin
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a href="/shop" className="text-gray-600 hover:text-bitcoin-orange transition-colors">
+                  <Link href="/shop" className="text-gray-600 hover:text-bitcoin-orange transition-colors">
                     Bitcoin Shop
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>

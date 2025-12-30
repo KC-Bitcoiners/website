@@ -39,7 +39,7 @@ jobs:
         run: |
           npm run build
           node scripts/post-build.js
-          ls -lah
+          ls -lah out
         env:
           NEXT_SHARP_REQUIRE_CDN: 1
       

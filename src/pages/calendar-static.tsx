@@ -55,7 +55,7 @@ export default function CalendarStaticPage({
   };
 
   return (
-    <StaticLayout title="Events - KC Bitcoiners" description="Upcoming Bitcoin events in Kansas City">
+    <StaticLayout>
       <div className="container mx-auto px-4 py-12">
         <div className="relative">
           {/* Main Content */}
