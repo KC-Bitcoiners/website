@@ -2,7 +2,7 @@ name: staticS3Deploy
 
 on:
   push:
-    branches: ["master", "dev", "bugFix", "nsyte"]
+    branches: ["master", "dev", "bugFix", "nsyte", "staticnsyte"]
   schedule:
     - cron: "0 0 * * 1,3,6"
 
