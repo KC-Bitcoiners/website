@@ -58,7 +58,7 @@ jobs:
             https://cdn.hzrd149.com
             https://cdn.sovbit.host
           concurrency: 4
-          fallback: /index.html
+          fallback: /index-static/index.html
           #nsyte_version: "v0.5.0"
 
       - name: Verify deployment success
