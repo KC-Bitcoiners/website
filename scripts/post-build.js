@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 
 // This script creates clean URL structure for Next.js static export
-// It converts /calendar.html to /calendar/index.html so that /calendar works
+// It handles both flat HTML files and directory structures from SSG
 
 const outDir = path.join(__dirname, '../out');
 
@@ -24,7 +24,7 @@ function createCleanUrls() {
     const targetFile = path.join(targetDir, 'index.html');
     
     if (fs.existsSync(sourceFile)) {
-      // Create directory
+      // Case 1: flat HTML file exists, create directory structure
       if (!fs.existsSync(targetDir)) {
         fs.mkdirSync(targetDir, { recursive: true });
       }
@@ -33,7 +33,7 @@ function createCleanUrls() {
       fs.copyFileSync(sourceFile, targetFile);
       console.log(`✅ Created clean URL: /${page}/ -> ${targetFile}`);
       
-      // Also create a redirect from /page.html to /page/ for backward compatibility
+      // Create redirect from /page.html to /page/ for backward compatibility
       const redirectContent = `<!DOCTYPE html>
 <html>
 <head>
@@ -51,8 +51,16 @@ function createCleanUrls() {
       
       fs.writeFileSync(sourceFile, redirectContent);
       console.log(`✅ Created redirect: /${page}.html -> /${page}/`);
+    } else if (fs.existsSync(targetFile)) {
+      // Case 2: directory structure already exists (from Next.js SSG)
+      console.log(`✅ Clean URL already exists: /${page}/ -> ${targetFile}`);
+      
+      // Create flat HTML file for backward compatibility
+      const flatFile = path.join(outDir, `${page}.html`);
+      fs.copyFileSync(targetFile, flatFile);
+      console.log(`✅ Created flat file: /${page}.html`);
     } else {
-      console.warn(`⚠️  Source file not found: ${sourceFile}`);
+      console.warn(`⚠️  Neither source file nor directory found for: ${page}`);
     }
   });
   
