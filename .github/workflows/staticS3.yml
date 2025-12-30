@@ -51,6 +51,7 @@ jobs:
           directory: './out'  # Your built website directory
           relays: |
             wss://relay.damus.io
+            wss://nos.lol
           servers: |
             https://cdn.hzrd149.com/
           concurrency: 1
