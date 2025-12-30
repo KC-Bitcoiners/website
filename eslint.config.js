@@ -37,7 +37,7 @@ module.exports = [
 
       // Basic rules
       "no-unused-vars": "off", // Turned off in favor of @typescript-eslint/no-unused-vars
-      "no-console": "warn",
+      "no-console": "off",
     },
     settings: {
       react: {
