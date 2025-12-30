@@ -1,0 +1,15 @@
+{
+  "bunkerPubkey": "cb143273402b579caf7e3c848d557f66b3ebd29bf4d1a13b75c17168be92eea1",
+  "relays": [
+    "wss://relay.nsite.lol"
+  ],
+  "servers": [],
+  "profile": {
+    "name": "kcbitcoiners",
+    "display_name": "kcbitcoiners",
+    "about": "kcbitcoiners website"
+  },
+  "publishProfile": true,
+  "publishRelayList": true,
+  "publishServerList": true
+}
