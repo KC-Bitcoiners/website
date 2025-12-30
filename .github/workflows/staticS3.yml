@@ -54,6 +54,7 @@ jobs:
             wss://relay.damus.io
             wss://nos.lol
             wss://relay.nsite.lol
+            wss://relay.primal.net
           servers: |
             https://cdn.hzrd149.com
             https://cdn.sovbit.host
