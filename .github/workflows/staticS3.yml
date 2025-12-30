@@ -46,6 +46,7 @@ jobs:
         uses: sandwichfarm/nsite-action@v0.2.2
         with:
           nbunksec: ${{ secrets.NBUNKSEC }}
+          verbose: true
           directory: './out'  # Your built website directory
           relays: |
             wss://relay.nsite.lol
