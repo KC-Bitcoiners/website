@@ -52,8 +52,10 @@ jobs:
           relays: |
             wss://relay.damus.io
             wss://nos.lol
+            wss://relay.nsite.lol
           servers: |
-            https://cdn.hzrd149.com/
+            https://cdn.hzrd149.com
+            https://cdn.sovbit.host
           concurrency: 4
           fallback: /index.html
           #nsyte_version: "v0.5.0"
