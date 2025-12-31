@@ -42,7 +42,25 @@ jobs:
 
         env:
           NEXT_SHARP_REQUIRE_CDN: 1
-
+      - name: Deploy to Nostr/Blossom
+        uses: sandwichfarm/nsite-action@v0.2.2
+        continue-on-error: false
+        with:
+          nbunksec: ${{ secrets.NBUNKSEC }}
+          verbose: true
+          directory: './out'  
+          relays: |
+            wss://relay.damus.io
+            wss://nos.lol
+            wss://relay.nsite.lol
+            wss://relay.primal.net
+          servers: |
+            https://cdn.hzrd149.com
+            https://cdn.sovbit.host
+            https://blossom.band
+          concurrency: 4
+          fallback: /index.html
+          
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
