@@ -16,7 +16,7 @@ export default function BitcoinLogo({
       style={{ width: size, height: size }}
     >
       <Image
-        src="/logo.jpeg"
+        src="/logo.svg"
         alt="KC Bitcoin Meetup Group Logo"
         width={size}
         height={size}

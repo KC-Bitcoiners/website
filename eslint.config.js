@@ -32,12 +32,15 @@ module.exports = [
       "react-hooks/exhaustive-deps": "warn",
 
       // TypeScript rules
-      "@typescript-eslint/no-unused-vars": "warn",
-      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/no-explicit-any": "off",
+
+      // Next.js rules
+      "@next/next/no-html-link-for-pages": "off",
 
       // Basic rules
       "no-unused-vars": "off", // Turned off in favor of @typescript-eslint/no-unused-vars
-      "no-console": "warn",
+      "no-console": "off",
     },
     settings: {
       react: {

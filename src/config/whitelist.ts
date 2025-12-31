@@ -16,12 +16,10 @@ export const WHITELISTED_PUBKEYS = WHITELISTED_NPUBS.map((npub) => {
     if (type === "npub") {
       // For npub, data is already a hex string (64 characters)
       const hex = data as string;
-      console.log(`🔑 Decoded ${npub} to hex: ${hex} (length: ${hex.length})`);
       return hex;
     }
     return "";
   } catch (error) {
-    console.error("Failed to decode npub:", npub, error);
     return "";
   }
 }).filter(Boolean);

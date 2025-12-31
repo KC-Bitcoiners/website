@@ -9,7 +9,7 @@ export default function Home() {
         <title>KC Bitcoin Meetup Group</title>
         <meta
           name="description"
-          content="Bitcoin only group focused on fostering relationships and building community in Kansas City"
+          content="Bitcoin only group focused on fostering relationships and building community in Kansas City."
         />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
@@ -35,7 +35,7 @@ export default function Home() {
               <p className="leading-relaxed">
                 We are a Bitcoin only group focused on fostering relationships
                 and building community. We meet twice monthly throughout the
-                Kansas City metro area.
+                Kansas City metro area
               </p>
 
               <p className="leading-relaxed">
