@@ -44,7 +44,8 @@ jobs:
         env:
           NEXT_SHARP_REQUIRE_CDN: 1
       - name: Deploy to Nostr/Blossom
-        uses: sandwichfarm/nsite-action@v0.2.2
+        #uses: sandwichfarm/nsite-action@v0.2.2
+        uses: auggie-lahey/nsite-action@0.0.0
         continue-on-error: false
         with:
           nbunksec: ${{ secrets.NBUNKSEC }}
