@@ -50,11 +50,10 @@ jobs:
           nbunksec: ${{ secrets.NBUNKSEC }}
           verbose: true
           directory: './out'  # Your built website directory
-          relays: |
-            wss://relay.damus.io
-            wss://nos.lol
-            wss://relay.nsite.lol
-            wss://relay.primal.net
+          relays: wss://relay.nsite.lol
+            # wss://relay.damus.io
+            # wss://nos.lol
+            # wss://relay.primal.net
           servers: |
             https://cdn.hzrd149.com
             https://cdn.sovbit.host
