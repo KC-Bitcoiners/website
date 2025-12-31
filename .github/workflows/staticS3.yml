@@ -63,9 +63,10 @@ jobs:
             https://cdn.sovbit.host
           concurrency: 4
           fallback: /index.html
-          publish_relay_list: true
-          publish_server_list: true
-          publish_profile: true
+          # publish_relay_list: true
+          # publish_server_list: true
+          # publish_profile: true
+          verbose: true
           purge: true
           
       - name: Configure AWS Credentials
