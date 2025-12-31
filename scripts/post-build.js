@@ -12,7 +12,6 @@ const outDir = path.join(__dirname, '../out');
 const pages = [
   'calendar',
   'shop',
-  'events'
 ];
 
 function createCleanUrls() {

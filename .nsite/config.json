@@ -1,0 +1,18 @@
+{
+  "relays": [
+    "wss://relay.nsite.lol",
+    "wss://relay.damus.io"
+  ],
+  "servers": [
+    "https://cdn.hzrd149.com/",
+    "https://blossom.band"
+  ],
+  "profile": {
+    "name": "kcbitcoiners",
+    "display_name": "kcbitcoiners",
+    "about": "kcbitcoiners website"
+  },
+  "publishProfile": true,
+  "publishRelayList": true,
+  "publishServerList": true
+}
