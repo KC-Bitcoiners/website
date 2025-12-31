@@ -52,9 +52,9 @@ jobs:
           verbose: true
           directory: './out'  
           relays: |
+            wss://relay.nsite.lol
             wss://relay.damus.io
             wss://nos.lol
-            wss://relay.nsite.lol
             wss://relay.primal.net
           servers: |
             https://cdn.hzrd149.com
@@ -62,6 +62,9 @@ jobs:
             https://blossom.band
           concurrency: 4
           fallback: /index.html
+          publish_relay_list: true
+          publish_server_list: true
+
           
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
