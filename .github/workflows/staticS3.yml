@@ -43,6 +43,7 @@ jobs:
 
         env:
           NEXT_SHARP_REQUIRE_CDN: 1
+          
       - name: Deploy to Nostr/Blossom
         #uses: sandwichfarm/nsite-action@v0.2.2
         uses: auggie-lahey/nsite-action@0.0.0
@@ -64,7 +65,7 @@ jobs:
           fallback: /index.html
           publish_relay_list: true
           publish_server_list: true
-
+          purge: true
           
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
