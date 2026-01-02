@@ -72,7 +72,6 @@ export default function Home() {
               Join Our Meetups
             </a>
             <a
-              href="https://btcpay0.voltageapp.io/apps/26q7Q6PpDTZFoUBfpMko6jSzm4od/pos"
               target="_blank"
               rel="noopener noreferrer"
               className="bg-transparent border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:bitcoin-orange hover:text-gray-700 transition-colors"

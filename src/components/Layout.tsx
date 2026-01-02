@@ -7,6 +7,8 @@ import { useNostr } from "@/contexts/NostrContext";
 import UserProfile from "./UserProfile";
 import NostrLogin from "./NostrLogin";
 import SocialLinks from "./SocialLinks";
+import { ensureHttpURL } from "applesauce-core/helpers";
+import { KB_BITCOINERS_RELAY } from "../config/const";
 
 function NavLinks({ currentPath }: { currentPath: string }) {
   return (
@@ -62,12 +64,12 @@ function NavLinks({ currentPath }: { currentPath: string }) {
         Meetup.com
       </a>
       <a
-        href="https://btcpay0.voltageapp.io/apps/26q7Q6PpDTZFoUBfpMko6jSzm4od/pos"
+        href={ensureHttpURL(KB_BITCOINERS_RELAY)}
         target="_blank"
         rel="noopener noreferrer"
         className="hover:text-bitcoin-orange font-semibold transition-colors"
       >
-        Donations
+        Nostr
       </a>
     </>
   );

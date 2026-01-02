@@ -658,7 +658,7 @@ export default function CalendarView({
           {" "}
           {/* Dynamic height based on time range */}
           {/* Fixed time column - CRITICAL: This provides the time labels on the left side */}
-          <div className="w-20 flex-shrink-0 border-r border-gray-200 bg-gray-50">
+          <div className="w-20 shrink-0 border-r border-gray-200 bg-gray-50">
             {timeRange.hours.map((hour: number) => (
               <div
                 key={hour}

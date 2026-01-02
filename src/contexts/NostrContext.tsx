@@ -1,12 +1,17 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  ReactNode,
-} from "react";
-import { nip19 } from "nostr-tools";
 import { isWhitelisted } from "@/config/whitelist";
+import {
+  generateSecretKey,
+  getPublicKey,
+  normalizeToSecretKey,
+  npubEncode,
+} from "applesauce-core/helpers";
+import {
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
 // NIP-07 interface for browser extensions
 declare global {
@@ -56,27 +61,6 @@ interface NostrProviderProps {
   children: ReactNode;
 }
 
-// Simple utility to generate a random hex string
-function generatePrivateKey(): string {
-  const array = new Uint8Array(32);
-  crypto.getRandomValues(array);
-  return Array.from(array, (byte) => byte.toString(16).padStart(2, "0")).join(
-    "",
-  );
-}
-
-// Simple utility to derive public key from private key (simplified)
-async function getPublicKey(privateKey: string): Promise<string> {
-  // This is a simplified version - in production you'd use proper secp256k1
-  // For demo purposes, we'll use a hash of the private key
-  const encoder = new TextEncoder();
-  const data = encoder.encode(privateKey);
-  const hash = await crypto.subtle.digest("SHA-256", data);
-  return Array.from(new Uint8Array(hash), (byte) =>
-    byte.toString(16).padStart(2, "0"),
-  ).join("");
-}
-
 export function NostrProvider({ children }: NostrProviderProps) {
   const [user, setUser] = useState<NostrUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -104,39 +88,21 @@ export function NostrProvider({ children }: NostrProviderProps) {
 
   const login = async (privateKeyOrNsec?: string) => {
     try {
-      let privateKey: string;
+      let privateKey: Uint8Array;
       let pubkey: string;
 
       if (privateKeyOrNsec) {
-        // Try to decode as nsec first
-        if (privateKeyOrNsec.startsWith("nsec")) {
-          try {
-            const { type, data } = nip19.decode(privateKeyOrNsec);
-            if (type === "nsec") {
-              // Convert Uint8Array to hex string
-              privateKey = Array.from(data as Uint8Array, (byte) =>
-                byte.toString(16).padStart(2, "0"),
-              ).join("");
-            } else {
-              throw new Error("Invalid nsec format");
-            }
-          } catch (decodeError) {
-            throw new Error("Failed to decode nsec");
-          }
-        } else {
-          // Treat as hex private key
-          privateKey = privateKeyOrNsec;
-        }
+        privateKey = normalizeToSecretKey(privateKeyOrNsec);
       } else {
         // Generate new key pair
-        privateKey = generatePrivateKey();
+        privateKey = generateSecretKey();
       }
 
       // Derive public key
       pubkey = await getPublicKey(privateKey);
 
       // Create npub encoding - use the hex string directly
-      const npub = nip19.npubEncode(pubkey);
+      const npub = npubEncode(pubkey);
 
       // Check if user is whitelisted
       if (!isWhitelisted(npub)) {
@@ -151,7 +117,7 @@ export function NostrProvider({ children }: NostrProviderProps) {
       const userData: NostrUser = {
         pubkey,
         npub,
-        privateKey, // Store for signing events
+        privateKey: privateKey.toString(), // Store for signing events
       };
 
       setUser(userData);
@@ -308,7 +274,7 @@ export function NostrProvider({ children }: NostrProviderProps) {
     try {
       // Request public key from extension
       const pubkey = await window.nostr.getPublicKey();
-      const npub = nip19.npubEncode(pubkey);
+      const npub = npubEncode(pubkey);
 
       // Check if the user is whitelisted
       if (!isWhitelisted(npub)) {
