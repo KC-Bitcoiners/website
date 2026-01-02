@@ -1,5 +1,5 @@
 import { getWhitelistFilter, WHITELISTED_NPUBS } from "@/config/whitelist";
-import pool from "@/lib/nostr";
+import { pool } from "@/lib/nostr";
 import {
   decodePointer,
   finalizeEvent,

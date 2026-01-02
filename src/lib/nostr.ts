@@ -3,7 +3,7 @@ import { EventStore } from "applesauce-core/event-store";
 import { Filter, persistEventsToCache } from "applesauce-core/helpers";
 import { createEventLoaderForStore } from "applesauce-loaders/loaders";
 import { RelayPool } from "applesauce-relay/pool";
-import { KB_BITCOINERS_RELAY } from "../config/const";
+import { KC_BITCOINERS_RELAY } from "../config/const";
 
 // Check if we're on the client side
 const isClient = typeof window !== "undefined";
@@ -16,8 +16,8 @@ if (isClient) {
   } catch (error) {}
 }
 
-const pool = new RelayPool();
-const eventStore = new EventStore();
+export const pool = new RelayPool();
+export const eventStore = new EventStore();
 
 // Create cache request function that loads from local cache
 // Only use window.nostrdb on the client side
@@ -42,7 +42,5 @@ createEventLoaderForStore(eventStore, pool, {
     "wss://index.hzrd149.com/",
     "wss://indexer.coracle.social/",
   ],
-  extraRelays: [KB_BITCOINERS_RELAY],
+  extraRelays: [KC_BITCOINERS_RELAY],
 });
-
-export default pool;

@@ -3,7 +3,7 @@ import dynamic from "next/dynamic";
 import VendorForm from "@/components/VendorForm";
 import { useNostr } from "@/contexts/NostrContext";
 import { fetchBTCMapVendors, BTCMapVendor } from "@/utils/btcmap";
-import pool from "@/lib/nostr";
+import { pool } from "@/lib/nostr";
 import type { Icon, LatLngBounds, DivIcon } from "leaflet";
 import { getEventHash, type NostrEvent } from "applesauce-core/helpers/event";
 

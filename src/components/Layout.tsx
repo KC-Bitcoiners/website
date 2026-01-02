@@ -8,7 +8,7 @@ import UserProfile from "./UserProfile";
 import NostrLogin from "./NostrLogin";
 import SocialLinks from "./SocialLinks";
 import { ensureHttpURL } from "applesauce-core/helpers";
-import { KB_BITCOINERS_RELAY } from "../config/const";
+import { KC_BITCOINERS_RELAY } from "../config/const";
 
 function NavLinks({ currentPath }: { currentPath: string }) {
   return (
@@ -62,14 +62,6 @@ function NavLinks({ currentPath }: { currentPath: string }) {
         className="hover:text-bitcoin-orange font-semibold transition-colors"
       >
         Meetup.com
-      </a>
-      <a
-        href={ensureHttpURL(KB_BITCOINERS_RELAY)}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="hover:text-bitcoin-orange font-semibold transition-colors"
-      >
-        Nostr
       </a>
     </>
   );
