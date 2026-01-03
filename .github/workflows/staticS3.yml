@@ -1,8 +1,11 @@
 name: staticS3Deploy
+#nbunksec1qqswe02m3rug0l406xem25rlsrtmksgu3zrng5t0xa2yjkw7ph0je0gpyr7h3l6fqd0s9mmzs7hc5y3e7cazmduqt5erdx8a7vqatyrq7vpxjqs5waehxw309aex2mrp0yhxuum9vvhxzursev3zaa
+  #"bunkerPubkey": "nbunksec1qqswe02m3rug0l406xem25rlsrtmksgu3zrng5t0xa2yjkw7ph0je0gpyr7h3l6fqd0s9mmzs7hc5y3e7cazmduqt5erdx8a7vqatyrq7vpxjqs5waehxw309aex2mrp0yhxuum9vvhxzursev3zaa" 
+  #"cb143273402b579caf7e3c848d557f66b3ebd29bf4d1a13b75c17168be92eea1",
 
 on:
   push:
-    branches: ["master", "dev", "bugFix"]
+    branches: ["master", "dev", "bugFix", "static"]
   schedule:
     - cron: "0 0 * * 1,3,6"
 
@@ -39,10 +42,33 @@ jobs:
         run: |
           npm run build
           node scripts/post-build.js
+          ls -lah out/
 
         env:
           NEXT_SHARP_REQUIRE_CDN: 1
 
+      - name: Deploy to Nostr/Blossom
+        #uses: sandwichfarm/nsite-action@v0.2.2
+        uses: auggie-lahey/nsite-action@0.0.0
+        continue-on-error: false
+        with:
+          nbunksec: nbunksec1qqswe02m3rug0l406xem25rlsrtmksgu3zrng5t0xa2yjkw7ph0je0gpyr7h3l6fqd0s9mmzs7hc5y3e7cazmduqt5erdx8a7vqatyrq7vpxjqs5waehxw309aex2mrp0yhxuum9vvhxzursev3zaa 
+          #${{ secrets.NBUNKSEC }}
+          directory: './out'  
+          relays: |
+            wss://relay.nsite.lol
+            wss://relay.damus.io
+          servers: |
+            https://cdn.hzrd149.com
+            https://cdn.sovbit.host
+          concurrency: 4
+          fallback: /index.html
+          # publish_relay_list: true
+          # publish_server_list: true
+          # publish_profile: true
+          verbose: false
+          purge: true
+          
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
