@@ -1,6 +1,6 @@
 import { writeFileSync } from "fs";
 import { join } from "path";
-import { MeetupGroup, getVenueAddress } from "./meetup";
+import { MeetupGroup, getVenueAddress } from "../lib/meetup";
 
 // Helper function to format date for iCalendar (YYYYMMDDTHHMMSSZ format)
 const formatICalDate = (dateString: string): string => {

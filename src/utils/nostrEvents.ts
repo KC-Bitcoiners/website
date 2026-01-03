@@ -1,10 +1,12 @@
 import { getWhitelistFilter, WHITELISTED_NPUBS } from "@/config/whitelist";
+import { pool } from "@/lib/nostr";
 import {
+  decodePointer,
   finalizeEvent,
   generateSecretKey,
   getPublicKey,
-  nip19,
-} from "nostr-tools";
+  naddrEncode,
+} from "applesauce-core/helpers";
 
 export interface NostrCalendarEvent {
   id: string;
@@ -22,20 +24,18 @@ export interface NostrCalendarEvent {
   created_at: number;
 }
 
-// Fetch calendar events from nostr relays using WebSocket
+// Fetch calendar events from nostr relays using RelayPool
 export async function fetchNostrCalendarEvents(): Promise<
   NostrCalendarEvent[]
 > {
   console.log("📅 Starting to fetch nostr calendar events...");
 
-  // Use WebSocket connections to avoid CORS issues like plektos
+  // Use relay pool to connect to multiple relays
   const relays = [
     "wss://relay.damus.io",
     "wss://relay.snort.social",
     "wss://nos.lol",
   ];
-
-  const allEvents: NostrCalendarEvent[] = [];
 
   // Use whitelist filter to only get events from whitelisted users
   const filter = getWhitelistFilter();
@@ -46,317 +46,124 @@ export async function fetchNostrCalendarEvents(): Promise<
     WHITELISTED_NPUBS,
   );
 
-  // Try each relay and collect events, prioritizing Damus
-  const primaryRelay = "wss://relay.damus.io";
-  const backupRelays = relays.filter((r) => r !== primaryRelay);
-
-  // First, fetch from Damus (primary relay)
-  console.log(
-    `🔌 Fetching calendar events from primary relay: ${primaryRelay}`,
-  );
-  let primaryEvents: NostrCalendarEvent[] = [];
+  const allEvents: NostrCalendarEvent[] = [];
 
   try {
-    const ws = new WebSocket(primaryRelay);
+    // Use pool.request() which handles retries, deduplication, and multiple relays
+    console.log(`🔌 Fetching calendar events from relays:`, relays);
 
     const eventsPromise = new Promise<NostrCalendarEvent[]>(
       (resolve, reject) => {
         const timeout = setTimeout(() => {
-          console.log(`⏰ Timeout on ${primaryRelay}`);
-          ws.close();
-          reject(new Error("Timeout"));
-        }, 10000);
+          console.log(`⏰ Request timeout`);
+          reject(new Error("Request timeout"));
+        }, 30000); // 30 second timeout for all relays
 
-        ws.onopen = () => {
-          console.log(`✅ Connected to ${primaryRelay} for calendar events`);
+        const events: NostrCalendarEvent[] = [];
 
-          // Send REQ message for calendar events
-          const reqMessage = JSON.stringify([
-            "REQ",
-            "calendar-events-sub",
-            filter,
-          ]);
+        pool.request(relays, filter).subscribe({
+          next: (nostrEvent) => {
+            console.log(`🎯 Found calendar event:`, nostrEvent.id);
 
-          console.log(
-            `📤 Sending calendar REQ to ${primaryRelay}:`,
-            reqMessage,
-          );
-          ws.send(reqMessage);
-        };
+            const calendarEvent: NostrCalendarEvent = {
+              id: nostrEvent.id,
+              kind: nostrEvent.kind,
+              pubkey: nostrEvent.pubkey,
+              tags: nostrEvent.tags || [],
+              content: nostrEvent.content,
+              dTag: nostrEvent.tags?.find(
+                (tag: string[]) => tag[0] === "d",
+              )?.[1],
+              title: nostrEvent.tags?.find(
+                (tag: string[]) => tag[0] === "title",
+              )?.[1],
+              summary: nostrEvent.tags?.find(
+                (tag: string[]) => tag[0] === "summary",
+              )?.[1],
+              description: nostrEvent.content,
+              location: nostrEvent.tags?.find(
+                (tag: string[]) => tag[0] === "location",
+              )?.[1],
+              start: nostrEvent.tags?.find(
+                (tag: string[]) => tag[0] === "start",
+              )?.[1],
+              end: nostrEvent.tags?.find(
+                (tag: string[]) => tag[0] === "end",
+              )?.[1],
+              created_at: nostrEvent.created_at,
+            };
 
-        const relayEvents: NostrCalendarEvent[] = [];
-
-        ws.onmessage = (event) => {
-          try {
-            const message = JSON.parse(event.data);
-            console.log(`📨 Calendar message from ${primaryRelay}:`, message);
-
-            if (message[0] === "EVENT") {
-              const [type, subscriptionId, nostrEvent] = message;
-
-              if (subscriptionId === "calendar-events-sub") {
-                console.log(
-                  `🎯 Found calendar event from ${primaryRelay}:`,
-                  nostrEvent,
-                );
-
-                const calendarEvent: NostrCalendarEvent = {
-                  id: nostrEvent.id,
-                  kind: nostrEvent.kind,
-                  pubkey: nostrEvent.pubkey,
-                  tags: nostrEvent.tags || [],
-                  content: nostrEvent.content,
-                  dTag: nostrEvent.tags?.find(
-                    (tag: string[]) => tag[0] === "d",
-                  )?.[1],
-                  title: nostrEvent.tags?.find(
-                    (tag: string[]) => tag[0] === "title",
-                  )?.[1],
-                  summary: nostrEvent.tags?.find(
-                    (tag: string[]) => tag[0] === "summary",
-                  )?.[1],
-                  description: nostrEvent.content,
-                  location: nostrEvent.tags?.find(
-                    (tag: string[]) => tag[0] === "location",
-                  )?.[1],
-                  start: nostrEvent.tags?.find(
-                    (tag: string[]) => tag[0] === "start",
-                  )?.[1],
-                  end: nostrEvent.tags?.find(
-                    (tag: string[]) => tag[0] === "end",
-                  )?.[1],
-                  created_at: nostrEvent.created_at,
-                };
-
-                relayEvents.push(calendarEvent);
-              }
-            } else if (message[0] === "EOSE") {
-              console.log(
-                `📭 End of stored calendar events from ${primaryRelay}`,
-              );
-              clearTimeout(timeout);
-              ws.close();
-              resolve(relayEvents);
-            }
-          } catch (error) {
-            console.error(
-              `💥 Error parsing calendar message from ${primaryRelay}:`,
-              error,
-            );
-          }
-        };
-
-        ws.onerror = (error) => {
-          console.error(`💥 WebSocket error from ${primaryRelay}:`, error);
-          clearTimeout(timeout);
-          reject(error);
-        };
-
-        ws.onclose = () => {
-          console.log(`🔌 Closed calendar connection to ${primaryRelay}`);
-          clearTimeout(timeout);
-          resolve(relayEvents);
-        };
+            events.push(calendarEvent);
+          },
+          error: (error) => {
+            console.error(`💥 Error fetching calendar events:`, error);
+            clearTimeout(timeout);
+            reject(error);
+          },
+          complete: () => {
+            console.log(`📭 End of stored calendar events`);
+            clearTimeout(timeout);
+            resolve(events);
+          },
+        });
       },
     );
 
-    primaryEvents = await eventsPromise;
-    console.log(`📊 Got ${primaryEvents.length} events from primary relay`);
-  } catch (error) {
-    console.warn(
-      `⚠️ Failed to fetch from primary relay ${primaryRelay}:`,
-      error,
-    );
-  }
+    const events = await eventsPromise;
 
-  // Add primary events to allEvents
-  for (const event of primaryEvents) {
-    allEvents.push(event);
-    console.log(`➕ Added primary event:`, event.title || "No title");
-  }
-
-  // Create a set of naddrs for deduplication
-  const existingNaddrs = new Set<string>();
-  for (const event of primaryEvents) {
-    if (event.dTag) {
-      const naddr = encodeNaddr(event.kind, event.pubkey, event.dTag);
-      existingNaddrs.add(naddr);
-    }
-  }
-
-  console.log(`🔍 Existing naddrs from primary relay: ${existingNaddrs.size}`);
-
-  // Now fetch from backup relays and deduplicate
-  for (const relayUrl of backupRelays) {
-    console.log(
-      `🔌 Fetching calendar events from backup relay: ${relayUrl}...`,
-    );
-
-    try {
-      const ws = new WebSocket(relayUrl);
-
-      // Create a promise that resolves when we get events
-      const eventsPromise = new Promise<NostrCalendarEvent[]>(
-        (resolve, reject) => {
-          const timeout = setTimeout(() => {
-            console.log(`⏰ Timeout on ${relayUrl}`);
-            ws.close();
-            reject(new Error("Timeout"));
-          }, 8000); // Shorter timeout for backup relays
-
-          ws.onopen = () => {
-            console.log(`✅ Connected to ${relayUrl} for calendar events`);
-
-            // Send REQ message for calendar events
-            const reqMessage = JSON.stringify([
-              "REQ",
-              "calendar-events-sub",
-              filter,
-            ]);
-
-            console.log(`📤 Sending calendar REQ to ${relayUrl}:`, reqMessage);
-            ws.send(reqMessage);
-          };
-
-          const relayEvents: NostrCalendarEvent[] = [];
-
-          ws.onmessage = (event) => {
-            try {
-              const message = JSON.parse(event.data);
-              console.log(`📨 Calendar message from ${relayUrl}:`, message);
-
-              if (message[0] === "EVENT") {
-                const [type, subscriptionId, nostrEvent] = message;
-
-                if (subscriptionId === "calendar-events-sub") {
-                  console.log(
-                    `🎯 Found calendar event from ${relayUrl}:`,
-                    nostrEvent,
-                  );
-
-                  const calendarEvent: NostrCalendarEvent = {
-                    id: nostrEvent.id,
-                    kind: nostrEvent.kind,
-                    pubkey: nostrEvent.pubkey,
-                    tags: nostrEvent.tags || [],
-                    content: nostrEvent.content,
-                    dTag: nostrEvent.tags?.find(
-                      (tag: string[]) => tag[0] === "d",
-                    )?.[1],
-                    title: nostrEvent.tags?.find(
-                      (tag: string[]) => tag[0] === "title",
-                    )?.[1],
-                    summary: nostrEvent.tags?.find(
-                      (tag: string[]) => tag[0] === "summary",
-                    )?.[1],
-                    description: nostrEvent.content,
-                    location: nostrEvent.tags?.find(
-                      (tag: string[]) => tag[0] === "location",
-                    )?.[1],
-                    start: nostrEvent.tags?.find(
-                      (tag: string[]) => tag[0] === "start",
-                    )?.[1],
-                    end: nostrEvent.tags?.find(
-                      (tag: string[]) => tag[0] === "end",
-                    )?.[1],
-                    created_at: nostrEvent.created_at,
-                  };
-
-                  relayEvents.push(calendarEvent);
-                }
-              } else if (message[0] === "EOSE") {
-                console.log(
-                  `📭 End of stored calendar events from ${relayUrl}`,
-                );
-                clearTimeout(timeout);
-                ws.close();
-                resolve(relayEvents);
-              }
-            } catch (error) {
-              console.error(
-                `💥 Error parsing calendar message from ${relayUrl}:`,
-                error,
-              );
-            }
-          };
-
-          ws.onerror = (error) => {
-            console.error(`💥 WebSocket error from ${relayUrl}:`, error);
-            clearTimeout(timeout);
-            reject(error);
-          };
-
-          ws.onclose = () => {
-            console.log(`🔌 Closed calendar connection to ${relayUrl}`);
-            clearTimeout(timeout);
-            resolve(relayEvents);
-          };
-        },
-      );
-
-      // Wait for events or timeout
-      const relayEvents = await eventsPromise;
-
-      // Add events from this relay, deduplicating by naddr
-      for (const event of relayEvents) {
-        if (event.dTag) {
-          const naddr = encodeNaddr(event.kind, event.pubkey, event.dTag);
-
-          if (!existingNaddrs.has(naddr)) {
-            allEvents.push(event);
-            existingNaddrs.add(naddr);
-            console.log(
-              `➕ Added backup event from ${relayUrl}:`,
-              event.title || "No title",
-            );
-          } else {
-            console.log(
-              `🔁 Duplicate event skipped by naddr:`,
-              event.title || "No title",
-            );
-          }
+    // Deduplicate events by naddr
+    const existingNaddrs = new Set<string>();
+    for (const event of events) {
+      if (event.dTag) {
+        const naddr = naddrEncode({
+          kind: event.kind,
+          pubkey: event.pubkey,
+          identifier: event.dTag,
+        });
+        if (!existingNaddrs.has(naddr)) {
+          allEvents.push(event);
+          existingNaddrs.add(naddr);
+          console.log(`➕ Added event:`, event.title || "No title");
         } else {
-          // For events without dTag, use old method as fallback
-          const exists = allEvents.some(
-            (e) =>
-              e.dTag === event.dTag &&
-              e.pubkey === event.pubkey &&
-              e.kind === event.kind,
+          console.log(
+            `🔁 Duplicate event skipped by naddr:`,
+            event.title || "No title",
           );
+        }
+      } else {
+        // For events without dTag, use old method as fallback
+        const exists = allEvents.some(
+          (e) =>
+            e.dTag === event.dTag &&
+            e.pubkey === event.pubkey &&
+            e.kind === event.kind,
+        );
 
-          if (!exists) {
-            allEvents.push(event);
-            console.log(
-              `➕ Added backup event (no dTag) from ${relayUrl}:`,
-              event.title || "No title",
-            );
-          } else {
-            console.log(
-              `🔁 Duplicate event skipped (no dTag):`,
-              event.title || "No title",
-            );
-          }
+        if (!exists) {
+          allEvents.push(event);
+          console.log(`➕ Added event (no dTag):`, event.title || "No title");
+        } else {
+          console.log(
+            `🔁 Duplicate event skipped (no dTag):`,
+            event.title || "No title",
+          );
         }
       }
-    } catch (error) {
-      console.warn(
-        `⚠️ Failed to fetch calendar events from ${relayUrl}:`,
-        error,
-      );
-      // Continue to next relay
     }
-  }
 
-  console.log(`📊 Total calendar events fetched: ${allEvents.length}`);
-  console.log(
-    `📅 Calendar events summary:`,
-    allEvents.map((e) => ({
-      id: e.id,
-      kind: e.kind,
-      title: e.title,
-      start: e.start,
-    })),
-  );
+    console.log(`📊 Total calendar events fetched: ${allEvents.length}`);
+    console.log(
+      `📅 Calendar events summary:`,
+      allEvents.map((e) => ({
+        id: e.id,
+        kind: e.kind,
+        title: e.title,
+        start: e.start,
+      })),
+    );
+  } catch (error) {
+    console.warn(`⚠️ Failed to fetch calendar events:`, error);
+  }
 
   // Sort events by creation time (newest first)
   return allEvents.sort((a, b) => b.created_at - a.created_at);
@@ -393,112 +200,6 @@ export function convertNostrEventToCalendar(event: NostrCalendarEvent) {
         .map((tag) => tag[1]) || [],
     created_at: event.created_at,
   };
-}
-
-// Filter events for calendar view
-export function filterEventsForTimeRange(
-  events: NostrCalendarEvent[],
-  startDate: Date,
-  endDate: Date,
-) {
-  return events.filter((event) => {
-    if (!event.start) return false;
-
-    const eventStart = new Date(parseInt(event.start) * 1000);
-
-    // Include event if it overlaps with the time range
-    return (
-      eventStart <= endDate &&
-      (!event.end || new Date(parseInt(event.end) * 1000) >= startDate)
-    );
-  });
-}
-
-// Get upcoming events
-export function getUpcomingNostrEvents(events: NostrCalendarEvent[]) {
-  const now = new Date();
-  return events.filter((event) => {
-    if (!event.start) return false;
-    const eventStart = new Date(parseInt(event.start) * 1000);
-    return eventStart >= now;
-  });
-}
-
-// Get past events
-export function getPastNostrEvents(events: NostrCalendarEvent[]) {
-  const now = new Date();
-  return events.filter((event) => {
-    if (!event.start) return false;
-    const eventStart = new Date(parseInt(event.start) * 1000);
-    return eventStart < now;
-  });
-}
-
-// Generate naddr for a nostr event using proper nostr-tools encoding
-export function generateNaddr(event: NostrCalendarEvent): string {
-  return encodeNaddr(event.kind, event.pubkey, event.dTag || "");
-}
-
-// Proper naddr encoding using nostr-tools library
-export function encodeNaddr(
-  kind: number,
-  pubkey: string,
-  identifier: string,
-): string {
-  try {
-    // Ensure pubkey is a valid 64-character hex string (32 bytes)
-    let cleanPubkey = pubkey;
-
-    // If pubkey starts with '0x', remove it
-    if (cleanPubkey.startsWith("0x")) {
-      cleanPubkey = cleanPubkey.slice(2);
-    }
-
-    // If pubkey is 65 characters (might have extra character), trim it
-    if (cleanPubkey.length === 65) {
-      cleanPubkey = cleanPubkey.slice(0, 64);
-    }
-
-    // If pubkey is shorter than 64 characters, pad it (though this shouldn't happen with valid keys)
-    if (cleanPubkey.length < 64) {
-      cleanPubkey = cleanPubkey.padStart(64, "0");
-    }
-
-    // Validate hex format
-    if (!/^[0-9a-fA-F]{64}$/.test(cleanPubkey)) {
-      throw new Error(
-        `Invalid pubkey format: ${cleanPubkey}. Expected 64-character hex string.`,
-      );
-    }
-
-    console.log(
-      `🔧 Cleaned pubkey for naddr: ${cleanPubkey} (original: ${pubkey})`,
-    );
-
-    const addr = {
-      kind: kind,
-      pubkey: cleanPubkey,
-      identifier: identifier,
-    };
-
-    const naddr = nip19.naddrEncode(addr);
-    console.log(`✅ Generated naddr: ${naddr}`);
-    return naddr;
-  } catch (error) {
-    console.error("Error encoding naddr:", error);
-    console.error("Details:", { kind, pubkey, identifier });
-
-    // Fallback to simple encoding if nostr-tools fails
-    try {
-      const fallback = `naddr1${btoa(`${kind}:${pubkey}:${identifier}`).replace(/\+/g, "-").replace(/\//g, "").replace(/=/g, "")}`;
-      console.log("Using fallback naddr:", fallback);
-      return fallback;
-    } catch (fallbackError) {
-      console.error("Fallback encoding also failed:", fallbackError);
-      // Return a basic identifier as last resort
-      return `event-${identifier}`;
-    }
-  }
 }
 
 // Publish a calendar event to nostr relays
@@ -604,10 +305,65 @@ export async function publishNostrEvent(
     console.log("📝 Created nostr event:", event);
 
     // Generate naddr for the event
-    const naddr = encodeNaddr(kind, userPubkey, dTag);
+    const naddr = naddrEncode({ kind, pubkey: userPubkey, identifier: dTag });
     console.log("🔗 Generated naddr:", naddr);
 
-    // Actually publish to relays using WebSocket connections
+    // Create a properly signed event
+    let signedEvent;
+
+    if (window.nostr && pubkey) {
+      // Use Nostr extension for signing
+      console.log(
+        `🔑 Using Nostr extension for signing with pubkey: ${pubkey}`,
+      );
+      const eventForExtension = {
+        ...event,
+        pubkey: pubkey,
+      };
+      signedEvent = await window.nostr.signEvent(eventForExtension);
+      console.log(`✅ Event signed with extension:`, signedEvent.id);
+    } else if (privateKey === "mock-private-key-for-demo") {
+      // For demo purposes, generate a temporary key pair
+      const tempSecretKey = generateSecretKey();
+      const tempPubkey = getPublicKey(tempSecretKey);
+
+      signedEvent = finalizeEvent(event, tempSecretKey);
+      console.log(`🔑 Generated temporary keypair for demo:`, {
+        pubkey: tempPubkey,
+        eventId: signedEvent.id,
+      });
+    } else if (privateKey) {
+      // Use provided private key for signing
+      // Convert hex string to Uint8Array
+      let privateKeyBytes: Uint8Array;
+
+      // Check if it's an nsec
+      if (privateKey.startsWith("nsec")) {
+        const { type, data } = decodePointer(privateKey);
+        if (type === "nsec") {
+          privateKeyBytes = data as Uint8Array;
+        } else {
+          throw new Error("Invalid nsec format");
+        }
+      } else {
+        // Convert hex string to Uint8Array
+        const cleanHex = privateKey.startsWith("0x")
+          ? privateKey.slice(2)
+          : privateKey;
+        if (cleanHex.length !== 64) {
+          throw new Error("Private key must be 64 hex characters (32 bytes)");
+        }
+        privateKeyBytes = new Uint8Array(
+          cleanHex.match(/.{2}/g)?.map((byte) => parseInt(byte, 16)) || [],
+        );
+      }
+
+      signedEvent = finalizeEvent(event, privateKeyBytes);
+    } else {
+      throw new Error("No private key or extension available for signing");
+    }
+
+    // Actually publish to relays using RelayPool
     const relays = [
       "wss://relay.damus.io",
       "wss://relay.snort.social",
@@ -615,182 +371,51 @@ export async function publishNostrEvent(
     ];
 
     console.log("📡 Publishing to relays:", relays);
-    console.log("📝 Event data:", event);
-
-    let publishSuccess = false;
-    let publishedEventId = "";
-    const publishPromises: Promise<void>[] = [];
-
-    // Publish to each relay
-    for (const relayUrl of relays) {
-      const publishPromise = new Promise<void>((resolve, reject) => {
-        const ws = new WebSocket(relayUrl);
-        const timeout = setTimeout(() => {
-          console.log(`⏰ Publish timeout on ${relayUrl}`);
-          ws.close();
-          reject(new Error("Publish timeout"));
-        }, 10000);
-
-        ws.onopen = async () => {
-          console.log(`✅ Connected to ${relayUrl} for publishing`);
-
-          // Create a properly signed event
-          let signedEvent;
-
-          if (window.nostr && pubkey) {
-            // Use Nostr extension for signing
-            console.log(
-              `🔑 Using Nostr extension for signing with pubkey: ${pubkey}`,
-            );
-            const eventForExtension = {
-              ...event,
-              pubkey: pubkey,
-            };
-            signedEvent = await window.nostr.signEvent(eventForExtension);
-            console.log(`✅ Event signed with extension:`, signedEvent.id);
-          } else if (privateKey === "mock-private-key-for-demo") {
-            // For demo purposes, generate a temporary key pair
-            const tempSecretKey = generateSecretKey();
-            const tempPubkey = getPublicKey(tempSecretKey);
-
-            signedEvent = finalizeEvent(event, tempSecretKey);
-            console.log(`🔑 Generated temporary keypair for demo:`, {
-              pubkey: tempPubkey,
-              eventId: signedEvent.id,
-            });
-          } else if (privateKey) {
-            // Use provided private key for signing
-            // Convert hex string to Uint8Array for nostr-tools
-            let privateKeyBytes: Uint8Array;
-
-            // Check if it's an nsec
-            if (privateKey.startsWith("nsec")) {
-              const { type, data } = nip19.decode(privateKey);
-              if (type === "nsec") {
-                privateKeyBytes = data as Uint8Array;
-              } else {
-                throw new Error("Invalid nsec format");
-              }
-            } else {
-              // Convert hex string to Uint8Array
-              const cleanHex = privateKey.startsWith("0x")
-                ? privateKey.slice(2)
-                : privateKey;
-              if (cleanHex.length !== 64) {
-                throw new Error(
-                  "Private key must be 64 hex characters (32 bytes)",
-                );
-              }
-              privateKeyBytes = new Uint8Array(
-                cleanHex.match(/.{2}/g)?.map((byte) => parseInt(byte, 16)) ||
-                  [],
-              );
-            }
-
-            signedEvent = finalizeEvent(event, privateKeyBytes);
-          } else {
-            throw new Error(
-              "No private key or extension available for signing",
-            );
-          }
-
-          console.log(`📤 Publishing event to ${relayUrl}:`, signedEvent);
-
-          // Send EVENT message
-          const publishMessage = JSON.stringify(["EVENT", signedEvent]);
-          ws.send(publishMessage);
-        };
-
-        ws.onmessage = (message) => {
-          try {
-            const response = JSON.parse(message.data);
-            console.log(`📨 Publish response from ${relayUrl}:`, response);
-
-            if (response[0] === "OK") {
-              const [, eventId, success, message] = response;
-              if (success && eventId) {
-                console.log(
-                  `✅ Successfully published to ${relayUrl}:`,
-                  eventId,
-                );
-                if (!publishedEventId) {
-                  publishedEventId = eventId;
-                }
-                publishSuccess = true;
-                clearTimeout(timeout);
-                ws.close();
-                resolve();
-              } else {
-                console.warn(`❌ Publish failed on ${relayUrl}:`, message);
-                clearTimeout(timeout);
-                ws.close();
-                reject(new Error(message || "Publish failed"));
-              }
-            }
-          } catch (error) {
-            console.error(
-              `💥 Error parsing publish response from ${relayUrl}:`,
-              error,
-            );
-          }
-        };
-
-        ws.onerror = (error) => {
-          console.error(`💥 WebSocket error from ${relayUrl}:`, error);
-          clearTimeout(timeout);
-          reject(error);
-        };
-
-        ws.onclose = () => {
-          console.log(`🔌 Closed publish connection to ${relayUrl}`);
-          clearTimeout(timeout);
-          if (!publishSuccess) {
-            reject(new Error("Connection closed without successful publish"));
-          }
-        };
-      });
-
-      publishPromises.push(publishPromise);
-    }
+    console.log("📝 Event data:", signedEvent);
 
     try {
-      // Wait for at least one successful publish
-      await Promise.race([
-        Promise.any(publishPromises),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("All publishes timed out")), 15000),
-        ),
-      ]);
+      // Use pool.publish() which handles retries and reconnection automatically
+      const responses = await pool.publish(relays, signedEvent);
 
-      if (publishSuccess && publishedEventId) {
+      // Check if at least one relay accepted the event
+      const successfulResponses = responses.filter((r) => r.ok);
+      const failedResponses = responses.filter((r) => !r.ok);
+
+      if (successfulResponses.length > 0) {
         console.log("✅ Event successfully published to at least one relay!");
-        console.log(`  🆔 Event ID: ${publishedEventId}`);
+        console.log(`  🆔 Event ID: ${signedEvent.id}`);
         console.log(`  🔗 Naddr: ${naddr}`);
         console.log(`  📅 Kind: ${kind} (${formData.eventType})`);
         console.log(`  🏷️  D-Tag: ${dTag}`);
         console.log(`  👤 Pubkey: ${userPubkey}`);
+        console.log(
+          `  ✅ Published to ${successfulResponses.length}/${responses.length} relays`,
+        );
+
+        if (failedResponses.length > 0) {
+          console.warn(
+            `  ⚠️ Failed on ${failedResponses.length} relays:`,
+            failedResponses.map((r) => `${r.from}: ${r.message}`),
+          );
+        }
 
         return {
           success: true,
-          eventId: publishedEventId,
+          eventId: signedEvent.id,
           naddr: naddr,
         };
       } else {
-        throw new Error("Failed to publish to any relay");
-      }
-    } catch (error) {
-      console.error("💥 All publish attempts failed:", error);
-
-      // Check if we got partial success
-      if (publishSuccess && publishedEventId) {
-        console.log("⚠️ Partial success - event published to some relays");
+        const errorMessages = failedResponses
+          .map((r) => `${r.from}: ${r.message}`)
+          .join("; ");
+        console.error("❌ Failed to publish to all relays:", errorMessages);
         return {
-          success: true,
-          eventId: publishedEventId,
-          naddr: naddr,
+          success: false,
+          error: errorMessages || "Failed to publish to relays",
         };
       }
-
+    } catch (error) {
+      console.error("💥 Error publishing event:", error);
       return {
         success: false,
         error:

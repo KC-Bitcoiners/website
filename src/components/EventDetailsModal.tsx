@@ -1,7 +1,7 @@
 import React from "react";
 import { CalendarEvent } from "../types/calendar";
 import { XIcon } from "./Icons";
-import { encodeNaddr } from "../utils/nostrEvents";
+import { naddrEncode } from "applesauce-core/helpers";
 
 interface EventDetailsModalProps {
   event: CalendarEvent | null;
@@ -246,7 +246,11 @@ export default function EventDetailsModal({
             event.id.startsWith("nostr-") &&
             event.dTag &&
             (() => {
-              const naddr = encodeNaddr(event.kind, event.pubkey, event.dTag);
+              const naddr = naddrEncode({
+                kind: event.kind,
+                pubkey: event.pubkey,
+                identifier: event.dTag,
+              });
               console.log("🔗 Generated naddr for nostr event:", {
                 eventId: event.id,
                 kind: event.kind,
@@ -263,7 +267,7 @@ export default function EventDetailsModal({
                 </h4>
                 <div className="text-gray-600">
                   <a
-                    href={`https://plektos.app/event/${encodeNaddr(event.kind, event.pubkey, event.dTag)}`}
+                    href={`https://plektos.app/event/${naddrEncode({ kind: event.kind, pubkey: event.pubkey, identifier: event.dTag })}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition-colors"

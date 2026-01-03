@@ -1,11 +1,7 @@
 import { GetStaticProps, InferGetStaticPropsType } from "next";
 import EventCard from "../components/EventCard";
 import { generateICalendarFile } from "../utils/icalendar";
-import {
-  fetchMeetupEvents,
-  getVenueAddress,
-  MeetupGroup,
-} from "../utils/meetup";
+import { fetchMeetupEvents, getVenueAddress, MeetupGroup } from "../lib/meetup";
 
 interface EventsPageProps {
   group: MeetupGroup | null;

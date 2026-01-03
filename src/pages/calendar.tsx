@@ -12,11 +12,7 @@ import {
   getUpcomingEvents,
   getPastEvents,
 } from "../utils/calendar";
-import {
-  fetchMeetupEvents,
-  getVenueAddress,
-  MeetupGroup,
-} from "../utils/meetup";
+import { fetchMeetupEvents, getVenueAddress, MeetupGroup } from "../lib/meetup";
 import {
   fetchNostrCalendarEvents,
   convertNostrEventToCalendar,

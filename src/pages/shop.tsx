@@ -2,8 +2,10 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import VendorForm from "@/components/VendorForm";
 import { useNostr } from "@/contexts/NostrContext";
-import { SimplePool, getEventHash } from "nostr-tools";
 import { fetchBTCMapVendors, BTCMapVendor } from "@/utils/btcmap";
+import { pool } from "@/lib/nostr";
+import type { Icon, LatLngBounds, DivIcon } from "leaflet";
+import { getEventHash, type NostrEvent } from "applesauce-core/helpers/event";
 
 // Relay configuration for Nostr operations
 const RELAYS = [
@@ -33,9 +35,9 @@ const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), {
 });
 
 // Import Leaflet components only on client side
-let Icon: any = null;
-let LatLngBounds: any = null;
-let DivIcon: any = null;
+let LeafletIcon: typeof Icon | null = null;
+let LeafletLatLngBounds: typeof LatLngBounds | null = null;
+let LeafletDivIcon: typeof DivIcon | null = null;
 
 interface NostrVendor {
   id: string;
@@ -68,8 +70,6 @@ type SortField = keyof NostrVendor | "submitterName";
 type SortDirection = "asc" | "desc";
 
 export default function ShopPage() {
-  // Initialize Nostr pool with useMemo to prevent recreation on every render
-  const pool = useMemo(() => new SimplePool(), []);
   const { user } = useNostr();
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
@@ -102,7 +102,6 @@ export default function ShopPage() {
     npub: string,
   ): Promise<{ name?: string; picture?: string }> => {
     try {
-      const pool = new SimplePool();
       const relays = ["wss://relay.damus.io", "wss://nos.lol"];
 
       const filter = {
@@ -110,7 +109,29 @@ export default function ShopPage() {
         authors: [npub],
       };
 
-      const events = await pool.querySync(relays, filter);
+      const eventsPromise = new Promise<NostrEvent[]>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error("Request timeout"));
+        }, 10000); // 10 second timeout
+
+        const events: NostrEvent[] = [];
+
+        pool.request(relays, filter).subscribe({
+          next: (event: NostrEvent) => {
+            events.push(event);
+          },
+          error: (error) => {
+            clearTimeout(timeout);
+            reject(error);
+          },
+          complete: () => {
+            clearTimeout(timeout);
+            resolve(events);
+          },
+        });
+      });
+
+      const events = await eventsPromise;
       if (events.length > 0) {
         const metadata = JSON.parse(events[0].content);
         return {
@@ -118,8 +139,6 @@ export default function ShopPage() {
           picture: metadata.picture,
         };
       }
-
-      pool.close(relays);
     } catch (error) {
       console.warn("Failed to fetch profile for", npub, error);
     }
@@ -133,7 +152,6 @@ export default function ShopPage() {
       setNostrError(null);
 
       try {
-        const pool = new SimplePool();
         const relays = [
           "wss://relay.damus.io",
           "wss://nos.lol",
@@ -145,7 +163,32 @@ export default function ShopPage() {
           limit: 100,
         };
 
-        const events = await pool.querySync(relays, filter);
+        const eventsPromise = new Promise<NostrEvent[]>((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            console.log(`⏰ Request timeout`);
+            reject(new Error("Request timeout"));
+          }, 30000); // 30 second timeout for all relays
+
+          const events: NostrEvent[] = [];
+
+          pool.request(relays, filter).subscribe({
+            next: (event: NostrEvent) => {
+              events.push(event);
+            },
+            error: (error) => {
+              console.error(`💥 Error fetching vendor events:`, error);
+              clearTimeout(timeout);
+              reject(error);
+            },
+            complete: () => {
+              console.log(`📭 End of stored vendor events`);
+              clearTimeout(timeout);
+              resolve(events);
+            },
+          });
+        });
+
+        const events = await eventsPromise;
         console.log(
           "📝 Fetching nostr events:",
           events.length,
@@ -168,13 +211,15 @@ export default function ShopPage() {
 
             // Extract dTag from tags for replaceable events
             const dTag =
-              event.tags.find((tag) => tag[0] === "d")?.[1] ||
+              event.tags.find((tag: string[]) => tag[0] === "d")?.[1] ||
               `vendor-${event.id}`;
 
             // Parse lat/lon from location tag if available
             let lat: number | undefined;
             let lon: number | undefined;
-            const locationTag = event.tags.find((tag) => tag[0] === "location");
+            const locationTag = event.tags.find(
+              (tag: string[]) => tag[0] === "location",
+            );
             if (locationTag && locationTag[1]) {
               const coords = locationTag[1].split(",");
               if (coords.length === 2) {
@@ -232,8 +277,6 @@ export default function ShopPage() {
             `📊 Nostr vendor summary: ${vendors.length} valid vendors found`,
           );
         }
-
-        pool.close(relays);
       } catch (error) {
         console.error("Error fetching nostr vendors:", error);
         setNostrError(
@@ -253,13 +296,14 @@ export default function ShopPage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       import("leaflet").then((leaflet) => {
-        Icon = leaflet.Icon;
-        LatLngBounds = leaflet.LatLngBounds;
-        DivIcon = leaflet.DivIcon;
+        LeafletIcon = leaflet.Icon;
+        LeafletLatLngBounds = leaflet.LatLngBounds;
+        LeafletDivIcon = leaflet.DivIcon;
 
         // Fix for default markers in react-leaflet
-        delete (Icon.Default.prototype as any)._getIconUrl;
-        Icon.Default.mergeOptions({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        delete (LeafletIcon.Default.prototype as any)._getIconUrl;
+        LeafletIcon.Default.mergeOptions({
           iconRetinaUrl:
             "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
           iconUrl:
@@ -327,8 +371,12 @@ export default function ShopPage() {
 
     // Apply sorting
     result.sort((a, b) => {
-      let aValue: any = a[sortField as keyof (NostrVendor | BTCMapVendor)];
-      let bValue: any = b[sortField as keyof (NostrVendor | BTCMapVendor)];
+      let aValue: string | number | undefined = a[
+        sortField as keyof (NostrVendor | BTCMapVendor)
+      ] as string | number | undefined;
+      let bValue: string | number | undefined = b[
+        sortField as keyof (NostrVendor | BTCMapVendor)
+      ] as string | number | undefined;
 
       if (sortField === "submitterName") {
         if ("submitterName" in a) {
@@ -349,6 +397,10 @@ export default function ShopPage() {
         aValue = aValue.toLowerCase();
         bValue = bValue.toLowerCase();
       }
+
+      // Handle undefined/null values
+      if (aValue === undefined || aValue === null) aValue = "";
+      if (bValue === undefined || bValue === null) bValue = "";
 
       if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
       if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
@@ -414,7 +466,9 @@ export default function ShopPage() {
 
       // Sign the event using the user's signing method
       if (!window.nostr) {
-        throw new Error("Nostr extension not found. Please install a Nostr extension like Nos2x or Snort.");
+        throw new Error(
+          "Nostr extension not found. Please install a Nostr extension like Nos2x or Snort.",
+        );
       }
       const signedEvent = await window.nostr.signEvent(deleteEventTemplate);
 
@@ -425,19 +479,25 @@ export default function ShopPage() {
       };
 
       // Publish the delete event to relays
-      await Promise.all(
-        RELAYS.map(async (relayUrl) => {
-          try {
-            const relay = await pool.ensureRelay(relayUrl);
-            await relay.publish(deleteEvent);
-          } catch (error) {
-            console.error(
-              `Failed to publish delete event to ${relayUrl}:`,
-              error,
-            );
-          }
-        }),
-      );
+      const responses = await pool.publish(RELAYS, deleteEvent);
+
+      // Check if at least one relay accepted the event
+      const successfulResponses = responses.filter((r) => r.ok);
+      const failedResponses = responses.filter((r) => !r.ok);
+
+      if (successfulResponses.length === 0) {
+        const errorMessages = failedResponses
+          .map((r) => `${r.from}: ${r.message}`)
+          .join("; ");
+        throw new Error(`Failed to publish to all relays: ${errorMessages}`);
+      }
+
+      if (failedResponses.length > 0) {
+        console.warn(
+          `⚠️ Failed on ${failedResponses.length} relays:`,
+          failedResponses.map((r) => `${r.from}: ${r.message}`),
+        );
+      }
 
       // Update local state to remove the deleted vendor
       setNostrVendors((prev) => prev.filter((v) => v.id !== vendor.id));
@@ -446,7 +506,7 @@ export default function ShopPage() {
       setSuccessMessage({
         eventId: deleteEvent.id,
         naddr: `Deleted "${vendor.name}" from the directory`,
-      } as any);
+      });
     } catch (error) {
       console.error("Error deleting vendor:", error);
       alert("Failed to delete vendor. Please try again.");
@@ -454,9 +514,12 @@ export default function ShopPage() {
   };
 
   // Create custom pin icon
-  const createPinIcon = (hasLightning: boolean, hasOnchain: boolean) => {
-    if (!DivIcon || typeof window === "undefined") {
-      return null; // Return null if DivIcon is not available (SSR)
+  const createPinIcon = (
+    hasLightning: boolean,
+    hasOnchain: boolean,
+  ): DivIcon | undefined => {
+    if (!LeafletDivIcon || typeof window === "undefined") {
+      return undefined; // Return undefined if DivIcon is not available (SSR)
     }
 
     // Use Bitcoin symbol by default, Lightning if available
@@ -468,7 +531,7 @@ export default function ShopPage() {
       </div>
     `;
 
-    return new DivIcon({
+    return new LeafletDivIcon({
       html: iconHtml,
       className: "custom-div-icon",
       iconSize: [32, 32],
@@ -649,11 +712,13 @@ export default function ShopPage() {
                   zoom={12}
                   style={{ height: "100%", width: "100%" }}
                   bounds={
-                    new LatLngBounds(
-                      filteredAndSortedVendors
-                        .filter((v) => v.lat && v.lon)
-                        .map((v) => [v.lat!, v.lon!] as [number, number]),
-                    )
+                    LeafletLatLngBounds
+                      ? new LeafletLatLngBounds(
+                          filteredAndSortedVendors
+                            .filter((v) => v.lat && v.lon)
+                            .map((v) => [v.lat!, v.lon!] as [number, number]),
+                        )
+                      : undefined
                   }
                   boundsOptions={{ padding: [50, 50] }}
                 >
@@ -677,7 +742,9 @@ export default function ShopPage() {
                         <Marker
                           key={vendor.id}
                           position={[vendor.lat!, vendor.lon!]}
-                          icon={createPinIcon(hasLightning, hasOnchain)}
+                          icon={
+                            createPinIcon(hasLightning, hasOnchain) ?? undefined
+                          }
                           eventHandlers={{
                             click: () => scrollToVendor(vendor.id),
                             mouseover: (e) => {

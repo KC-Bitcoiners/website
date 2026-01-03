@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
 import { useNostr } from "@/contexts/NostrContext";
+import { naddrEncode } from "applesauce-core/helpers";
+import { useEffect, useState } from "react";
 import { XIcon } from "./Icons";
-import { generateVendorNaddr } from "@/utils/vendorAttestations";
 
 // RochesterKC business data
 const ROCHESTERKC_DATA = {
@@ -475,7 +475,11 @@ export default function VendorForm({
 
       if (publishSuccess && publishedEventId) {
         // Generate proper naddr for event
-        const naddr = generateVendorNaddr(30333, user.pubkey, dTag);
+        const naddr = naddrEncode({
+          kind: 30333,
+          pubkey: user.pubkey,
+          identifier: dTag,
+        });
 
         console.log("✅ Vendor successfully published to Nostr!");
         console.log(`🆔 Event ID: ${publishedEventId}`);

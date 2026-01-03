@@ -1,23 +1,4 @@
-export interface NostrEvent {
-  id: string;
-  pubkey: string;
-  created_at: number;
-  kind: number;
-  tags: string[][];
-  content: string;
-  sig: string;
-}
-
-export interface NostrFilter {
-  ids?: string[];
-  kinds?: number[];
-  authors?: string[];
-  since?: number;
-  until?: number;
-  limit?: number;
-  "#d"?: string[];
-  [key: `#${string}`]: string[] | number | undefined;
-}
+import { NostrEvent } from "applesauce-core/helpers/event";
 
 // Simple nostr utilities for basic functionality
 export class NostrUtils {

@@ -1,4 +1,4 @@
-import { nip19 } from "nostr-tools";
+import { naddrEncode } from "applesauce-core/helpers";
 
 export interface VendorData {
   name: string;
@@ -25,71 +25,6 @@ export interface VendorAttestation {
   created_at: number;
   dTag?: string;
   vendorData?: VendorData;
-}
-
-// Generate naddr for a vendor event using proper nostr-tools encoding
-export function generateVendorNaddr(
-  kind: number,
-  pubkey: string,
-  identifier: string,
-): string {
-  try {
-    // Ensure pubkey is a valid 64-character hex string (32 bytes)
-    let cleanPubkey = pubkey;
-
-    // If pubkey starts with '0x', remove it
-    if (cleanPubkey.startsWith("0x")) {
-      cleanPubkey = cleanPubkey.slice(2);
-    }
-
-    // If pubkey is 65 characters (might have extra character), trim it
-    if (cleanPubkey.length === 65) {
-      cleanPubkey = cleanPubkey.slice(0, 64);
-    }
-
-    // If pubkey is shorter than 64 characters, pad it (though this shouldn't happen with valid keys)
-    if (cleanPubkey.length < 64) {
-      cleanPubkey = cleanPubkey.padStart(64, "0");
-    }
-
-    // Validate hex format
-    if (!/^[0-9a-fA-F]{64}$/.test(cleanPubkey)) {
-      throw new Error(
-        `Invalid pubkey format: ${cleanPubkey}. Expected 64-character hex string.`,
-      );
-    }
-
-    console.log(
-      `🔧 Cleaned pubkey for vendor naddr: ${cleanPubkey} (original: ${pubkey})`,
-    );
-
-    const addr = {
-      kind: kind,
-      pubkey: cleanPubkey,
-      identifier: identifier,
-    };
-
-    const naddr = nip19.naddrEncode(addr);
-    console.log(`✅ Generated vendor naddr: ${naddr}`);
-    return naddr;
-  } catch (error) {
-    console.error("Error encoding vendor naddr:", error);
-    console.error("Details:", { kind, pubkey, identifier });
-
-    // Fallback to simple encoding if nostr-tools fails
-    try {
-      const fallback = `naddr1${btoa(`${kind}:${pubkey}:${identifier}`).replace(/\+/g, "-").replace(/\//g, "").replace(/=/g, "")}`;
-      console.log("Using fallback vendor naddr:", fallback);
-      return fallback;
-    } catch (fallbackError) {
-      console.error(
-        "Fallback vendor naddr encoding also failed:",
-        fallbackError,
-      );
-      // Return a basic identifier as last resort
-      return `vendor-${identifier}`;
-    }
-  }
 }
 
 // Fetch vendor attestations from nostr relays
@@ -253,7 +188,11 @@ export async function fetchVendorAttestations(): Promise<VendorAttestation[]> {
   const existingNaddrs = new Set<string>();
   for (const event of primaryEvents) {
     if (event.dTag) {
-      const naddr = generateVendorNaddr(event.kind, event.pubkey, event.dTag);
+      const naddr = naddrEncode({
+        kind: event.kind,
+        pubkey: event.pubkey,
+        identifier: event.dTag,
+      });
       existingNaddrs.add(naddr);
     }
   }
@@ -375,11 +314,11 @@ export async function fetchVendorAttestations(): Promise<VendorAttestation[]> {
       // Add events from this relay, deduplicating by naddr
       for (const event of relayEvents) {
         if (event.dTag) {
-          const naddr = generateVendorNaddr(
-            event.kind,
-            event.pubkey,
-            event.dTag,
-          );
+          const naddr = naddrEncode({
+            kind: event.kind,
+            pubkey: event.pubkey,
+            identifier: event.dTag,
+          });
 
           if (!existingNaddrs.has(naddr)) {
             allEvents.push(event);
