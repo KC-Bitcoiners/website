@@ -3,7 +3,7 @@ import { EventStore } from "applesauce-core/event-store";
 import { Filter, persistEventsToCache } from "applesauce-core/helpers";
 import { createEventLoaderForStore } from "applesauce-loaders/loaders";
 import { RelayPool } from "applesauce-relay/pool";
-import { KC_BITCOINERS_RELAY } from "../config/const";
+import { KC_BITCOINERS_RELAY } from "@/config";
 
 // Check if we're on the client side
 const isClient = typeof window !== "undefined";

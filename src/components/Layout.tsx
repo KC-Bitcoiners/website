@@ -7,8 +7,6 @@ import { useNostr } from "@/contexts/NostrContext";
 import UserProfile from "./UserProfile";
 import NostrLogin from "./NostrLogin";
 import SocialLinks from "./SocialLinks";
-import { ensureHttpURL } from "applesauce-core/helpers";
-import { KC_BITCOINERS_RELAY } from "../config/const";
 
 function NavLinks({ currentPath }: { currentPath: string }) {
   return (

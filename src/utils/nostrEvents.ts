@@ -1,4 +1,4 @@
-import { getWhitelistFilter, WHITELISTED_NPUBS } from "@/config/whitelist";
+import { getWhitelistFilter, WHITELISTED_NPUBS } from "@/config";
 import { pool } from "@/lib/nostr";
 import {
   decodePointer,

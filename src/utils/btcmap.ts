@@ -1,5 +1,6 @@
 // BTCMap.org API integration
 // Fetches real vendor data from btcmap.org and integrates with our map
+import { btcmapConfig } from "@/config";
 
 export interface BTCMapVendor {
   id: string;
@@ -53,15 +54,8 @@ export const fetchBTCMapVendors = async (bounds?: {
   maxLon: number;
 }): Promise<BTCMapVendor[]> => {
   try {
-    // Default bounds for Kansas City area if not provided
-    const defaultBounds = {
-      minLat: 38.5,
-      maxLat: 39.5,
-      minLon: -95.5,
-      maxLon: -93.5,
-    };
-
-    const bbox = bounds || defaultBounds;
+    // Use provided bounds or default from config
+    const bbox = bounds || btcmapConfig.defaultBounds;
 
     // BTCMap Overpass API endpoint - Fixed syntax
     const overpassQuery = `
@@ -75,7 +69,7 @@ export const fetchBTCMapVendors = async (bounds?: {
       out geom;
     `;
 
-    const overpassUrl = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(overpassQuery.trim())}`;
+    const overpassUrl = `${btcmapConfig.overpassUrl}?data=${encodeURIComponent(overpassQuery.trim())}`;
 
     console.log("🗺️ Fetching BTCMap vendors from:", overpassUrl);
 
@@ -83,7 +77,7 @@ export const fetchBTCMapVendors = async (bounds?: {
       method: "GET",
       headers: {
         Accept: "application/json",
-        "User-Agent": "BitcoinVendorDirectory/1.0",
+        "User-Agent": btcmapConfig.userAgent,
       },
     });
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { socialLinks, SocialLink } from '@/config/socialLinks';
+import { socialLinks, SocialLink } from '@/config';
 import { GitHubIcon } from './Icons';
 
 // Icon mapping - dynamically import icons based on the icon name

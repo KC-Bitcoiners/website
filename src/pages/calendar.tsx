@@ -20,7 +20,7 @@ import {
 } from "../utils/nostrEvents";
 import { PlusIcon } from "../components/Icons";
 import { GetStaticProps, InferGetStaticPropsType } from "next";
-import { WHITELISTED_NPUBS, WHITELISTED_PUBKEYS } from "../config/whitelist";
+import { WHITELISTED_NPUBS, WHITELISTED_PUBKEYS } from "@/config";
 import { useNostr } from "../contexts/NostrContext";
 
 interface CalendarPageProps {

@@ -1,4 +1,4 @@
-import { isWhitelisted } from "@/config/whitelist";
+import { isWhitelisted, nostrRelays } from "@/config";
 import {
   generateSecretKey,
   getPublicKey,
@@ -134,11 +134,7 @@ export function NostrProvider({ children }: NostrProviderProps) {
     try {
       // Follow plektos implementation - use WebSocket connections to relays
       // This avoids CORS issues entirely
-      const relays = [
-        "wss://relay.damus.io",
-        "wss://relay.snort.social",
-        "wss://nos.lol",
-      ];
+      const relays = nostrRelays;
 
       console.log("🌐 Connecting to relays for metadata:", relays);
 
