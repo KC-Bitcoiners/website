@@ -21,6 +21,7 @@ import {
 import { PlusIcon } from "../components/Icons";
 import { GetStaticProps, InferGetStaticPropsType } from "next";
 import { WHITELISTED_NPUBS, WHITELISTED_PUBKEYS } from "../config/whitelist";
+import { calendarConfig } from "@/config";
 import { useNostr } from "../contexts/NostrContext";
 
 interface CalendarPageProps {
@@ -59,7 +60,7 @@ export default function CalendarPage({
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "month" | "week" | "day">(
-    "month",
+    calendarConfig.defaultView,
   );
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(
     null,
@@ -202,6 +203,7 @@ export default function CalendarPage({
 
   // Load nostr events separately in the background
   useEffect(() => {
+    console.log("🚀 USEFFECT FOR NOSTR EVENTS IS RUNNING!!!");
     const loadNostrEvents = async () => {
       console.log("🕰️ Loading nostr events in background...");
       setIsLoadingNostrEvents(true);
@@ -461,7 +463,7 @@ export default function CalendarPage({
   // Function to get color based on event creator
   const getEventColor = (event: CalendarEvent): string => {
     if (event.pubkey === "meetup") {
-      return "bg-bitcoin-orange border-bitcoin-orange"; // Meetup events - bitcoin orange
+      return calendarConfig.meetupColor; // Meetup events color from config
     }
 
     // Find index based on hex format (which nostr events use)
@@ -473,13 +475,8 @@ export default function CalendarPage({
     );
     const colorIndex = Math.max(hexIndex, npubIndex);
 
-    const colors = [
-      "bg-purple-500 border-purple-600", // First whitelisted user - purple
-      "bg-green-500 border-green-600", // Second user - green
-      "bg-yellow-500 border-yellow-600", // Third user - yellow
-      "bg-pink-500 border-pink-600", // Fourth user - pink
-      "bg-indigo-500 border-indigo-600", // Fifth user - indigo
-    ];
+    // Use colors from config
+    const colors = calendarConfig.eventColors;
 
     return colorIndex >= 0
       ? colors[colorIndex % colors.length]
@@ -561,19 +558,19 @@ export default function CalendarPage({
                 <div className="text-lg font-bold text-bitcoin-orange mb-1">
                   {events.length}
                 </div>
-                <div className="text-xs text-gray-600">Total</div>
+                <div className="text-xs text-gray-600">{calendarConfig.statistics.total}</div>
               </div>
               <div className="bg-white border border-gray-200 rounded-lg p-2 text-center shadow-sm">
                 <div className="text-lg font-bold text-green-600 mb-1">
                   {upcomingEvents.length}
                 </div>
-                <div className="text-xs text-gray-600">Upcoming</div>
+                <div className="text-xs text-gray-600">{calendarConfig.statistics.upcoming}</div>
               </div>
               <div className="bg-white border border-gray-200 rounded-lg p-2 text-center shadow-sm">
                 <div className="text-lg font-bold text-gray-600 mb-1">
                   {pastEvents.length}
                 </div>
-                <div className="text-xs text-gray-600">Past</div>
+                <div className="text-xs text-gray-600">{calendarConfig.statistics.past}</div>
               </div>
             </div>
           </div>
@@ -824,8 +821,8 @@ export default function CalendarPage({
                         endDate: new Date(Date.now() + 24 * 60 * 60 * 1000)
                           .toISOString()
                           .split("T")[0],
-                        startTime: "12:00",
-                        endTime: "14:00",
+                        startTime: calendarConfig.defaultEvent.startTime,
+                        endTime: calendarConfig.defaultEvent.endTime,
                         timezone:
                           Intl.DateTimeFormat().resolvedOptions().timeZone,
                         hashtags: [],

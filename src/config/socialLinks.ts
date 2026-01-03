@@ -1,3 +1,5 @@
+import { getSocialLinks } from "./index";
+
 export interface SocialLink {
   name: string;
   url: string;
@@ -5,24 +7,7 @@ export interface SocialLink {
   ariaLabel?: string;
 }
 
-export const socialLinks: SocialLink[] = [
-  {
-    name: 'GitHub',
-    url: 'https://github.com/KC-Bitcoiners/website',
-    icon: 'GitHubIcon',
-    ariaLabel: 'Visit our GitHub repository',
-  },
-  // Future social links can be added here:
-  // {
-  //   name: 'Twitter',
-  //   url: 'https://twitter.com/kc_bitcoin',
-  //   icon: 'TwitterIcon',
-  //   ariaLabel: 'Follow us on Twitter',
-  // },
-  // {
-  //   name: 'LinkedIn',
-  //   url: 'https://linkedin.com/company/kc-bitcoin',
-  //   icon: 'LinkedInIcon',
-  //   ariaLabel: 'Connect with us on LinkedIn',
-  // },
-];
+// Social links now sourced from config.json
+export const socialLinks: SocialLink[] = getSocialLinks();
+
+// Future social links can be added to config.json

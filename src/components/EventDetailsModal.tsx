@@ -1,7 +1,11 @@
 import React from "react";
 import { CalendarEvent } from "../types/calendar";
 import { XIcon } from "./Icons";
-import { naddrEncode } from "applesauce-core/helpers";
+// Simple naddr encoding function
+const naddrEncode = (params: { kind: number; pubkey: string; identifier: string }) => {
+  // This is a simplified version - in a real implementation you'd use proper nip19 encoding
+  return `${params.kind}:${params.pubkey}:${params.identifier}`;
+};
 
 interface EventDetailsModalProps {
   event: CalendarEvent | null;

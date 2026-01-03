@@ -1,4 +1,5 @@
 import { GraphQLClient, gql } from "graphql-request";
+import { getApiConfig } from "@/config";
 
 // TypeScript interfaces for the GraphQL response
 export interface Venue {
@@ -44,6 +45,9 @@ export interface GraphQLResponse {
   groupByUrlname: MeetupGroup;
 }
 
+// Get meetup configuration
+const apiConfig = getApiConfig();
+
 // GraphQL query for fetching events
 const EVENTS_QUERY = gql`
   query GetGroupEvents {
@@ -84,7 +88,7 @@ const EVENTS_QUERY = gql`
 
 // Function to fetch meetup events
 export async function fetchMeetupEvents(): Promise<MeetupGroup> {
-  const client = new GraphQLClient("https://api.meetup.com/gql-ext");
+  const client = new GraphQLClient(apiConfig.meetup.graphqlUrl);
   const data: GraphQLResponse = await client.request(EVENTS_QUERY);
 
   if (!data.groupByUrlname) {

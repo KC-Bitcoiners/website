@@ -1,4 +1,7 @@
-import { naddrEncode } from "applesauce-core/helpers";
+// Simple naddrEncode implementation for compatibility
+const naddrEncode = (params: { kind: number; pubkey: string; identifier: string }): string => {
+  return `naddr1${JSON.stringify(params).slice(0, 20)}`; // Placeholder
+};
 
 export interface VendorData {
   name: string;

@@ -1,0 +1,185 @@
+{
+  "site": {
+    "title": "KC Bitcoin Meetup Group",
+    "description": "Bitcoin only group focused on fostering relationships and building community in Kansas City",
+    "organization": {
+      "name": "KC Bitcoiners",
+      "location": "Kansas City",
+      "coordinates": {
+        "lat": 39.03219,
+        "lon": -94.58101
+      }
+    },
+    "contact": {
+      "meetup": {
+        "urlname": "kansas-city-bitcoin-meetup-group",
+        "url": "https://www.meetup.com/kansas-city-bitcoin-meetup-group/"
+      }
+    }
+  },
+  "nostr": {
+    "relays": [
+      "wss://relay.damus.io",
+      "wss://nos.lol",
+      "wss://relay.snort.social"
+    ],
+    "kcRelay": "wss://kcbtc.hzrd149.com/",
+    "whitelistedNpubs": [
+      "npub16ux4qzg4qjue95vr3q327fzata4n594c9kgh4jmeyn80v8k54nhqg6lra7",
+      "npub1nrswn76gtr6apep95rev06y0cylk2t7utqyw9yn5x7qv8atgn3fscmpv2z",
+      "npub187w4ykkurr3e89mm0rg5p49x6lveqtq0pp0um7qyk6xyrpeerx3s84exkz",
+      "npub1nv5c7sj2zxtjv7uayp2q2mneymm39mfp93wjhl5287y6yp6ey02qrsjhcn",
+      "npub1yvscx9vrmpcmwcmydrm8lauqdpngum4ne8xmkgc2d4rcaxrx7tkswdwzdu"
+    ]
+  },
+  "social": {
+    "links": [
+      {
+        "name": "GitHub",
+        "url": "https://github.com/KC-Bitcoiners/website",
+        "icon": "GitHubIcon",
+        "ariaLabel": "Visit our GitHub repository"
+      }
+    ]
+  },
+  "pages": {
+    "home": {
+      "title": "KC Bitcoiners",
+      "meta": {
+        "title": "KC Bitcoin Meetup Group",
+        "description": "Bitcoin only group focused on fostering relationships and building community in Kansas City"
+      },
+      "hero": {
+        "title": "KC Bitcoiners",
+        "description": "We are a Bitcoin only group focused on fostering relationships and building community. We meet twice monthly throughout the Kansas City metro area.",
+        "topics": {
+          "intro": "Whether you're new to Bitcoin or a long time HODLer this group is for you. Meetups include discussions on topics such as:",
+          "list": [
+            "Economics",
+            "Protocol & Software",
+            "Digital Wallets",
+            "Investing",
+            "Mining",
+            "And all other topics Bitcoin!"
+          ]
+        }
+      },
+      "callToAction": {
+        "title": "Ready to Join the Community?",
+        "buttons": [
+          {
+            "text": "Join Our Meetups",
+            "url": "https://www.meetup.com/kansas-city-bitcoin-meetup-group/",
+            "style": "primary"
+          },
+          {
+            "text": "Support Us",
+            "url": "#",
+            "style": "secondary"
+          }
+        ]
+      }
+    },
+    "events": {
+      "title": "Events",
+      "meta": {
+        "title": "Events - KC Bitcoiners",
+        "description": "Join us for Bitcoin meetups, educational sessions, and community building in Kansas City"
+      },
+      "description": "Join us for Bitcoin meetups, educational sessions, and community building in Kansas City. All skill levels welcome - from Bitcoin beginners to seasoned hodlers!",
+      "sections": {
+        "upcoming": {
+          "title": "Upcoming Events",
+          "emptyMessage": "No upcoming events scheduled at the moment.",
+          "emptySubtext": "Check back soon or follow us on Meetup.com for the latest updates!"
+        },
+        "past": {
+          "title": "Past Events",
+          "showCount": 5,
+          "viewAllText": "View all past events on Meetup.com"
+        },
+        "callToAction": {
+          "title": "Stay Connected",
+          "description": "Don't miss out on any Bitcoin discussions and networking opportunities. Join our Meetup group to get notified about new events and connect with fellow Bitcoin enthusiasts in Kansas City.",
+          "buttonText": "Join Our Meetup Group"
+        }
+      }
+    },
+    "calendar": {
+      "title": "Calendar",
+      "meta": {
+        "title": "Calendar - KC Bitcoiners",
+        "description": "Community calendar for KC Bitcoiners events and meetups"
+      },
+      "defaultView": "month",
+      "eventColors": [
+        "bg-purple-500 border-purple-600",
+        "bg-green-500 border-green-600",
+        "bg-yellow-500 border-yellow-600",
+        "bg-pink-500 border-pink-600",
+        "bg-indigo-500 border-indigo-600"
+      ],
+      "meetupColor": "bg-bitcoin-orange border-bitcoin-orange",
+      "defaultColor": "bg-gray-50 border-gray-200",
+      "statistics": {
+        "total": "Total",
+        "upcoming": "Upcoming",
+        "past": "Past"
+      },
+      "defaultEvent": {
+        "durationHours": 2,
+        "startTime": "12:00",
+        "endTime": "14:00"
+      }
+    },
+    "shop": {
+      "title": "Bitcoin Vendors",
+      "meta": {
+        "title": "Bitcoin Vendors - KC Bitcoiners",
+        "description": "Directory of Bitcoin-accepting businesses in Kansas City"
+      },
+      "description": "Directory of Bitcoin-accepting businesses and vendors in the Kansas City area",
+      "map": {
+        "center": {
+          "lat": 39.03219,
+          "lon": -94.58101
+        },
+        "defaultZoom": 12,
+        "boundsPadding": [50, 50]
+      },
+      "vendorKinds": {
+        "nostr": 30333,
+        "delete": 5
+      },
+      "callToAction": {
+        "title": "Know a Bitcoin-Accepting Business?",
+        "description": "Help grow this decentralized vendor directory! If you know of a local business that accepts Bitcoin, submit their information to the Nostr network.",
+        "buttonText": "Submit New Vendor"
+      },
+      "filters": {
+        "name": "Filter Vendor Name",
+        "category": "Filter Category",
+        "submitter": "Filter Submitter",
+        "sortBy": "Sort By"
+      }
+    }
+  },
+  "api": {
+    "meetup": {
+      "graphqlUrl": "https://api.meetup.com/gql-ext",
+      "timeout": 30000
+    },
+    "btcmap": {
+      "baseUrl": "https://api.btcmap.org"
+    }
+  },
+  "build": {
+    "outputDir": "out",
+    "generateICalendar": true,
+    "staticAssets": {
+      "favicon": "/favicon.ico",
+      "logo": "/logo.svg",
+      "appleTouchIcon": "/apple-touch-icon.png"
+    }
+  }
+}

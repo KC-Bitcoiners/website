@@ -1,4 +1,13 @@
-import { NostrEvent } from "applesauce-core/helpers/event";
+// Simple NostrEvent interface for compatibility
+interface NostrEvent {
+  id: string;
+  pubkey: string;
+  created_at: number;
+  kind: number;
+  tags: string[][];
+  content: string;
+  sig: string;
+}
 
 // Simple nostr utilities for basic functionality
 export class NostrUtils {

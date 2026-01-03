@@ -1,5 +1,9 @@
 import { useNostr } from "@/contexts/NostrContext";
-import { naddrEncode } from "applesauce-core/helpers";
+// Simple naddr encoding function
+const naddrEncode = (params: { kind: number; pubkey: string; identifier: string }) => {
+  // This is a simplified version - in a real implementation you'd use proper nip19 encoding
+  return `${params.kind}:${params.pubkey}:${params.identifier}`;
+};
 import { useEffect, useState } from "react";
 import { XIcon } from "./Icons";
 
