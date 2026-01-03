@@ -50,7 +50,7 @@ export interface NostrCalendarEvent {
 export async function fetchNostrCalendarEvents(): Promise<
   NostrCalendarEvent[]
 > {
-  console.log("📅 Starting to fetch nostr calendar events...");
+  console.log("📅 STARTING TO FETCH NOSTR CALENDAR EVENTS - FUNCTION CALLED!!!");
 
   // Use relay pool to connect to multiple relays
   const relays = [
@@ -59,10 +59,9 @@ export async function fetchNostrCalendarEvents(): Promise<
     "wss://nos.lol",
   ];
 
-  // Use whitelist filter to only get events from whitelisted users
-  const filter = getWhitelistFilter();
-
-  console.log("🎯 Using whitelist calendar events filter:", filter);
+  // Use whitelist filter to only fetch events from whitelisted npubs
+  const whitelistFilter = getWhitelistFilter();
+  console.log("🎯 Using whitelist calendar events filter:", whitelistFilter);
   console.log(
     "👥 Only fetching events from whitelisted npubs:",
     WHITELISTED_NPUBS,
@@ -74,8 +73,25 @@ export async function fetchNostrCalendarEvents(): Promise<
     // Use pool.request() which handles retries, deduplication, and multiple relays
     console.log(`🔌 Fetching calendar events from relays:`, relays);
 
-    const events = await pool.request(relays[0], filter);
-    if (events && Array.isArray(events)) {
+    // Try each relay until we get events
+    let events: any[] = [];
+    for (const relay of relays) {
+      try {
+        console.log(`🔌 Trying relay: ${relay}`);
+        const response = await pool.request(relay, whitelistFilter);
+        events = Array.isArray(response) ? response : [];
+        if (events && events.length > 0) {
+          console.log(`✅ Found ${events.length} events from ${relay}`);
+          break;
+        } else {
+          console.log(`📭 No events from ${relay}`);
+        }
+      } catch (error) {
+        console.warn(`⚠️ Failed to fetch from ${relay}:`, error);
+        continue;
+      }
+    }
+    if (events && Array.isArray(events) && events.length > 0) {
       events.forEach((nostrEvent: any) => {
         console.log(`🎯 Found calendar event:`, nostrEvent.id);
 
@@ -111,46 +127,9 @@ export async function fetchNostrCalendarEvents(): Promise<
       });
     }
 
-    // Deduplicate events by naddr
-    const existingNaddrs = new Set<string>();
-    const fetchedEvents = events as any[];
-    for (const event of fetchedEvents) {
-      if (event.dTag) {
-        const naddr = naddrEncode({
-          kind: event.kind,
-          pubkey: event.pubkey,
-          identifier: event.dTag,
-        });
-        if (!existingNaddrs.has(naddr)) {
-          allEvents.push(event);
-          existingNaddrs.add(naddr);
-          console.log(`➕ Added event:`, event.title || "No title");
-        } else {
-          console.log(
-            `🔁 Duplicate event skipped by naddr:`,
-            event.title || "No title",
-          );
-        }
-      } else {
-        // For events without dTag, use old method as fallback
-        const exists = allEvents.some(
-          (e) =>
-            e.dTag === event.dTag &&
-            e.pubkey === event.pubkey &&
-            e.kind === event.kind,
-        );
-
-        if (!exists) {
-          allEvents.push(event);
-          console.log(`➕ Added event (no dTag):`, event.title || "No title");
-        } else {
-          console.log(
-            `🔁 Duplicate event skipped (no dTag):`,
-            event.title || "No title",
-          );
-        }
-      }
-    }
+    // Note: Events are already added above in the events.forEach loop
+    // The deduplication logic above was duplicating events, so we'll skip it for now
+    console.log(`� Total calendar events fetched: ${allEvents.length}`);
 
     console.log(`📊 Total calendar events fetched: ${allEvents.length}`);
     console.log(

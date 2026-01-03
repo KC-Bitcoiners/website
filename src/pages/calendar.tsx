@@ -203,6 +203,7 @@ export default function CalendarPage({
 
   // Load nostr events separately in the background
   useEffect(() => {
+    console.log("🚀 USEFFECT FOR NOSTR EVENTS IS RUNNING!!!");
     const loadNostrEvents = async () => {
       console.log("🕰️ Loading nostr events in background...");
       setIsLoadingNostrEvents(true);

@@ -22,6 +22,7 @@ interface NostrEvent {
   sig: string;
 }
 import { shopConfig, getNostrRelays, getMapCenter } from "@/config";
+import { WHITELISTED_NPUBS } from "@/config/whitelist";
 
 // Relay configuration for Nostr operations (now sourced from config)
 const RELAYS = getNostrRelays();
@@ -151,6 +152,7 @@ export default function ShopPage() {
         const filter = {
           kinds: [30333], // Custom Bitcoin Vendor Directory kind
           limit: 100,
+          authors: WHITELISTED_NPUBS, // Only fetch from whitelisted npubs
         };
 
         // Simple timeout for the request
@@ -347,10 +349,10 @@ export default function ShopPage() {
             }
           }
           return (
-            vendor[key as keyof (NostrVendor | BTCMapVendor)]?.toString() || ""
-          )
-            .toLowerCase()
-            .includes(filterValue);
+            (vendor[key as keyof (NostrVendor | BTCMapVendor)]?.toString() || "")
+              .toLowerCase()
+              .includes(filterValue)
+          );
         });
       }
     });

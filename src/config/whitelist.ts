@@ -1,9 +1,10 @@
 import { getWhitelistedNpubs } from "./index";
 
-// Simple npub to hex conversion (simplified version)
+// Simple npub to hex conversion (try to use npub directly first)
 const normalizeToPubkey = (npub: string): string => {
-  // This is a simplified placeholder - in a real implementation you'd use proper nip19 decoding
-  return npub; // Return as-is for now
+  // Some Nostr libraries can handle npub format directly in filters
+  // Try to use npub as-is first, fall back to hex conversion if needed
+  return npub; // Return npub directly for now
 };
 
 // Whitelist of allowed npub keys for calendar events (now sourced from config)

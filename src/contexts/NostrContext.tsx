@@ -119,7 +119,7 @@ export function NostrProvider({ children }: NostrProviderProps) {
       // Derive public key
       pubkey = await getPublicKey(privateKey);
 
-      // Create npub encoding - use's hex string directly
+      // Create npub encoding - use hex string directly
       const npub = npubEncode(pubkey);
 
       // Check if user is whitelisted
@@ -294,7 +294,7 @@ export function NostrProvider({ children }: NostrProviderProps) {
       const pubkey = await window.nostr.getPublicKey();
       const npub = npubEncode(pubkey);
 
-      // Check if's user is whitelisted
+      // Check if user is whitelisted
       if (!isWhitelisted(npub)) {
         console.log("🚫 User not whitelisted:", npub);
         throw new Error(
