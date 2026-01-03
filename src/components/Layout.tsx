@@ -7,7 +7,13 @@ import { useNostr } from "@/contexts/NostrContext";
 import UserProfile from "./UserProfile";
 import NostrLogin from "./NostrLogin";
 import SocialLinks from "./SocialLinks";
-import { ensureHttpURL } from "applesauce-core/helpers";
+// Simple URL utility function
+const ensureHttpURL = (url: string) => {
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    return `https://${url}`;
+  }
+  return url;
+};
 import { KC_BITCOINERS_RELAY } from "../config/const";
 
 function NavLinks({ currentPath }: { currentPath: string }) {

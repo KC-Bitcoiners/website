@@ -1,1 +1,3 @@
-export const KC_BITCOINERS_RELAY = "wss://kcbtc.hzrd149.com/";
+import { getKcRelay } from "./index";
+
+export const KC_BITCOINERS_RELAY = getKcRelay();
