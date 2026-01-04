@@ -52,7 +52,6 @@ export interface PageConfig {
 
 export interface AppConfig {
   site: SiteConfig;
-  api: ApiConfig;
   nostr: NostrConfig;
   pages: {
     home: PageConfig;
@@ -66,9 +65,12 @@ export const config: AppConfig = configData as AppConfig;
 
 // Export specific sections for convenience
 export const siteConfig = config.site;
-export const apiConfig = config.api;
 export const nostrConfig = config.nostr;
 export const pagesConfig = config.pages;
+
+// Export API configurations from their respective pages
+export const meetupConfig = config.pages.calendar?.api?.meetup;
+export const btcmapConfig = config.pages.shop?.api?.btcmap;
 
 // Export specific commonly used values
 export const {
@@ -77,11 +79,6 @@ export const {
   organization,
   externalLinks
 } = siteConfig;
-
-export const {
-  meetup: meetupConfig,
-  btcmap: btcmapConfig
-} = apiConfig;
 
 export const {
   relays: nostrRelays,

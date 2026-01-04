@@ -1,46 +1,62 @@
 {
-    "site": {
-        "title": "KC Bitcoin Meetup Group",
-        "description": "Bitcoin only group focused on fostering relationships and building community in Kansas City",
-        "organization": {
-        "name": "KC Bitcoiners",
-        "location": "Kansas City",
-        "coordinates": {
-            "lat": 39.03219,
-            "lon": -94.58101
-        }
-        },
-        "externalLinks": {
-            "GitHub": {
-                "url": "https://github.com/KC-Bitcoiners/website",
-                "icon": "GitHubIcon",
-                "ariaLabel": "Visit our GitHub repository"
-            }, 
-            "meetup": {
-                "urlname": "kansas-city-bitcoin-meetup-group",
-                "url": "https://www.meetup.com/kansas-city-bitcoin-meetup-group/"
-            }
-        },
-        "images": {
-            "logo": "/logo.svg",
-            "logoFallback": "/logo.jpeg"
-        }
-    },
-    "nostr": {
-        "relays": [
-            "wss://relay.damus.io",
-            "wss://nos.lol",
-            "wss://relay.snort.social",
-            "wss://kcbtc.hzrd149.com/"
-        ],
-        "whitelistedNpubs": [
-            "npub16ux4qzg4qjue95vr3q327fzata4n594c9kgh4jmeyn80v8k54nhqg6lra7",
-            "npub1nrswn76gtr6apep95rev06y0cylk2t7utqyw9yn5x7qv8atgn3fscmpv2z",
-            "npub187w4ykkurr3e89mm0rg5p49x6lveqtq0pp0um7qyk6xyrpeerx3s84exkz",
-            "npub1nv5c7sj2zxtjv7uayp2q2mneymm39mfp93wjhl5287y6yp6ey02qrsjhcn",
-            "npub1yvscx9vrmpcmwcmydrm8lauqdpngum4ne8xmkgc2d4rcaxrx7tkswdwzdu"
-        ]   
-    },
+  "site": {
+      "title": "Another Meetup Group",
+      "description": "Bitcoin only group focused on fostering relationships and building community in someCITY",
+      "organization": {
+      "name": "SomeName",
+      "location": "Kansas City",
+      "coordinates": {
+          "lat": 39.03219,
+          "lon": -94.58101
+      }
+      },
+      "externalLinks": {
+          "GitHub": {
+              "url": "https://github.com/KC-Bitcoiners/website",
+              "icon": "GitHubIcon",
+              "ariaLabel": "Visit our GitHub repository"
+          }, 
+          "meetup": {
+              "urlname": "kansas-city-bitcoin-meetup-group",
+              "url": "https://www.meetup.com/kansas-city-bitcoin-meetup-group/"
+          }
+      },
+      "images": {
+          "logo": "https://logosmarcas.net/wp-content/uploads/2020/12/GitHub-Logo.png",
+          "logoFallback": "/logo.jpeg"
+      }
+  },
+  "api": {
+      "meetup": {
+          "graphqlUrl": "https://api.meetup.com/gql-ext",
+          "groupName": "kansas-city-bitcoin-meetup-group"
+      },
+      "btcmap": {
+          "overpassUrl": "https://overpass-api.de/api/interpreter",
+          "defaultBounds": {
+              "minLat": 38.5,
+              "maxLat": 39.5,
+              "minLon": -95.5,
+              "maxLon": -93.5
+          },
+          "userAgent": "BitcoinVendorDirectory/1.0"
+      }
+  },
+  "nostr": {
+      "relays": [
+          "wss://relay.damus.io",
+          "wss://nos.lol",
+          "wss://relay.snort.social",
+          "wss://kcbtc.hzrd149.com/"
+      ],
+      "whitelistedNpubs": [
+          "npub16ux4qzg4qjue95vr3q327fzata4n594c9kgh4jmeyn80v8k54nhqg6lra7",
+          "npub1nrswn76gtr6apep95rev06y0cylk2t7utqyw9yn5x7qv8atgn3fscmpv2z",
+          "npub187w4ykkurr3e89mm0rg5p49x6lveqtq0pp0um7qyk6xyrpeerx3s84exkz",
+          "npub1nv5c7sj2zxtjv7uayp2q2mneymm39mfp93wjhl5287y6yp6ey02qrsjhcn",
+          "npub1yvscx9vrmpcmwcmydrm8lauqdpngum4ne8xmkgc2d4rcaxrx7tkswdwzdu"
+      ]   
+  },
   "pages": {
     "home": {
       "title": "KC Bitcoiners",
@@ -85,12 +101,6 @@
         "title": "Calendar - KC Bitcoiners",
         "description": "Community calendar for KC Bitcoiners events and meetups"
       },
-      "api": {
-        "meetup": {
-          "graphqlUrl": "https://api.meetup.com/gql-ext",
-          "groupName": "kansas-city-bitcoin-meetup-group"
-        }
-      },
       "defaultView": "month",
       "eventColors": [
         "bg-purple-500 border-purple-600",
@@ -118,24 +128,7 @@
         "title": "Bitcoin Vendors - KC Bitcoiners",
         "description": "Directory of Bitcoin-accepting businesses in Kansas City"
       },
-      "description": "Directory of Bitcoin-accepting businesses and vendors in Kansas City area",
-      "location": "Kansas City",
-      "coordinates": {
-        "lat": 39.03219,
-        "lon": -94.58101
-      },
-      "api": {
-        "btcmap": {
-          "overpassUrl": "https://overpass-api.de/api/interpreter",
-          "defaultBounds": {
-            "minLat": 38.5,
-            "maxLat": 39.5,
-            "minLon": -95.5,
-            "maxLon": -93.5
-          },
-          "userAgent": "BitcoinVendorDirectory/1.0"
-        }
-      },
+      "description": "Directory of Bitcoin-accepting businesses and vendors in the Kansas City area",
       "map": {
         "center": {
           "lat": 39.03219,
