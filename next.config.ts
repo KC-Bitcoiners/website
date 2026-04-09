@@ -2,12 +2,11 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  output: "export",
   images: {
     unoptimized: true,
   },
-  webpack: (config, { isServer }) => {
-    // Enable top-level await support
+  webpack: (config) => {
+    // Enable top-level await for window.nostrdb.js dynamic import
     config.experiments = {
       ...config.experiments,
       topLevelAwait: true,

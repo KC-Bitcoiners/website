@@ -12,16 +12,17 @@ export default function EventDetailsModal({
   event,
   onClose,
 }: EventDetailsModalProps) {
-  if (!event) return null;
-
-  // Close on Escape key
+  // Hooks must run unconditionally — guard the body instead of the call
   useEffect(() => {
+    if (!event) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+  }, [onClose, event]);
+
+  if (!event) return null;
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString("en-US", {

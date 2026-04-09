@@ -187,7 +187,6 @@ export default function ShopPage() {
         const events = await eventsPromise;
 
         const vendors: NostrVendor[] = [];
-        let skippedEvents = 0;
 
         for (const event of events) {
           try {
@@ -195,8 +194,7 @@ export default function ShopPage() {
             try {
               data = JSON.parse(event.content);
             } catch {
-              // Quietly skip invalid JSON events - these are likely not vendor events
-              skippedEvents++;
+              // Skip events with invalid JSON — they are not vendor entries
               continue;
             }
 

@@ -36,6 +36,8 @@ export const getStaticProps: GetStaticProps<CalendarPageProps> = async () => {
       props: {
         meetupGroup: group,
       },
+      // Re-fetch from Meetup.com at most once per hour in the background (ISR)
+      revalidate: 3600,
     };
   } catch (error) {
     console.error("Error fetching meetup events:", error);
@@ -46,6 +48,8 @@ export const getStaticProps: GetStaticProps<CalendarPageProps> = async () => {
         meetupError:
           error instanceof Error ? error.message : "Unknown error occurred",
       },
+      // Retry sooner on error — try again in 5 minutes
+      revalidate: 300,
     };
   }
 };

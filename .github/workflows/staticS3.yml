@@ -1,4 +1,9 @@
 name: staticS3Deploy
+# NOTE: This workflow deploys to S3 and nsite (Nostr Blossom).
+# Both deployment steps require a static export (next.config.ts output: "export")
+# which has been removed in favour of ISR on Vercel (see vercel.yml).
+# The nsite step can be restored by adding a separate static build step.
+# The S3 step is superseded by Vercel for the primary web deployment.
 
 on:
   push:
