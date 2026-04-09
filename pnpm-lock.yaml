@@ -45,9 +45,6 @@ importers:
       next:
         specifier: 15.3.4
         version: 15.3.4(@babel/core@7.28.5)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
-      nostr-tools:
-        specifier: ^2.19.4
-        version: 2.19.4(typescript@5.9.3)
       qrcode:
         specifier: ^1.5.4
         version: 1.5.4

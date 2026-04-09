@@ -1,10 +1,8 @@
-import { getWhitelistFilter, WHITELISTED_NPUBS, nostrRelays } from "@/config";
+import { getWhitelistFilter, nostrRelays } from "@/config";
 import { pool } from "@/lib/nostr";
 import {
   decodePointer,
   finalizeEvent,
-  generateSecretKey,
-  getPublicKey,
   naddrEncode,
 } from "applesauce-core/helpers";
 
@@ -24,148 +22,65 @@ export interface NostrCalendarEvent {
   created_at: number;
 }
 
-// Fetch calendar events from nostr relays using RelayPool
-export async function fetchNostrCalendarEvents(): Promise<
-  NostrCalendarEvent[]
-> {
-  console.log("📅 Starting to fetch nostr calendar events...");
-
-  // Use relay pool to connect to multiple relays
-  const relays = nostrRelays;
-
-  // Use whitelist filter to only get events from whitelisted users
+/** Fetch calendar events from whitelisted authors across all configured relays. */
+export async function fetchNostrCalendarEvents(): Promise<NostrCalendarEvent[]> {
   const filter = getWhitelistFilter();
-
-  console.log("🎯 Using whitelist calendar events filter:", filter);
-  console.log(
-    "👥 Only fetching events from whitelisted npubs:",
-    WHITELISTED_NPUBS,
-  );
-
   const allEvents: NostrCalendarEvent[] = [];
 
   try {
-    // Use pool.request() which handles retries, deduplication, and multiple relays
-    console.log(`🔌 Fetching calendar events from relays:`, relays);
+    const events = await new Promise<NostrCalendarEvent[]>((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error("Request timeout")), 30000);
+      const collected: NostrCalendarEvent[] = [];
 
-    const eventsPromise = new Promise<NostrCalendarEvent[]>(
-      (resolve, reject) => {
-        const timeout = setTimeout(() => {
-          console.log(`⏰ Request timeout`);
-          reject(new Error("Request timeout"));
-        }, 30000); // 30 second timeout for all relays
+      pool.request(nostrRelays, filter).subscribe({
+        next: (nostrEvent) => {
+          collected.push({
+            id: nostrEvent.id,
+            kind: nostrEvent.kind,
+            pubkey: nostrEvent.pubkey,
+            tags: nostrEvent.tags || [],
+            content: nostrEvent.content,
+            dTag: nostrEvent.tags?.find((t: string[]) => t[0] === "d")?.[1],
+            title: nostrEvent.tags?.find((t: string[]) => t[0] === "title")?.[1],
+            summary: nostrEvent.tags?.find((t: string[]) => t[0] === "summary")?.[1],
+            description: nostrEvent.content,
+            location: nostrEvent.tags?.find((t: string[]) => t[0] === "location")?.[1],
+            start: nostrEvent.tags?.find((t: string[]) => t[0] === "start")?.[1],
+            end: nostrEvent.tags?.find((t: string[]) => t[0] === "end")?.[1],
+            created_at: nostrEvent.created_at,
+          });
+        },
+        error: (err) => { clearTimeout(timeout); reject(err); },
+        complete: () => { clearTimeout(timeout); resolve(collected); },
+      });
+    });
 
-        const events: NostrCalendarEvent[] = [];
-
-        pool.request(relays, filter).subscribe({
-          next: (nostrEvent) => {
-            console.log(`🎯 Found calendar event:`, nostrEvent.id);
-
-            const calendarEvent: NostrCalendarEvent = {
-              id: nostrEvent.id,
-              kind: nostrEvent.kind,
-              pubkey: nostrEvent.pubkey,
-              tags: nostrEvent.tags || [],
-              content: nostrEvent.content,
-              dTag: nostrEvent.tags?.find(
-                (tag: string[]) => tag[0] === "d",
-              )?.[1],
-              title: nostrEvent.tags?.find(
-                (tag: string[]) => tag[0] === "title",
-              )?.[1],
-              summary: nostrEvent.tags?.find(
-                (tag: string[]) => tag[0] === "summary",
-              )?.[1],
-              description: nostrEvent.content,
-              location: nostrEvent.tags?.find(
-                (tag: string[]) => tag[0] === "location",
-              )?.[1],
-              start: nostrEvent.tags?.find(
-                (tag: string[]) => tag[0] === "start",
-              )?.[1],
-              end: nostrEvent.tags?.find(
-                (tag: string[]) => tag[0] === "end",
-              )?.[1],
-              created_at: nostrEvent.created_at,
-            };
-
-            events.push(calendarEvent);
-          },
-          error: (error) => {
-            console.error(`💥 Error fetching calendar events:`, error);
-            clearTimeout(timeout);
-            reject(error);
-          },
-          complete: () => {
-            console.log(`📭 End of stored calendar events`);
-            clearTimeout(timeout);
-            resolve(events);
-          },
-        });
-      },
-    );
-
-    const events = await eventsPromise;
-
-    // Deduplicate events by naddr
-    const existingNaddrs = new Set<string>();
+    // Deduplicate by naddr (kind:pubkey:d-tag coordinate)
+    const seen = new Set<string>();
     for (const event of events) {
       if (event.dTag) {
-        const naddr = naddrEncode({
-          kind: event.kind,
-          pubkey: event.pubkey,
-          identifier: event.dTag,
-        });
-        if (!existingNaddrs.has(naddr)) {
+        const naddr = naddrEncode({ kind: event.kind, pubkey: event.pubkey, identifier: event.dTag });
+        if (!seen.has(naddr)) {
           allEvents.push(event);
-          existingNaddrs.add(naddr);
-          console.log(`➕ Added event:`, event.title || "No title");
-        } else {
-          console.log(
-            `🔁 Duplicate event skipped by naddr:`,
-            event.title || "No title",
-          );
+          seen.add(naddr);
         }
       } else {
-        // For events without dTag, use old method as fallback
-        const exists = allEvents.some(
-          (e) =>
-            e.dTag === event.dTag &&
-            e.pubkey === event.pubkey &&
-            e.kind === event.kind,
-        );
-
-        if (!exists) {
+        // Fallback for events missing a d-tag
+        const key = `${event.kind}:${event.pubkey}`;
+        if (!seen.has(key)) {
           allEvents.push(event);
-          console.log(`➕ Added event (no dTag):`, event.title || "No title");
-        } else {
-          console.log(
-            `🔁 Duplicate event skipped (no dTag):`,
-            event.title || "No title",
-          );
+          seen.add(key);
         }
       }
     }
-
-    console.log(`📊 Total calendar events fetched: ${allEvents.length}`);
-    console.log(
-      `📅 Calendar events summary:`,
-      allEvents.map((e) => ({
-        id: e.id,
-        kind: e.kind,
-        title: e.title,
-        start: e.start,
-      })),
-    );
   } catch (error) {
-    console.warn(`⚠️ Failed to fetch calendar events:`, error);
+    console.warn("Failed to fetch Nostr calendar events:", error);
   }
 
-  // Sort events by creation time (newest first)
   return allEvents.sort((a, b) => b.created_at - a.created_at);
 }
 
-// Convert nostr calendar events to the app's CalendarEvent format
+/** Convert a raw Nostr event into the app's CalendarEvent shape. */
 export function convertNostrEventToCalendar(event: NostrCalendarEvent) {
   const startTime = event.start ? parseInt(event.start) : undefined;
   const endTime = event.end ? parseInt(event.end) : undefined;
@@ -185,242 +100,89 @@ export function convertNostrEventToCalendar(event: NostrCalendarEvent) {
     start: startTime?.toString(),
     end: endTime?.toString(),
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    image: event.tags?.find((tag: string[]) => tag[0] === "image")?.[1],
-    hashtags:
-      event.tags
-        ?.filter((tag: string[]) => tag[0] === "t")
-        .map((tag) => tag[1]) || [],
-    references:
-      event.tags
-        ?.filter((tag: string[]) => tag[0] === "e")
-        .map((tag) => tag[1]) || [],
+    image: event.tags?.find((t: string[]) => t[0] === "image")?.[1],
+    hashtags: event.tags?.filter((t: string[]) => t[0] === "t").map((t) => t[1]) || [],
+    references: event.tags?.filter((t: string[]) => t[0] === "r").map((t) => t[1]) || [],
     created_at: event.created_at,
   };
 }
 
-// Publish a calendar event to nostr relays
+/** Publish a calendar event to Nostr relays via the NIP-07 extension. */
 export async function publishNostrEvent(
   formData: any,
   privateKey?: string,
   pubkey?: string,
-): Promise<{
-  success: boolean;
-  eventId?: string;
-  naddr?: string;
-  error?: string;
-}> {
+  /** Pass the existing dTag when updating a replaceable event. */
+  existingDTag?: string,
+): Promise<{ success: boolean; eventId?: string; naddr?: string; error?: string }> {
   try {
-    console.log("🚀 Publishing event to nostr:", formData);
+    const dTag = existingDTag ?? `event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const userPubkey = pubkey ?? "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0";
 
-    // Generate a unique identifier for the event
-    const dTag = `event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const tags: string[][] = [["d", dTag], ["title", formData.title]];
 
-    // Use the provided pubkey for naddr generation
-    const userPubkey =
-      pubkey ||
-      "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0";
+    if (formData.summary) tags.push(["summary", formData.summary]);
+    formData.locations?.forEach((l: string) => tags.push(["location", l]));
+    formData.hashtags?.forEach((t: string) => tags.push(["t", t]));
+    formData.references?.filter((r: string) => r.startsWith("http")).forEach((r: string) => tags.push(["r", r]));
+    if (formData.image) tags.push(["image", formData.image]);
 
-    // Convert EventFormData to nostr event format
-    const tags: string[][] = [];
-
-    // Add required tags
-    tags.push(["d", dTag]); // Unique identifier
-    tags.push(["title", formData.title]);
-
-    if (formData.summary) {
-      tags.push(["summary", formData.summary]);
-    }
-
-    if (formData.locations && formData.locations.length > 0) {
-      formData.locations.forEach((location: string) => {
-        tags.push(["location", location]);
-      });
-    }
-
-    if (formData.hashtags && formData.hashtags.length > 0) {
-      formData.hashtags.forEach((tag: string) => {
-        tags.push(["t", tag]);
-      });
-    }
-
-    if (formData.references && formData.references.length > 0) {
-      formData.references.forEach((ref: string) => {
-        if (ref.startsWith("http")) {
-          tags.push(["r", ref]);
-        }
-      });
-    }
-
-    if (formData.image) {
-      tags.push(["image", formData.image]);
-    }
-
-    // Add time-based tags
     if (formData.eventType === "all-day") {
-      // All-day event (kind 31922)
-      tags.push([
-        "start",
-        Math.floor(new Date(formData.startDate).getTime() / 1000).toString(),
-      ]);
+      tags.push(["start", Math.floor(new Date(formData.startDate).getTime() / 1000).toString()]);
       if (formData.endDate) {
-        tags.push([
-          "end",
-          Math.floor(
-            new Date(formData.endDate + "T23:59:59").getTime() / 1000,
-          ).toString(),
-        ]);
+        tags.push(["end", Math.floor(new Date(`${formData.endDate}T23:59:59`).getTime() / 1000).toString()]);
       }
     } else {
-      // Timed event (kind 31923)
       if (formData.startDate && formData.startTime) {
-        const startDateTime = new Date(
-          `${formData.startDate}T${formData.startTime}`,
-        );
-        tags.push([
-          "start",
-          Math.floor(startDateTime.getTime() / 1000).toString(),
-        ]);
+        tags.push(["start", Math.floor(new Date(`${formData.startDate}T${formData.startTime}`).getTime() / 1000).toString()]);
       }
       if (formData.endDate && formData.endTime) {
-        const endDateTime = new Date(`${formData.endDate}T${formData.endTime}`);
-        tags.push(["end", Math.floor(endDateTime.getTime() / 1000).toString()]);
+        tags.push(["end", Math.floor(new Date(`${formData.endDate}T${formData.endTime}`).getTime() / 1000).toString()]);
       }
     }
 
-    // Create the nostr event
     const kind = formData.eventType === "all-day" ? 31922 : 31923;
-    const created_at = Math.floor(Date.now() / 1000);
-
-    const event = {
-      kind: kind,
-      created_at: created_at,
-      tags: tags,
+    const eventTemplate = {
+      kind,
+      created_at: Math.floor(Date.now() / 1000),
+      tags,
       content: formData.description || formData.title,
     };
 
-    console.log("📝 Created nostr event:", event);
-
-    // Generate naddr for the event
     const naddr = naddrEncode({ kind, pubkey: userPubkey, identifier: dTag });
-    console.log("🔗 Generated naddr:", naddr);
 
-    // Create a properly signed event
-    let signedEvent;
+    let signedEvent: any;
 
     if (window.nostr && pubkey) {
-      // Use Nostr extension for signing
-      console.log(
-        `🔑 Using Nostr extension for signing with pubkey: ${pubkey}`,
-      );
-      const eventForExtension = {
-        ...event,
-        pubkey: pubkey,
-      };
-      signedEvent = await window.nostr.signEvent(eventForExtension);
-      console.log(`✅ Event signed with extension:`, signedEvent.id);
-    } else if (privateKey === "mock-private-key-for-demo") {
-      // For demo purposes, generate a temporary key pair
-      const tempSecretKey = generateSecretKey();
-      const tempPubkey = getPublicKey(tempSecretKey);
-
-      signedEvent = finalizeEvent(event, tempSecretKey);
-      console.log(`🔑 Generated temporary keypair for demo:`, {
-        pubkey: tempPubkey,
-        eventId: signedEvent.id,
-      });
+      // Preferred path: NIP-07 extension signing
+      signedEvent = await window.nostr.signEvent({ ...eventTemplate, pubkey });
     } else if (privateKey) {
-      // Use provided private key for signing
-      // Convert hex string to Uint8Array
+      // Legacy fallback: raw private key (kept for backward compat, not exposed in UI)
       let privateKeyBytes: Uint8Array;
-
-      // Check if it's an nsec
       if (privateKey.startsWith("nsec")) {
         const { type, data } = decodePointer(privateKey);
-        if (type === "nsec") {
-          privateKeyBytes = data as Uint8Array;
-        } else {
-          throw new Error("Invalid nsec format");
-        }
+        if (type !== "nsec") throw new Error("Invalid nsec format");
+        privateKeyBytes = data as Uint8Array;
       } else {
-        // Convert hex string to Uint8Array
-        const cleanHex = privateKey.startsWith("0x")
-          ? privateKey.slice(2)
-          : privateKey;
-        if (cleanHex.length !== 64) {
-          throw new Error("Private key must be 64 hex characters (32 bytes)");
-        }
-        privateKeyBytes = new Uint8Array(
-          cleanHex.match(/.{2}/g)?.map((byte) => parseInt(byte, 16)) || [],
-        );
+        const clean = privateKey.startsWith("0x") ? privateKey.slice(2) : privateKey;
+        if (clean.length !== 64) throw new Error("Private key must be 64 hex characters");
+        privateKeyBytes = new Uint8Array(clean.match(/.{2}/g)!.map((b) => parseInt(b, 16)));
       }
-
-      signedEvent = finalizeEvent(event, privateKeyBytes);
+      signedEvent = finalizeEvent(eventTemplate, privateKeyBytes);
     } else {
-      throw new Error("No private key or extension available for signing");
+      throw new Error("No signing method available — install a NIP-07 extension");
     }
 
-    // Actually publish to relays using RelayPool
-    const relays = nostrRelays;
+    const responses = await pool.publish(nostrRelays, signedEvent);
+    const ok = responses.filter((r) => r.ok);
 
-    console.log("📡 Publishing to relays:", relays);
-    console.log("📝 Event data:", signedEvent);
-
-    try {
-      // Use pool.publish() which handles retries and reconnection automatically
-      const responses = await pool.publish(relays, signedEvent);
-
-      // Check if at least one relay accepted the event
-      const successfulResponses = responses.filter((r) => r.ok);
-      const failedResponses = responses.filter((r) => !r.ok);
-
-      if (successfulResponses.length > 0) {
-        console.log("✅ Event successfully published to at least one relay!");
-        console.log(`  🆔 Event ID: ${signedEvent.id}`);
-        console.log(`  🔗 Naddr: ${naddr}`);
-        console.log(`  📅 Kind: ${kind} (${formData.eventType})`);
-        console.log(`  🏷️  D-Tag: ${dTag}`);
-        console.log(`  👤 Pubkey: ${userPubkey}`);
-        console.log(
-          `  ✅ Published to ${successfulResponses.length}/${responses.length} relays`,
-        );
-
-        if (failedResponses.length > 0) {
-          console.warn(
-            `  ⚠️ Failed on ${failedResponses.length} relays:`,
-            failedResponses.map((r) => `${r.from}: ${r.message}`),
-          );
-        }
-
-        return {
-          success: true,
-          eventId: signedEvent.id,
-          naddr: naddr,
-        };
-      } else {
-        const errorMessages = failedResponses
-          .map((r) => `${r.from}: ${r.message}`)
-          .join("; ");
-        console.error("❌ Failed to publish to all relays:", errorMessages);
-        return {
-          success: false,
-          error: errorMessages || "Failed to publish to relays",
-        };
-      }
-    } catch (error) {
-      console.error("💥 Error publishing event:", error);
-      return {
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to publish to relays",
-      };
+    if (ok.length > 0) {
+      return { success: true, eventId: signedEvent.id, naddr };
     }
+
+    const errs = responses.filter((r) => !r.ok).map((r) => `${r.from}: ${r.message}`).join("; ");
+    return { success: false, error: errs || "Failed to publish to relays" };
   } catch (error) {
-    console.error("💥 Error publishing nostr event:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error occurred",
-    };
+    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
   }
 }

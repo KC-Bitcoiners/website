@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { CalendarEvent } from "../types/calendar";
 import { XIcon } from "./Icons";
 import { naddrEncode } from "applesauce-core/helpers";
@@ -13,6 +13,15 @@ export default function EventDetailsModal({
   onClose,
 }: EventDetailsModalProps) {
   if (!event) return null;
+
+  // Close on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString("en-US", {
@@ -57,8 +66,14 @@ export default function EventDetailsModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b border-gray-200">
           <h2 className="text-2xl font-bold text-gray-900">Event Details</h2>
@@ -97,8 +112,8 @@ export default function EventDetailsModal({
             </div>
           </div>
 
-          {/* Summary */}
-          {event.summary && (
+          {/* Summary — only show if it adds something beyond the title */}
+          {event.summary && event.summary !== event.title && (
             <div className="mb-6">
               <h4 className="font-semibold text-gray-900 mb-2">Summary</h4>
               <p className="text-gray-600">{event.summary}</p>
@@ -130,19 +145,29 @@ export default function EventDetailsModal({
             </div>
           )}
 
-          {/* Locations */}
-          {(event.location ||
+          {/* Location — venue name (if available) above address, no duplication */}
+          {(event.venueName || event.location ||
             (event.locations && event.locations.length > 0)) && (
             <div className="mb-6">
               <h4 className="font-semibold text-gray-900 mb-2">
                 Location
                 {event.locations && event.locations.length > 1 ? "s" : ""}
               </h4>
-              <div className="space-y-2">
-                {event.location && (
+              <div className="space-y-1">
+                {/* Venue name displayed prominently above the address */}
+                {event.venueName && (
+                  <p className="font-medium text-gray-800">{event.venueName}</p>
+                )}
+
+                {/*
+                  Prefer event.location (fully formatted address string).
+                  Only fall through to the locations array if location is absent
+                  AND there are multiple entries worth listing individually.
+                */}
+                {event.location ? (
                   <div className="flex items-center gap-2 text-gray-600">
                     <svg
-                      className="w-5 h-5"
+                      className="w-5 h-5 shrink-0"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -162,15 +187,14 @@ export default function EventDetailsModal({
                     </svg>
                     <span>{event.location}</span>
                   </div>
-                )}
-                {event.locations &&
-                  event.locations.map((location, index) => (
+                ) : (
+                  event.locations?.map((location, index) => (
                     <div
                       key={index}
                       className="flex items-center gap-2 text-gray-600"
                     >
                       <svg
-                        className="w-5 h-5"
+                        className="w-5 h-5 shrink-0"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -190,7 +214,8 @@ export default function EventDetailsModal({
                       </svg>
                       <span>{location}</span>
                     </div>
-                  ))}
+                  ))
+                )}
               </div>
             </div>
           )}
@@ -245,22 +270,11 @@ export default function EventDetailsModal({
           {event.id &&
             event.id.startsWith("nostr-") &&
             event.dTag &&
-            (() => {
-              const naddr = naddrEncode({
-                kind: event.kind,
-                pubkey: event.pubkey,
-                identifier: event.dTag,
-              });
-              console.log("🔗 Generated naddr for nostr event:", {
-                eventId: event.id,
-                kind: event.kind,
-                pubkey: event.pubkey,
-                dTag: event.dTag,
-                naddr: naddr,
-                plektosUrl: `https://plektos.app/event/${naddr}`,
-              });
-              return naddr;
-            })() && (
+            naddrEncode({
+              kind: event.kind,
+              pubkey: event.pubkey,
+              identifier: event.dTag,
+            }) && (
               <div className="mb-6">
                 <h4 className="font-semibold text-gray-900 mb-2">
                   Nostr Event

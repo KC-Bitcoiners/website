@@ -16,6 +16,7 @@ export interface CalendarEvent {
   end?: string;
   location?: string;
   locations?: string[];
+  venueName?: string;
   geohash?: string;
   description?: string;
   timezone?: string;

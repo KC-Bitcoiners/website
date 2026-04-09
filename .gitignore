@@ -48,3 +48,6 @@ terraform/.terraform
 terraform/*.tfstate.backup
 
 job-logs.txt
+
+# agent tasks
+.tasks

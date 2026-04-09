@@ -125,7 +125,7 @@ export const fetchBTCMapVendors = async (bounds?: {
           city: tags["addr:city"],
           country: tags["addr:country"],
           state: tags["addr:state"] || tags["addr:province"],
-          postcode: tags["addr:postcode"] || tags["addr:postcode"],
+          postcode: tags["addr:postcode"] || tags["addr:zip"],
           btcmap_id: element.id.toString(), // Add the BTCMap element ID for linking
         };
       });

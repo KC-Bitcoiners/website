@@ -98,8 +98,9 @@ export const getExternalLink = (name: string) => externalLinks[name];
 export const getMeetupUrl = () => externalLinks.meetup?.url;
 export const getGithubUrl = () => externalLinks.GitHub?.url;
 
-// Constants for backward compatibility
-export const KC_BITCOINERS_RELAY = "wss://kcbtc.hzrd149.com/";
+// KC Bitcoiners' own relay — should match config.json nostr.relays entry.
+// Used as the preferred relay for event lookups and publishing.
+export const KC_BITCOINERS_RELAY = nostrRelays.find((r) => r.includes("kcbitcoiners")) ?? nostrRelays[0];
 
 // Social links interface and data (moved from socialLinks.ts)
 export interface SocialLink {

@@ -163,7 +163,6 @@ export default function ShopPage() {
 
         const eventsPromise = new Promise<NostrEvent[]>((resolve, reject) => {
           const timeout = setTimeout(() => {
-            console.log(`⏰ Request timeout`);
             reject(new Error("Request timeout"));
           }, 30000); // 30 second timeout for all relays
 
@@ -179,7 +178,6 @@ export default function ShopPage() {
               reject(error);
             },
             complete: () => {
-              console.log(`📭 End of stored vendor events`);
               clearTimeout(timeout);
               resolve(events);
             },
@@ -187,11 +185,6 @@ export default function ShopPage() {
         });
 
         const events = await eventsPromise;
-        console.log(
-          "📝 Fetching nostr vendor events:",
-          events.length,
-          "total events found from whitelisted authors only",
-        );
 
         const vendors: NostrVendor[] = [];
         let skippedEvents = 0;
@@ -261,20 +254,8 @@ export default function ShopPage() {
           }
         }
 
-        // Sort by creation date (newest first) by default
         vendors.sort((a, b) => b.createdAt - a.createdAt);
         setNostrVendors(vendors);
-
-        // Log summary
-        if (skippedEvents > 0) {
-          console.log(
-            `📊 Nostr vendor summary: ${vendors.length} valid vendors, ${skippedEvents} non-vendor events skipped`,
-          );
-        } else {
-          console.log(
-            `📊 Nostr vendor summary: ${vendors.length} valid vendors found`,
-          );
-        }
       } catch (error) {
         console.error("Error fetching nostr vendors:", error);
         setNostrError(
@@ -320,9 +301,7 @@ export default function ShopPage() {
       setBTCMapError(null);
 
       try {
-        console.log("🗺️ Fetching BTCMap vendors...");
         const btcMapData = await fetchBTCMapVendors();
-        console.log("🗺️ BTCMap vendors fetched:", btcMapData.length);
         setBTCMapVendors(btcMapData);
       } catch (error) {
         console.error("🗺️ Error fetching BTCMap vendors:", error);
