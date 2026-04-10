@@ -55,6 +55,17 @@ function NavLinks({ currentPath }: { currentPath: string }) {
         Shop
       </Link>
       <Link
+        href="/education"
+        className={clsx(
+          "font-semibold transition-colors",
+          currentPath === "/education"
+            ? "bitcoin-orange"
+            : "hover:text-bitcoin-orange",
+        )}
+      >
+        Education
+      </Link>
+      <Link
         href="/donate"
         className={clsx(
           "font-semibold transition-colors",

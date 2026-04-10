@@ -190,6 +190,13 @@
         "description": "Help grow this decentralized vendor directory! If you know of a local business that accepts Bitcoin, submit their information to the Nostr network.",
         "buttonText": "Submit New Vendor"
       }
+    },
+    "education": {
+      "title": "Education",
+      "meta": {
+        "title": "Education - KC Bitcoiners",
+        "description": "Curated Bitcoin education resources and reading lists"
+      }
     }
   }
 }
