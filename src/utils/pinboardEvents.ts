@@ -240,10 +240,11 @@ export async function fetchPinboards(): Promise<Pinboard[]> {
       authors: WHITELISTED_PUBKEYS,
       limit: 100,
     }).subscribe({
-      next: (event: any) => rawEvents.push(event),
+      next: (event) => rawEvents.push(event),
       error: () => { clearTimeout(timeout); resolve([]); },
       complete: () => {
         clearTimeout(timeout);
+        // Client-side author filter (belts-and-suspenders: some relays ignore `authors`)
         const authorSet = new Set(WHITELISTED_PUBKEYS);
         const filtered = rawEvents.filter((e: any) => authorSet.has(e.pubkey));
         const deduped = deduplicateByCoordinate(filtered, 30067);
@@ -260,6 +261,8 @@ export async function fetchFeaturedPins(): Promise<Pin[]> {
 
   if (WHITELISTED_PUBKEYS.length === 0) return [];
 
+  // Fetch all kind 39067 events from whitelisted authors
+  // then filter client-side to only include pins referencing our boards
   const boards = await fetchPinboards();
   const boardCoords = new Set(boards.map((b) => b.coordinate));
   const authorSet = new Set(WHITELISTED_PUBKEYS);
@@ -273,15 +276,17 @@ export async function fetchFeaturedPins(): Promise<Pin[]> {
       authors: WHITELISTED_PUBKEYS,
       limit: 500,
     }).subscribe({
-      next: (event: any) => rawEvents.push(event),
+      next: (event) => rawEvents.push(event),
       error: () => { clearTimeout(timeout); resolve([]); },
       complete: () => {
         clearTimeout(timeout);
+        // Client-side author filter (belts-and-suspenders: some relays ignore `authors`)
         const filtered = rawEvents.filter((e: any) => authorSet.has(e.pubkey));
         const deduped = deduplicateByCoordinate(filtered, 39067);
         const pins: Pin[] = [];
         for (const event of deduped) {
           const pin = parsePinEvent(event);
+          // Only include pins that reference one of our boards
           if (pin && pin.boardCoordinates.some((c) => boardCoords.has(c))) {
             pins.push(pin);
           }
@@ -297,6 +302,7 @@ export async function fetchPinsForBoard(board: Pinboard): Promise<Pin[]> {
   const relays = nostrRelays;
   const coordinate = board.coordinate;
 
+  // Fetch by author and filter client-side by board coordinate
   const authors = board.collaborative ? undefined : [board.pubkey];
   const filter: any = {
     kinds: [39067],
@@ -309,7 +315,7 @@ export async function fetchPinsForBoard(board: Pinboard): Promise<Pin[]> {
     const rawEvents: any[] = [];
 
     pool.request(relays, filter).subscribe({
-      next: (event: any) => rawEvents.push(event),
+      next: (event) => rawEvents.push(event),
       error: () => { clearTimeout(timeout); resolve([]); },
       complete: () => {
         clearTimeout(timeout);
@@ -343,6 +349,8 @@ export function buildPinEvent(opts: {
     ["A", opts.boardCoordinate],
   ];
 
+  // d tag is required for parameterized replaceable events (kind 39067)
+  // Generate one from title/url if not provided
   const dTag = opts.dTag || opts.title?.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 64) || Math.random().toString(36).slice(2);
   tags.push(["d", dTag]);
 

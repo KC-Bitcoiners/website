@@ -13,9 +13,7 @@ interface Committee {
 
 export default function CommitteesPage() {
   const committees: Committee[] = config.pages.committees?.data ?? [];
-  const [selectedCommittee, setSelectedCommittee] = useState<Committee | null>(
-    null,
-  );
+  const [selectedCommittee, setSelectedCommittee] = useState<Committee | null>(null);
   const [showApplicationForm, setShowApplicationForm] = useState(false);
 
   const totalOpenings = committees.reduce(
@@ -29,9 +27,7 @@ export default function CommitteesPage() {
         <title>{config.pages.committees?.meta?.title ?? "Committees"}</title>
         <meta
           name="description"
-          content={
-            config.pages.committees?.meta?.description ?? "Committees page"
-          }
+          content={config.pages.committees?.meta?.description ?? "Committees page"}
         />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />

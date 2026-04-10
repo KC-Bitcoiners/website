@@ -1,7 +1,8 @@
 import React from "react";
 import Head from "next/head";
 import BitcoinLogo from "@/components/BitcoinLogo";
-import { config } from "@/config";
+import NewsletterForm from "@/components/NewsletterForm";
+import { config, newsletterConfig } from "@/config";
 
 export default function Home() {
   console.log('🏠 Home page - config.images.hero:', config.site.images.hero);
@@ -80,6 +81,21 @@ export default function Home() {
               </a>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Newsletter Signup Section */}
+      <section className="bg-gray-50 py-16">
+        <div className="container mx-auto px-6 max-w-md">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold mb-4 font-archivo-black bitcoin-orange">
+              {newsletterConfig.heading}
+            </h2>
+            <p className="text-gray-600">
+              {newsletterConfig.description}
+            </p>
+          </div>
+          <NewsletterForm />
         </div>
       </section>
     </>

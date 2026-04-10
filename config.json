@@ -223,5 +223,9 @@
       },
       "data": []
     }
+  },
+  "newsletter": {
+    "heading": "Stay Informed",
+    "description": "Get updates on upcoming events and community news."
   }
 }

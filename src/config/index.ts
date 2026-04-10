@@ -83,6 +83,9 @@ export const btcmapConfig = config.pages.shop?.api?.btcmap;
 // Export events page configuration
 export const eventsConfig = config.pages.events;
 
+// Export newsletter configuration
+export const newsletterConfig = (configData as any).newsletter;
+
 // Export events calendar configuration
 export const icalConfig = eventsConfig.calendar?.ical;
 
