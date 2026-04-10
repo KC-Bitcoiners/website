@@ -8,12 +8,11 @@ import { KC_BITCOINERS_RELAY, nostrRelays } from "@/config";
 // Check if we're on the client side
 const isClient = typeof window !== "undefined";
 
-// Conditionally import window.nostrdb.js only on the client
+// Conditionally import window.nostrdb.js only on the client.
+// Fire-and-forget — the library initialises itself on import, no return value needed.
+// Not awaited so this module stays synchronous and works in server-side contexts (ISR).
 if (isClient) {
-  try {
-    // window.nostrdb.js auto connects to a local nostr event cache for the browser
-    await import("window.nostrdb.js");
-  } catch (error) {}
+  import("window.nostrdb.js").catch(() => {});
 }
 
 export const pool = new RelayPool();
