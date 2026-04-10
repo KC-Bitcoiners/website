@@ -1,4 +1,5 @@
 import { CalendarEvent, EventFormData } from "@/types/calendar";
+import { logger } from "@/utils/logger";
 
 // Local storage key for events
 const EVENTS_STORAGE_KEY = "calendar-events";
@@ -24,7 +25,7 @@ export function saveEvents(events: CalendarEvent[]): void {
     );
     localStorage.setItem(EVENTS_STORAGE_KEY, JSON.stringify(localEvents));
   } catch (error) {
-    console.error("Failed to save events:", error);
+    logger.error("Failed to save events:", error);
   }
 }
 
@@ -34,7 +35,7 @@ export function loadEvents(): CalendarEvent[] {
     const stored = localStorage.getItem(EVENTS_STORAGE_KEY);
     return stored ? JSON.parse(stored) : [];
   } catch (error) {
-    console.error("Failed to load events:", error);
+    logger.error("Failed to load events:", error);
     return [];
   }
 }

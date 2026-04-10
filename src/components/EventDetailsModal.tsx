@@ -6,6 +6,7 @@ import {
 } from "../utils/calendar";
 import { XIcon } from "./Icons";
 import { naddrEncode } from "applesauce-core/helpers";
+import { logger } from "@/utils/logger";
 
 interface EventDetailsModalProps {
   event: CalendarEvent | null;
@@ -257,7 +258,7 @@ export default function EventDetailsModal({
                 pubkey: event.pubkey,
                 identifier: event.dTag,
               });
-              console.log("🔗 Generated naddr for nostr event:", {
+              logger.debug("Generated naddr for nostr event", {
                 eventId: event.id,
                 kind: event.kind,
                 pubkey: event.pubkey,

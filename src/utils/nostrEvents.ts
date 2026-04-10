@@ -1,5 +1,6 @@
-import { getWhitelistFilter, WHITELISTED_NPUBS, nostrRelays } from "@/config";
+import { getWhitelistFilter, WHITELISTED_NPUBS, WHITELISTED_PUBKEYS, nostrRelays } from "@/config";
 import { pool } from "@/lib/nostr";
+import { logger } from "@/utils/logger";
 import {
   decodePointer,
   finalizeEvent,
@@ -28,7 +29,7 @@ export interface NostrCalendarEvent {
 export async function fetchNostrCalendarEvents(): Promise<
   NostrCalendarEvent[]
 > {
-  console.log("📅 Starting to fetch nostr calendar events...");
+  logger.debug("Starting to fetch nostr calendar events");
 
   // Use relay pool to connect to multiple relays
   const relays = nostrRelays;
@@ -36,9 +37,9 @@ export async function fetchNostrCalendarEvents(): Promise<
   // Use whitelist filter to only get events from whitelisted users
   const filter = getWhitelistFilter();
 
-  console.log("🎯 Using whitelist calendar events filter:", filter);
-  console.log(
-    "👥 Only fetching events from whitelisted npubs:",
+  logger.debug("Using whitelist calendar events filter", filter);
+  logger.debug(
+    "Only fetching events from whitelisted npubs",
     WHITELISTED_NPUBS,
   );
 
@@ -46,12 +47,12 @@ export async function fetchNostrCalendarEvents(): Promise<
 
   try {
     // Use pool.request() which handles retries, deduplication, and multiple relays
-    console.log(`🔌 Fetching calendar events from relays:`, relays);
+    logger.debug("Fetching calendar events from relays", relays);
 
     const eventsPromise = new Promise<NostrCalendarEvent[]>(
       (resolve, reject) => {
         const timeout = setTimeout(() => {
-          console.log(`⏰ Request timeout`);
+          logger.debug("Request timeout");
           reject(new Error("Request timeout"));
         }, 30000); // 30 second timeout for all relays
 
@@ -59,7 +60,7 @@ export async function fetchNostrCalendarEvents(): Promise<
 
         pool.request(relays, filter).subscribe({
           next: (nostrEvent) => {
-            console.log(`🎯 Found calendar event:`, nostrEvent.id);
+            logger.debug("Found calendar event", nostrEvent.id);
 
             const calendarEvent: NostrCalendarEvent = {
               id: nostrEvent.id,
@@ -92,12 +93,12 @@ export async function fetchNostrCalendarEvents(): Promise<
             events.push(calendarEvent);
           },
           error: (error) => {
-            console.error(`💥 Error fetching calendar events:`, error);
+            logger.error("Error fetching calendar events", error);
             clearTimeout(timeout);
             reject(error);
           },
           complete: () => {
-            console.log(`📭 End of stored calendar events`);
+            logger.debug("End of stored calendar events");
             clearTimeout(timeout);
             resolve(events);
           },
@@ -119,10 +120,10 @@ export async function fetchNostrCalendarEvents(): Promise<
         if (!existingNaddrs.has(naddr)) {
           allEvents.push(event);
           existingNaddrs.add(naddr);
-          console.log(`➕ Added event:`, event.title || "No title");
+          logger.debug("Added event", event.title || "No title");
         } else {
-          console.log(
-            `🔁 Duplicate event skipped by naddr:`,
+          logger.debug(
+            "Duplicate event skipped by naddr",
             event.title || "No title",
           );
         }
@@ -137,19 +138,19 @@ export async function fetchNostrCalendarEvents(): Promise<
 
         if (!exists) {
           allEvents.push(event);
-          console.log(`➕ Added event (no dTag):`, event.title || "No title");
+          logger.debug("Added event (no dTag)", event.title || "No title");
         } else {
-          console.log(
-            `🔁 Duplicate event skipped (no dTag):`,
+          logger.debug(
+            "Duplicate event skipped (no dTag)",
             event.title || "No title",
           );
         }
       }
     }
 
-    console.log(`📊 Total calendar events fetched: ${allEvents.length}`);
-    console.log(
-      `📅 Calendar events summary:`,
+    logger.debug(`Total calendar events fetched: ${allEvents.length}`);
+    logger.debug(
+      "Calendar events summary",
       allEvents.map((e) => ({
         id: e.id,
         kind: e.kind,
@@ -158,7 +159,7 @@ export async function fetchNostrCalendarEvents(): Promise<
       })),
     );
   } catch (error) {
-    console.warn(`⚠️ Failed to fetch calendar events:`, error);
+    logger.warn("Failed to fetch calendar events", error);
   }
 
   // Sort events by creation time (newest first)
@@ -210,7 +211,7 @@ export async function publishNostrEvent(
   error?: string;
 }> {
   try {
-    console.log("🚀 Publishing event to nostr:", formData);
+    logger.debug("Publishing event to nostr", formData);
 
     // Generate a unique identifier for the event
     const dTag = `event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -298,33 +299,33 @@ export async function publishNostrEvent(
       content: formData.description || formData.title,
     };
 
-    console.log("📝 Created nostr event:", event);
+    logger.debug("Created nostr event", event);
 
     // Generate naddr for the event
     const naddr = naddrEncode({ kind, pubkey: userPubkey, identifier: dTag });
-    console.log("🔗 Generated naddr:", naddr);
+    logger.debug("Generated naddr", naddr);
 
     // Create a properly signed event
     let signedEvent;
 
     if (window.nostr && pubkey) {
       // Use Nostr extension for signing
-      console.log(
-        `🔑 Using Nostr extension for signing with pubkey: ${pubkey}`,
+      logger.debug(
+        `Using Nostr extension for signing with pubkey: ${pubkey}`,
       );
       const eventForExtension = {
         ...event,
         pubkey: pubkey,
       };
       signedEvent = await window.nostr.signEvent(eventForExtension);
-      console.log(`✅ Event signed with extension:`, signedEvent.id);
+      logger.debug("Event signed with extension", signedEvent.id);
     } else if (privateKey === "mock-private-key-for-demo") {
       // For demo purposes, generate a temporary key pair
       const tempSecretKey = generateSecretKey();
       const tempPubkey = getPublicKey(tempSecretKey);
 
       signedEvent = finalizeEvent(event, tempSecretKey);
-      console.log(`🔑 Generated temporary keypair for demo:`, {
+      logger.debug("Generated temporary keypair for demo", {
         pubkey: tempPubkey,
         eventId: signedEvent.id,
       });
@@ -362,8 +363,8 @@ export async function publishNostrEvent(
     // Actually publish to relays using RelayPool
     const relays = nostrRelays;
 
-    console.log("📡 Publishing to relays:", relays);
-    console.log("📝 Event data:", signedEvent);
+    logger.debug("Publishing to relays", relays);
+    logger.debug("Event data", signedEvent);
 
     try {
       // Use pool.publish() which handles retries and reconnection automatically
@@ -374,19 +375,19 @@ export async function publishNostrEvent(
       const failedResponses = responses.filter((r) => !r.ok);
 
       if (successfulResponses.length > 0) {
-        console.log("✅ Event successfully published to at least one relay!");
-        console.log(`  🆔 Event ID: ${signedEvent.id}`);
-        console.log(`  🔗 Naddr: ${naddr}`);
-        console.log(`  📅 Kind: ${kind} (${formData.eventType})`);
-        console.log(`  🏷️  D-Tag: ${dTag}`);
-        console.log(`  👤 Pubkey: ${userPubkey}`);
-        console.log(
-          `  ✅ Published to ${successfulResponses.length}/${responses.length} relays`,
+        logger.debug("Event successfully published to at least one relay");
+        logger.debug(`Event ID: ${signedEvent.id}`);
+        logger.debug(`Naddr: ${naddr}`);
+        logger.debug(`Kind: ${kind} (${formData.eventType})`);
+        logger.debug(`D-Tag: ${dTag}`);
+        logger.debug(`Pubkey: ${userPubkey}`);
+        logger.debug(
+          `Published to ${successfulResponses.length}/${responses.length} relays`,
         );
 
         if (failedResponses.length > 0) {
-          console.warn(
-            `  ⚠️ Failed on ${failedResponses.length} relays:`,
+          logger.warn(
+            `Failed on ${failedResponses.length} relays`,
             failedResponses.map((r) => `${r.from}: ${r.message}`),
           );
         }
@@ -400,14 +401,14 @@ export async function publishNostrEvent(
         const errorMessages = failedResponses
           .map((r) => `${r.from}: ${r.message}`)
           .join("; ");
-        console.error("❌ Failed to publish to all relays:", errorMessages);
+        logger.error("Failed to publish to all relays", errorMessages);
         return {
           success: false,
           error: errorMessages || "Failed to publish to relays",
         };
       }
     } catch (error) {
-      console.error("💥 Error publishing event:", error);
+      logger.error("Error publishing event", error);
       return {
         success: false,
         error:
@@ -417,7 +418,7 @@ export async function publishNostrEvent(
       };
     }
   } catch (error) {
-    console.error("💥 Error publishing nostr event:", error);
+    logger.error("Error publishing nostr event", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error occurred",

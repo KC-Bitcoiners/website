@@ -3,6 +3,7 @@ import { naddrEncode } from "applesauce-core/helpers";
 import { useEffect, useState } from "react";
 import { XIcon } from "./Icons";
 import { nostrRelays } from "@/config";
+import { logger } from "@/utils/logger";
 
 // RochesterKC business data
 const ROCHESTERKC_DATA = {
@@ -115,7 +116,7 @@ export default function VendorForm({
   // Pre-fill form with vendor data when editing
   useEffect(() => {
     if (isEdit && editVendor) {
-      console.log("🏪 Pre-filling form with vendor data:", editVendor);
+      logger.debug("🏪 Pre-filling form with vendor data:", editVendor);
 
       // Parse payment methods if available
       const paymentMethods = editVendor.payment_methods || [];
@@ -211,15 +212,15 @@ export default function VendorForm({
         `"${vendorData.submittedBy || ""}"`,
       ].join(",");
 
-      console.log("📄 CSV row to save:", csvRow);
+      logger.debug("📄 CSV row to save:", csvRow);
 
       // In a real implementation, this would save to a file or API
       // For now, we'll log it and show a success message
-      console.log("✅ Vendor data prepared for CSV export");
+      logger.debug("✅ Vendor data prepared for CSV export");
 
       return csvRow;
     } catch (error) {
-      console.error("Error saving to CSV:", error);
+      logger.error("Error saving to CSV:", error);
       throw error;
     }
   };
@@ -384,7 +385,7 @@ export default function VendorForm({
         content: content,
       };
 
-      console.log("🏪 Creating vendor attestation event:", event);
+      logger.debug("🏪 Creating vendor attestation event:", event);
 
       // Sign and publish the event using the Nostr extension
       if (typeof window === "undefined" || !window.nostr) {
@@ -398,7 +399,7 @@ export default function VendorForm({
         pubkey: user.pubkey,
       });
 
-      console.log("✅ Vendor event signed:", signedEvent.id);
+      logger.debug("✅ Vendor event signed:", signedEvent.id);
 
       // Publish to relays
       const relays = nostrRelays;
@@ -436,7 +437,7 @@ export default function VendorForm({
                 }
               }
             } catch (error) {
-              console.error(`Error parsing response from ${relayUrl}:`, error);
+              logger.error(`Error parsing response from ${relayUrl}:`, error);
             }
           };
 
@@ -478,9 +479,9 @@ export default function VendorForm({
           identifier: dTag,
         });
 
-        console.log("✅ Vendor successfully published to Nostr!");
-        console.log(`🆔 Event ID: ${publishedEventId}`);
-        console.log(`🔗 Naddr: ${naddr}`);
+        logger.debug("✅ Vendor successfully published to Nostr!");
+        logger.debug(`🆔 Event ID: ${publishedEventId}`);
+        logger.debug(`🔗 Naddr: ${naddr}`);
 
         onSuccess({
           eventId: publishedEventId,
@@ -519,7 +520,7 @@ export default function VendorForm({
         throw new Error("Failed to publish vendor to any relay");
       }
     } catch (error) {
-      console.error("Error submitting vendor:", error);
+      logger.error("Error submitting vendor:", error);
       alert(
         "Failed to submit vendor: " +
           (error instanceof Error ? error.message : "Unknown error"),

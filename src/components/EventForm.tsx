@@ -547,6 +547,7 @@ export default function EventForm({
             type="submit"
             disabled={isSubmitting}
             className="px-4 py-2 bg-bitcoin-orange text-white rounded-md hover:bg-bitcoin-orange-hover transition-colors disabled:opacity-50"
+            data-testid="publish-event-btn"
           >
             {isSubmitting ? "Publishing..." : "Publish Event"}
           </button>

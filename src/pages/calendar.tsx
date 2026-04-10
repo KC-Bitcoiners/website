@@ -22,6 +22,7 @@ import { PlusIcon } from "../components/Icons";
 import { GetStaticProps, InferGetStaticPropsType } from "next";
 import { WHITELISTED_NPUBS, WHITELISTED_PUBKEYS } from "@/config";
 import { useNostr } from "../contexts/NostrContext";
+import { logger } from "@/utils/logger";
 
 interface CalendarPageProps {
   meetupGroup: MeetupGroup | null;
@@ -39,7 +40,7 @@ export const getStaticProps: GetStaticProps<CalendarPageProps> = async () => {
       },
     };
   } catch (error) {
-    console.error("Error fetching meetup events:", error);
+    logger.error("Error fetching meetup events:", error);
 
     return {
       props: {
@@ -75,20 +76,20 @@ export default function CalendarPage({
   // Load events from localStorage, meetup data, and nostr
   useEffect(() => {
     const loadInitialEvents = async () => {
-      console.log("📅 Starting to load initial events...");
+      logger.debug("📅 Starting to load initial events...");
 
       try {
         // Load local events
-        console.log("🗂️ Loading local events...");
+        logger.debug("🗂️ Loading local events...");
         const localEvents = loadEvents();
-        console.log(`📊 Loaded ${localEvents.length} local events`);
+        logger.debug(`📊 Loaded ${localEvents.length} local events`);
 
         // Transform meetup events from props
-        console.log("🌐 Processing meetup events from props...");
+        logger.debug("🌐 Processing meetup events from props...");
         let meetupEvents: CalendarEvent[] = [];
 
         if (meetupGroup) {
-          console.log(
+          logger.debug(
             `📋 Found ${meetupGroup.events.edges.length} meetup events in group`,
           );
           meetupEvents = meetupGroup.events.edges.map((edge) => {
@@ -101,7 +102,7 @@ export default function CalendarPage({
               ? Math.floor(new Date(event.endTime).getTime() / 1000)
               : startTime + 3600; // Default 1 hour duration
 
-            console.log(
+            logger.debug(
               `🎯 Processing meetup event: ${event.title} at ${new Date(startTime * 1000).toLocaleString()}`,
             );
 
@@ -129,18 +130,18 @@ export default function CalendarPage({
               created_at: Math.floor(Date.now() / 1000),
             };
           });
-          console.log(
+          logger.debug(
             `✅ Successfully processed ${meetupEvents.length} meetup events`,
           );
         } else {
-          console.log("⚠️ No meetup group data available");
+          logger.debug("⚠️ No meetup group data available");
         }
 
         // Load local and meetup events immediately
-        console.log(
+        logger.debug(
           `🚀 Displaying immediate events: ${localEvents.length} local + ${meetupEvents.length} meetup`,
         );
-        console.log(
+        logger.debug(
           "🔍 Meetup events before sorting:",
           meetupEvents.map((e) => ({
             id: e.id,
@@ -155,7 +156,7 @@ export default function CalendarPage({
           ...localEvents,
           ...meetupEvents,
         ]);
-        console.log(
+        logger.debug(
           "🔍 All immediate events after sorting:",
           immediateEvents.map((e) => ({
             id: e.id,
@@ -168,9 +169,9 @@ export default function CalendarPage({
 
         const upcoming = getUpcomingEvents(immediateEvents);
         const past = getPastEvents(immediateEvents);
-        console.log("🔍 Upcoming events count:", upcoming.length);
-        console.log("🔍 Past events count:", past.length);
-        console.log(
+        logger.debug("🔍 Upcoming events count:", upcoming.length);
+        logger.debug("🔍 Past events count:", past.length);
+        logger.debug(
           "🔍 Upcoming events:",
           upcoming.map((e) => ({
             id: e.id,
@@ -179,7 +180,7 @@ export default function CalendarPage({
             kind: e.kind,
           })),
         );
-        console.log(
+        logger.debug(
           "🔍 Past events:",
           past.map((e) => ({
             id: e.id,
@@ -191,7 +192,7 @@ export default function CalendarPage({
 
         setEvents(immediateEvents);
       } catch (error) {
-        console.error("Error loading initial events:", error);
+        logger.error("Error loading initial events:", error);
         // Fallback to local events only
         const localEvents = loadEvents();
         setEvents(sortEventsByTime(localEvents));
@@ -204,30 +205,30 @@ export default function CalendarPage({
   // Load nostr events separately in the background
   useEffect(() => {
     const loadNostrEvents = async () => {
-      console.log("🕰️ Loading nostr events in background...");
+      logger.debug("🕰️ Loading nostr events in background...");
       setIsLoadingNostrEvents(true);
       let nostrEvents: CalendarEvent[] = [];
 
       try {
         const nostrCalendarEvents = await fetchNostrCalendarEvents();
-        console.log(`📡 Found ${nostrCalendarEvents.length} raw nostr events`);
+        logger.debug(`📡 Found ${nostrCalendarEvents.length} raw nostr events`);
         nostrEvents = nostrCalendarEvents.map(convertNostrEventToCalendar);
-        console.log(
+        logger.debug(
           `✅ Converted ${nostrEvents.length} nostr events to calendar format`,
         );
       } catch (error) {
-        console.warn("⚠️ Failed to load nostr events:", error);
+        logger.warn("⚠️ Failed to load nostr events:", error);
       } finally {
         setIsLoadingNostrEvents(false);
       }
 
       // Add nostr events to existing events
       setEvents((prevEvents) => {
-        console.log(
+        logger.debug(
           `➕ Adding ${nostrEvents.length} nostr events to existing ${prevEvents.length} events`,
         );
         const allEvents = sortEventsByTime([...prevEvents, ...nostrEvents]);
-        console.log(`📅 Total events after adding nostr: ${allEvents.length}`);
+        logger.debug(`📅 Total events after adding nostr: ${allEvents.length}`);
         return allEvents;
       });
     };
@@ -241,7 +242,7 @@ export default function CalendarPage({
     setIsSubmitting(true);
     try {
       // Publish to nostr instead of saving locally
-      console.log("🚀 Creating new nostr event:", formData);
+      logger.debug("🚀 Creating new nostr event:", formData);
 
       // For now, use a mock private key. In a real implementation, this would come from user authentication
       // Check if user is authenticated
@@ -252,7 +253,7 @@ export default function CalendarPage({
         return;
       }
 
-      console.log(
+      logger.debug(
         "🚀 Creating new nostr event with authenticated user:",
         user.pubkey,
       );
@@ -261,11 +262,11 @@ export default function CalendarPage({
       const result = await publishNostrEvent(formData, undefined, user.pubkey);
 
       if (result.success) {
-        console.log(
+        logger.debug(
           "✅ Successfully published event to nostr:",
           result.eventId,
         );
-        console.log("🔗 Event naddr:", result.naddr);
+        logger.debug("🔗 Event naddr:", result.naddr);
 
         // Create a calendar event to display immediately
         const newEvent = createEventFromFormData(formData);
@@ -273,7 +274,7 @@ export default function CalendarPage({
         newEvent.pubkey = user.pubkey; // Use actual user pubkey from Nostr extension
         newEvent.dTag = `event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`; // Match the dTag used in publishing
 
-        console.log("📝 Adding new event to local state:", {
+        logger.debug("📝 Adding new event to local state:", {
           id: newEvent.id,
           title: newEvent.title,
           start: newEvent.start,
@@ -291,7 +292,7 @@ export default function CalendarPage({
           );
 
           if (exists) {
-            console.log(
+            logger.debug(
               "⚠️ Event already exists, skipping duplicate:",
               newEvent.id,
             );
@@ -299,7 +300,7 @@ export default function CalendarPage({
           }
 
           const updatedEvents = sortEventsByTime([...prevEvents, newEvent]);
-          console.log("📅 Updated events count:", updatedEvents.length);
+          logger.debug("📅 Updated events count:", updatedEvents.length);
 
           // Also save to localStorage as backup (but avoid duplicates)
           const existingEvents = loadEvents();
@@ -324,54 +325,54 @@ export default function CalendarPage({
 
         // Fetch the event from relay to ensure it's rendered
         setTimeout(async () => {
-          console.log(
+          logger.debug(
             "🔄 Fetching newly published event from relay to verify it was published...",
           );
           try {
-            console.log(
+            logger.debug(
               "📡 Calling fetchNostrCalendarEvents() to get latest events from relay...",
             );
             const nostrCalendarEvents = await fetchNostrCalendarEvents();
-            console.log(
+            logger.debug(
               `📨 Received ${nostrCalendarEvents.length} events from relay`,
             );
 
-            console.log("🔄 Converting nostr events to calendar format...");
+            logger.debug("🔄 Converting nostr events to calendar format...");
             const nostrEvents = nostrCalendarEvents.map(
               convertNostrEventToCalendar,
             );
-            console.log(
+            logger.debug(
               `✅ Converted ${nostrEvents.length} nostr events to calendar format`,
             );
 
-            console.log("🔄 Updating event list with newly fetched events...");
+            logger.debug("🔄 Updating event list with newly fetched events...");
             setEvents((prevEvents) => {
               const allEvents = sortEventsByTime([
                 ...prevEvents,
                 ...nostrEvents,
               ]);
-              console.log(
+              logger.debug(
                 `📅 Updated total events: ${allEvents.length} (was ${prevEvents.length})`,
               );
               return allEvents;
             });
 
-            console.log(
+            logger.debug(
               "✅ Successfully fetched and integrated newly published event from relay",
             );
           } catch (error) {
-            console.error(
+            logger.error(
               "💥 Failed to refetch events after publishing:",
               error,
             );
-            console.warn(
+            logger.warn(
               "⚠️ Event was published successfully, but failed to refresh from relay",
             );
           }
         }, 2000); // Wait 2 seconds for relay to propagate
       } else {
         const errorMsg = result.error || "Failed to publish to nostr";
-        console.error("❌ Event publishing failed:", errorMsg);
+        logger.error("❌ Event publishing failed:", errorMsg);
 
         // Show detailed error to user
         if (errorMsg.includes("timeout") || errorMsg.includes("Timeout")) {
@@ -402,7 +403,7 @@ export default function CalendarPage({
         throw new Error(errorMsg);
       }
     } catch (error) {
-      console.error("Failed to create event:", error);
+      logger.error("Failed to create event:", error);
       const errorMsg = error instanceof Error ? error.message : "Unknown error";
 
       // Show user-friendly error message
@@ -452,7 +453,7 @@ export default function CalendarPage({
       saveEvents(updatedEvents);
       setEditingEvent(null);
     } catch (error) {
-      console.error("Failed to update event:", error);
+      logger.error("Failed to update event:", error);
       alert("Failed to update event. Please try again.");
     } finally {
       setIsSubmitting(false);
@@ -491,11 +492,11 @@ export default function CalendarPage({
   const pastEvents = getPastEvents(events);
 
   // Debug event rendering
-  console.log("🎯 Event Rendering Debug:");
-  console.log(`📊 Total events: ${events.length}`);
-  console.log(`🟢 Upcoming events: ${upcomingEvents.length}`);
-  console.log(`🔴 Past events: ${pastEvents.length}`);
-  console.log(
+  logger.debug("🎯 Event Rendering Debug:");
+  logger.debug(`📊 Total events: ${events.length}`);
+  logger.debug(`🟢 Upcoming events: ${upcomingEvents.length}`);
+  logger.debug(`🔴 Past events: ${pastEvents.length}`);
+  logger.debug(
     "📋 All events:",
     events.map((e) => ({
       id: e.id,

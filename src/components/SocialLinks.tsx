@@ -1,6 +1,7 @@
 import React from 'react';
 import { socialLinks, SocialLink } from '@/config';
 import { GitHubIcon } from './Icons';
+import { logger } from '@/utils/logger';
 
 // Icon mapping - dynamically import icons based on the icon name
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -19,7 +20,7 @@ function SocialLinkItem({ link, className = '' }: SocialLinkProps) {
   const IconComponent = iconMap[link.icon];
   
   if (!IconComponent) {
-    console.warn(`Icon "${link.icon}" not found in iconMap`);
+    logger.warn(`Icon "${link.icon}" not found in iconMap`);
     return null;
   }
 

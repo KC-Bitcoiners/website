@@ -8,18 +8,29 @@ export interface EventAction {
 
 interface EventActionsProps {
   event: Record<string, unknown>;
+  /** Extra actions beyond the defaults */
   extraActions?: EventAction[];
+  /** Optional class for the trigger button */
   className?: string;
+  /** Callback when user requests delete. If not provided, delete option is hidden. */
   onDelete?: () => void;
+  /** Callback when user requests edit. If not provided, edit option is hidden. */
   onEdit?: () => void;
 }
 
-export default function EventActions({ event, extraActions, className, onDelete, onEdit }: EventActionsProps) {
+export default function EventActions({
+  event,
+  extraActions,
+  className,
+  onDelete,
+  onEdit,
+}: EventActionsProps) {
   const [open, setOpen] = useState(false);
   const [showRaw, setShowRaw] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
+  // Close on outside click
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) {
@@ -39,14 +50,12 @@ export default function EventActions({ event, extraActions, className, onDelete,
       setCopied(label);
       setTimeout(() => setCopied(null), 2000);
     } catch {
-      // fallback
+      // clipboard not available
     }
   };
 
   const handleShare = async () => {
-    const text = eventId
-      ? `nostr:${eventId}`
-      : JSON.stringify(event);
+    const text = eventId ? `nostr:${eventId}` : JSON.stringify(event);
     await copyToClipboard(text, "Share link");
     setOpen(false);
   };
@@ -71,7 +80,7 @@ export default function EventActions({ event, extraActions, className, onDelete,
   const actions: EventAction[] = [
     {
       label: copied === "Share link" ? "Copied!" : "Share",
-      icon: "->",
+      icon: "🔗",
       onClick: handleShare,
     },
     {
@@ -83,22 +92,25 @@ export default function EventActions({ event, extraActions, className, onDelete,
       ? [
           {
             label: copied === "Event ID" ? "Copied!" : "Copy Event ID",
-            icon: "[ ]",
+            icon: "📋",
             onClick: handleCopyId,
           },
         ]
       : []),
     {
       label: copied === "Raw JSON" ? "Copied!" : "Copy Raw JSON",
-      icon: "{}",
+      icon: "📄",
       onClick: handleCopyRaw,
     },
     ...(onEdit
       ? [
           {
             label: "Edit",
-            icon: "Ed",
-            onClick: () => { onEdit(); setOpen(false); },
+            icon: "✏️",
+            onClick: () => {
+              onEdit();
+              setOpen(false);
+            },
           },
         ]
       : []),
@@ -106,8 +118,11 @@ export default function EventActions({ event, extraActions, className, onDelete,
       ? [
           {
             label: "Delete",
-            icon: "Del",
-            onClick: () => { onDelete(); setOpen(false); },
+            icon: "🗑️",
+            onClick: () => {
+              onDelete();
+              setOpen(false);
+            },
           },
         ]
       : []),
@@ -116,6 +131,7 @@ export default function EventActions({ event, extraActions, className, onDelete,
 
   return (
     <div ref={ref} className="relative">
+      {/* Trigger button */}
       <button
         onClick={() => setOpen(!open)}
         title="Actions"
@@ -124,6 +140,7 @@ export default function EventActions({ event, extraActions, className, onDelete,
         ...
       </button>
 
+      {/* Dropdown */}
       {open && (
         <div className="absolute right-0 top-full mt-1 z-50 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[180px]">
           {actions.map((action, i) => (
@@ -132,13 +149,16 @@ export default function EventActions({ event, extraActions, className, onDelete,
               onClick={action.onClick}
               className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-bitcoin-orange transition-colors flex items-center gap-2"
             >
-              {action.icon && <span className="w-5 text-center">{action.icon}</span>}
+              {action.icon && (
+                <span className="w-5 text-center">{action.icon}</span>
+              )}
               {action.label}
             </button>
           ))}
         </div>
       )}
 
+      {/* Raw data panel */}
       {showRaw && (
         <div className="absolute right-0 top-full mt-1 z-50 bg-white border border-gray-200 rounded-lg shadow-lg w-[400px] max-w-[90vw]">
           <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100">
