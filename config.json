@@ -41,7 +41,10 @@
           "npub187w4ykkurr3e89mm0rg5p49x6lveqtq0pp0um7qyk6xyrpeerx3s84exkz",
           "npub1nv5c7sj2zxtjv7uayp2q2mneymm39mfp93wjhl5287y6yp6ey02qrsjhcn",
           "npub1yvscx9vrmpcmwcmydrm8lauqdpngum4ne8xmkgc2d4rcaxrx7tkswdwzdu"
-      ]   
+      ],
+      "blossom": {
+          "server": "https://mibo.us.nostria.app"
+      }
   },
   "pages": {
     "home": {
@@ -189,6 +192,13 @@
         "title": "Know a Bitcoin-Accepting Business?",
         "description": "Help grow this decentralized vendor directory! If you know of a local business that accepts Bitcoin, submit their information to the Nostr network.",
         "buttonText": "Submit New Vendor"
+      }
+    },
+    "gallery": {
+      "title": "Gallery",
+      "meta": {
+        "title": "Gallery - KC Bitcoiners",
+        "description": "Photos from KC Bitcoiners events and community meetups"
       }
     }
   }

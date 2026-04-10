@@ -45,6 +45,10 @@ export interface ApiConfig {
 export interface NostrConfig {
   relays: string[];
   whitelistedNpubs: string[];
+  whitelistedPubkeys?: string[];
+  blossom?: {
+    server: string;
+  };
 }
 
 export interface PageConfig {
@@ -127,6 +131,9 @@ export const WHITELISTED_NPUBS = whitelistedNpubs;
 export const WHITELISTED_PUBKEYS = WHITELISTED_NPUBS.map((npub) =>
   normalizeToPubkey(npub),
 ).filter((p) => p !== null);
+
+// Blossom server config
+export const blossomConfig = nostrConfig.blossom;
 
 // Helper function to check if a pubkey is whitelisted
 export function isWhitelisted(pubkey: string): boolean {
