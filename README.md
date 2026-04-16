@@ -1,3 +1,5 @@
+![Bodarc Logo](public/repository-open-graph-template.png)
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).
 
 ## Getting Started
