@@ -32,7 +32,6 @@
           "wss://relay.damus.io",
           "wss://nostr21.com",
           "wss://nos.lol",
-          "wss://relay.snort.social",
           "wss://relay.kcbitcoiners.com"
       ],
       "whitelistedNpubs": [

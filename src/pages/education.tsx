@@ -55,6 +55,25 @@ function getPodcastFeedGuid(externalRef: string): string | null {
   return match ? match[1] : null;
 }
 
+function isRssFeed(url: string): boolean {
+  return /\.(xml|rss)(\?|$)/i.test(url) || /\/feed\b/i.test(url);
+}
+
+function getPodcastIndexShowUrl(externalRef: string): string | null {
+  if (isRssFeed(externalRef)) {
+    return `https://podcastindex.org/podcast/${encodeURIComponent(externalRef)}`;
+  }
+  const guid = getPodcastFeedGuid(externalRef);
+  if (guid) return `https://podcastindex.org/podcast/${encodeURIComponent(guid)}`;
+  return null;
+}
+
+function getPodcastIndexEpisodeUrl(externalRef: string): string | null {
+  const guid = getPodcastGuid(externalRef);
+  if (guid) return `https://podcastindex.org/episode/${encodeURIComponent(guid)}`;
+  return null;
+}
+
 export default function EducationPage() {
   const [pinboards, setPinboards] = useState<Pinboard[]>([]);
   const [featuredPins, setFeaturedPins] = useState<Pin[]>([]);
@@ -74,13 +93,12 @@ export default function EducationPage() {
   const loadAll = async () => {
     setLoadingFeatured(true);
     setLoadingBoards(true);
-    try {
-      const [boards, pins] = await Promise.all([fetchPinboards(), fetchFeaturedPins()]);
-      setPinboards(boards);
-      setFeaturedPins(pins);
-    } catch (err) {
-      console.warn("Failed to load education data:", err);
-    }
+    let boards: Pinboard[] = [];
+    let pins: Pin[] = [];
+    try { boards = await fetchPinboards(); } catch (err) { console.warn("Failed to load pinboards:", err); }
+    try { pins = await fetchFeaturedPins(); } catch (err) { console.warn("Failed to load featured pins:", err); }
+    setPinboards(boards);
+    setFeaturedPins(pins);
     setLoadingFeatured(false);
     setLoadingBoards(false);
   };
@@ -432,6 +450,46 @@ function FilterBar({
 }
 
 // --- Pin Card ---
+interface PodcastFeedMeta {
+  imageUrl: string | null;
+  websiteUrl: string | null;
+}
+
+const feedMetaCache = new Map<string, PodcastFeedMeta>();
+
+function usePodcastFeedMeta(feedUrl: string | null): PodcastFeedMeta | null {
+  const [meta, setMeta] = useState<PodcastFeedMeta | null>(null);
+
+  useEffect(() => {
+    if (!feedUrl || !isRssFeed(feedUrl)) { setMeta(null); return; }
+    if (feedMetaCache.has(feedUrl)) { setMeta(feedMetaCache.get(feedUrl)!); return; }
+    const controller = new AbortController();
+    // Use CORS proxy since static export can't have API routes
+    const proxyUrl = `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(feedUrl)}`;
+    fetch(proxyUrl, { signal: controller.signal })
+      .then(r => r.text())
+      .then(xml => {
+        let imageUrl: string | null = null;
+        let websiteUrl: string | null = null;
+        const imgMatch = xml.match(/<itunes:image[^>]*href=["']([^"']+)["']/i);
+        if (imgMatch) imageUrl = imgMatch[1];
+        if (!imageUrl) {
+          const imgTagMatch = xml.match(/<image>[\s\S]*?<url>([^<]+)<\/url>/i);
+          if (imgTagMatch) imageUrl = imgTagMatch[1].trim();
+        }
+        const linkMatch = xml.match(/<channel[\s\S]*?<link>([^<]+)<\/link>/i);
+        if (linkMatch) websiteUrl = linkMatch[1].trim();
+        const result: PodcastFeedMeta = { imageUrl, websiteUrl };
+        feedMetaCache.set(feedUrl, result);
+        setMeta(result);
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [feedUrl]);
+
+  return meta;
+}
+
 function PinCard({ pin, onDelete, onEdit }: { pin: Pin; onDelete: () => void; onEdit: () => void }) {
   const url = getPinUrl(pin);
   const dt = getDisplayType(pin);
@@ -440,8 +498,10 @@ function PinCard({ pin, onDelete, onEdit }: { pin: Pin; onDelete: () => void; on
   const rumbleId = dt === "youtube" ? getRumbleId(pin.externalRef || "") : null;
   const isVideo = !!(ytId || vimeoId || rumbleId);
   const spotifyEpisodeId = dt === "podcast-episode" ? getSpotifyEpisodeId(pin.externalRef || "") : null;
-  const episodeGuid = dt === "podcast-episode" ? getPodcastGuid(pin.externalRef || "") : null;
-  const feedGuid = dt === "podcast" ? getPodcastFeedGuid(pin.externalRef || "") : null;
+  const podcastIndexShowUrl = dt === "podcast" ? getPodcastIndexShowUrl(pin.externalRef || "") : null;
+  const podcastIndexEpisodeUrl = dt === "podcast-episode" ? getPodcastIndexEpisodeUrl(pin.externalRef || "") : null;
+  const isSpotifyShow = dt === "podcast" && pin.externalRef?.includes("open.spotify.com");
+  const feedMeta = usePodcastFeedMeta(dt === "podcast" && !isSpotifyShow ? pin.externalRef || null : null);
   const cfg = DISPLAY_TYPE_CONFIG[dt];
   const bookIsbn = dt === "book" ? pin.externalRef?.replace(/^isbn:/i, "") : null;
   const doiId = dt === "paper" ? pin.externalRef?.replace(/^doi:/i, "") : null;
@@ -452,11 +512,13 @@ function PinCard({ pin, onDelete, onEdit }: { pin: Pin; onDelete: () => void; on
       ? `https://doi.org/${doiId}`
       : geoCoords
         ? `https://www.google.com/maps?q=${encodeURIComponent(geoCoords)}`
-        : episodeGuid
-          ? `https://www.fountain.fm/episode/${episodeGuid}`
-          : feedGuid
-            ? `https://www.fountain.fm/podcast/${feedGuid}`
+        : podcastIndexEpisodeUrl
+          ? podcastIndexEpisodeUrl
+          : podcastIndexShowUrl
+            ? podcastIndexShowUrl
             : url;
+  const feedWebsiteUrl = feedMeta?.websiteUrl;
+  const finalDisplayUrl = feedWebsiteUrl || displayUrl;
 
   return (
     <div
@@ -495,11 +557,11 @@ function PinCard({ pin, onDelete, onEdit }: { pin: Pin; onDelete: () => void; on
         </div>
       )}
 
-      {/* Spotify embed */}
-      {dt === "podcast" && pin.externalRef && (
+      {/* Spotify embed (show) */}
+      {dt === "podcast" && isSpotifyShow && (
         <div className="w-full">
           <iframe
-            src={pin.externalRef.replace("open.spotify.com/show/", "open.spotify.com/embed/show/") + "?utm_source=generator&theme=0"}
+            src={pin.externalRef!.replace("open.spotify.com/show/", "open.spotify.com/embed/show/") + "?utm_source=generator&theme=0"}
             title={pin.title || "Podcast"}
             width="100%"
             height="152"
@@ -527,10 +589,35 @@ function PinCard({ pin, onDelete, onEdit }: { pin: Pin; onDelete: () => void; on
         </div>
       )}
 
-      {/* Podcast Episode fallback (GUID-based, no Spotify) */}
-      {dt === "podcast-episode" && !spotifyEpisodeId && episodeGuid && (
+      {/* Podcast fallback card (RSS feed / GUID — no Spotify embed) */}
+      {dt === "podcast" && !isSpotifyShow && (podcastIndexShowUrl || feedMeta) && (
         <a
-          href={`https://www.fountain.fm/episode/${episodeGuid}`}
+          href={feedMeta?.websiteUrl || podcastIndexShowUrl || "#"}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-purple-50 to-indigo-50 hover:from-purple-100 hover:to-indigo-100 transition-colors"
+        >
+          {feedMeta?.imageUrl ? (
+            <img src={feedMeta.imageUrl} alt={pin.title || "Podcast"} className="w-12 h-12 rounded-lg object-cover shrink-0" loading="lazy" />
+          ) : (
+            <svg className="w-8 h-8 text-purple-600 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 1a9 9 0 0 0-9 9v7c0 1.66 1.34 3 3 3h3v-8H5v-2c0-3.87 3.13-7 7-7s7 3.13 7 7v2h-4v8h3c1.66 0 3-1.34 3-3v-7a9 9 0 0 0-9-9z"/>
+            </svg>
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-900 truncate">{pin.title || "Podcast"}</p>
+            <p className="text-xs text-gray-500">{feedMeta?.websiteUrl ? new URL(feedMeta.websiteUrl).hostname : "View on Podcast Index"}</p>
+          </div>
+          <svg className="w-4 h-4 text-gray-400 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd"/>
+          </svg>
+        </a>
+      )}
+
+      {/* Podcast Episode fallback card (GUID-based, no Spotify) */}
+      {dt === "podcast-episode" && !spotifyEpisodeId && podcastIndexEpisodeUrl && (
+        <a
+          href={podcastIndexEpisodeUrl}
           target="_blank"
           rel="noopener noreferrer"
           className="w-full flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-purple-50 to-indigo-50 hover:from-purple-100 hover:to-indigo-100 transition-colors"
@@ -540,28 +627,7 @@ function PinCard({ pin, onDelete, onEdit }: { pin: Pin; onDelete: () => void; on
           </svg>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-900 truncate">{pin.title || "Podcast Episode"}</p>
-            <p className="text-xs text-gray-500">Listen on Fountain</p>
-          </div>
-          <svg className="w-4 h-4 text-gray-400 shrink-0" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd"/>
-          </svg>
-        </a>
-      )}
-
-      {/* Podcast Show fallback (GUID-based, no Spotify) */}
-      {dt === "podcast" && feedGuid && !pin.externalRef?.includes("open.spotify.com") && (
-        <a
-          href={`https://www.fountain.fm/podcast/${feedGuid}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="w-full flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-purple-50 to-indigo-50 hover:from-purple-100 hover:to-indigo-100 transition-colors"
-        >
-          <svg className="w-8 h-8 text-purple-600 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 1a9 9 0 0 0-9 9v7c0 1.66 1.34 3 3 3h3v-8H5v-2c0-3.87 3.13-7 7-7s7 3.13 7 7v2h-4v8h3c1.66 0 3-1.34 3-3v-7a9 9 0 0 0-9-9z"/>
-          </svg>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">{pin.title || "Podcast"}</p>
-            <p className="text-xs text-gray-500">View on Fountain</p>
+            <p className="text-xs text-gray-500">View on Podcast Index</p>
           </div>
           <svg className="w-4 h-4 text-gray-400 shrink-0" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd"/>
@@ -590,9 +656,9 @@ function PinCard({ pin, onDelete, onEdit }: { pin: Pin; onDelete: () => void; on
           {pin.rawEvent && <EventActions event={pin.rawEvent} onDelete={onDelete} onEdit={onEdit} />}
         </div>
 
-        {displayUrl ? (
+        {finalDisplayUrl ? (
           <a
-            href={displayUrl}
+            href={finalDisplayUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="text-lg font-bold text-gray-900 mb-1 hover:text-bitcoin-orange transition-colors block"
@@ -797,8 +863,8 @@ function AddPinModal({
             {selectedType && (
               <p className="text-xs text-gray-500 mt-1">
                 {selectedType === "youtube" && "Paste a video URL (YouTube, Vimeo, or Rumble)"}
-                {selectedType === "podcast" && "Paste a Spotify podcast URL or podcast:guid:xxx"}
-                {selectedType === "podcast-episode" && "Paste a Spotify episode URL or enter podcast:item:guid:xxx"}
+                {selectedType === "podcast" && "Paste an RSS feed URL (e.g. example.com/feed.xml) or a Spotify show URL"}
+                {selectedType === "podcast-episode" && "Paste a Spotify episode URL or an RSS feed URL"}
                 {selectedType === "link" && "Paste any web URL"}
                 {selectedType === "book" && "Enter an ISBN like isbn:978... or a bare ISBN number"}
                 {selectedType === "movie" && "Enter an ISAN like isan:XXXX-XXXX-XXXX"}
@@ -816,8 +882,8 @@ function AddPinModal({
               onChange={(e) => handleUrlChange(e.target.value)}
               placeholder={
                 selectedType === "youtube" ? "https://youtube.com/watch?v=... or https://vimeo.com/..."
-                : selectedType === "podcast" ? "https://open.spotify.com/show/... or podcast:guid:xxx"
-                : selectedType === "podcast-episode" ? "https://open.spotify.com/episode/... or podcast:item:guid:xxx"
+                : selectedType === "podcast" ? "https://example.com/feed.xml or https://open.spotify.com/show/..."
+                : selectedType === "podcast-episode" ? "https://open.spotify.com/episode/... or RSS feed URL"
                 : selectedType === "link" ? "https://example.com/article"
                 : selectedType === "book" ? "isbn:9780743273565 or bare ISBN"
                 : selectedType === "movie" ? "isan:XXXX-XXXX-XXXX-XXXX"

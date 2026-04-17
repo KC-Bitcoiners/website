@@ -77,49 +77,49 @@ export function getDisplayType(pin: Pin): DisplayType {
 
 export const DISPLAY_TYPE_CONFIG: Record<DisplayType, { icon: string; label: string; color: string; activeColor: string }> = {
   youtube: {
-    icon: ">>",
+    icon: "▶️",
     label: "Videos",
     color: "bg-red-100 text-red-700",
     activeColor: "bg-red-600 text-white",
   },
   podcast: {
-    icon: "##",
+    icon: "🎙️",
     label: "Podcasts",
     color: "bg-purple-100 text-purple-700",
     activeColor: "bg-purple-600 text-white",
   },
   "podcast-episode": {
-    icon: "~",
+    icon: "🎵",
     label: "Episodes",
     color: "bg-indigo-100 text-indigo-700",
     activeColor: "bg-indigo-600 text-white",
   },
   link: {
-    icon: "->",
+    icon: "🔗",
     label: "Links",
     color: "bg-blue-100 text-blue-700",
     activeColor: "bg-blue-600 text-white",
   },
   book: {
-    icon: "Bk",
+    icon: "📚",
     label: "Books",
     color: "bg-amber-100 text-amber-700",
     activeColor: "bg-amber-600 text-white",
   },
   movie: {
-    icon: "Mv",
+    icon: "🎥",
     label: "Movies",
     color: "bg-pink-100 text-pink-700",
     activeColor: "bg-pink-600 text-white",
   },
   paper: {
-    icon: "Pp",
+    icon: "📄",
     label: "Papers",
     color: "bg-teal-100 text-teal-700",
     activeColor: "bg-teal-600 text-white",
   },
   location: {
-    icon: "@",
+    icon: "📍",
     label: "Locations",
     color: "bg-green-100 text-green-700",
     activeColor: "bg-green-600 text-white",
@@ -197,6 +197,12 @@ export function detectContentKind(value: string): DetectedContent {
   }
   if (/^-?\d+\.\d+,\s*-?\d+\.\d+$/.test(trimmed)) {
     return { iTag: `geo:${trimmed.replace(/\s/g, "")}`, kTag: "geo", displayType: "location" };
+  }
+
+  // RSS/Atom feed URL
+  if (/\.(xml|rss)(\?|$)/i.test(trimmed) || /\/feed\b/i.test(trimmed)) {
+    const url = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+    return { iTag: url, kTag: "podcast", displayType: "podcast" };
   }
 
   // Default: web URL -- add scheme if missing
