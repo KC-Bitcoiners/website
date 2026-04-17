@@ -45,6 +45,16 @@ function getSpotifyEpisodeId(url: string): string | null {
   return match ? match[1] : null;
 }
 
+function getPodcastGuid(externalRef: string): string | null {
+  const match = externalRef.match(/^podcast:item:guid:(.+)$/i);
+  return match ? match[1] : null;
+}
+
+function getPodcastFeedGuid(externalRef: string): string | null {
+  const match = externalRef.match(/^podcast:guid:(.+)$/i);
+  return match ? match[1] : null;
+}
+
 export default function EducationPage() {
   const [pinboards, setPinboards] = useState<Pinboard[]>([]);
   const [featuredPins, setFeaturedPins] = useState<Pin[]>([]);
@@ -430,6 +440,8 @@ function PinCard({ pin, onDelete, onEdit }: { pin: Pin; onDelete: () => void; on
   const rumbleId = dt === "youtube" ? getRumbleId(pin.externalRef || "") : null;
   const isVideo = !!(ytId || vimeoId || rumbleId);
   const spotifyEpisodeId = dt === "podcast-episode" ? getSpotifyEpisodeId(pin.externalRef || "") : null;
+  const episodeGuid = dt === "podcast-episode" ? getPodcastGuid(pin.externalRef || "") : null;
+  const feedGuid = dt === "podcast" ? getPodcastFeedGuid(pin.externalRef || "") : null;
   const cfg = DISPLAY_TYPE_CONFIG[dt];
   const bookIsbn = dt === "book" ? pin.externalRef?.replace(/^isbn:/i, "") : null;
   const doiId = dt === "paper" ? pin.externalRef?.replace(/^doi:/i, "") : null;
@@ -440,7 +452,11 @@ function PinCard({ pin, onDelete, onEdit }: { pin: Pin; onDelete: () => void; on
       ? `https://doi.org/${doiId}`
       : geoCoords
         ? `https://www.google.com/maps?q=${encodeURIComponent(geoCoords)}`
-        : url;
+        : episodeGuid
+          ? `https://www.fountain.fm/episode/${episodeGuid}`
+          : feedGuid
+            ? `https://www.fountain.fm/podcast/${feedGuid}`
+            : url;
 
   return (
     <div
@@ -495,7 +511,7 @@ function PinCard({ pin, onDelete, onEdit }: { pin: Pin; onDelete: () => void; on
         </div>
       )}
 
-      {/* Podcast Episode embed */}
+      {/* Podcast Episode embed (Spotify) */}
       {dt === "podcast-episode" && spotifyEpisodeId && (
         <div className="w-full">
           <iframe
@@ -509,6 +525,48 @@ function PinCard({ pin, onDelete, onEdit }: { pin: Pin; onDelete: () => void; on
             className="w-full"
           />
         </div>
+      )}
+
+      {/* Podcast Episode fallback (GUID-based, no Spotify) */}
+      {dt === "podcast-episode" && !spotifyEpisodeId && episodeGuid && (
+        <a
+          href={`https://www.fountain.fm/episode/${episodeGuid}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-purple-50 to-indigo-50 hover:from-purple-100 hover:to-indigo-100 transition-colors"
+        >
+          <svg className="w-8 h-8 text-purple-600 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 1a9 9 0 0 0-9 9v7c0 1.66 1.34 3 3 3h3v-8H5v-2c0-3.87 3.13-7 7-7s7 3.13 7 7v2h-4v8h3c1.66 0 3-1.34 3-3v-7a9 9 0 0 0-9-9z"/>
+          </svg>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-900 truncate">{pin.title || "Podcast Episode"}</p>
+            <p className="text-xs text-gray-500">Listen on Fountain</p>
+          </div>
+          <svg className="w-4 h-4 text-gray-400 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd"/>
+          </svg>
+        </a>
+      )}
+
+      {/* Podcast Show fallback (GUID-based, no Spotify) */}
+      {dt === "podcast" && feedGuid && !pin.externalRef?.includes("open.spotify.com") && (
+        <a
+          href={`https://www.fountain.fm/podcast/${feedGuid}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-purple-50 to-indigo-50 hover:from-purple-100 hover:to-indigo-100 transition-colors"
+        >
+          <svg className="w-8 h-8 text-purple-600 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 1a9 9 0 0 0-9 9v7c0 1.66 1.34 3 3 3h3v-8H5v-2c0-3.87 3.13-7 7-7s7 3.13 7 7v2h-4v8h3c1.66 0 3-1.34 3-3v-7a9 9 0 0 0-9-9z"/>
+          </svg>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-900 truncate">{pin.title || "Podcast"}</p>
+            <p className="text-xs text-gray-500">View on Fountain</p>
+          </div>
+          <svg className="w-4 h-4 text-gray-400 shrink-0" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd"/>
+          </svg>
+        </a>
       )}
 
       {/* Book cover */}
