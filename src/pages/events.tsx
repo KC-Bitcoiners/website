@@ -130,6 +130,7 @@ export default function EventsPage({
                 startTime={formatTime(event.dateTime)}
                 endTime={event.endTime ? formatTime(event.endTime) : "TBA"}
                 location={getVenueAddress(event.venues)}
+                venueName={event.venues?.[0]?.name?.trim()}
                 description={splitDescription(event.description)}
                 link={event.eventUrl}
               />
@@ -170,6 +171,7 @@ export default function EventsPage({
                 startTime={formatTime(event.dateTime)}
                 endTime={event.endTime ? formatTime(event.endTime) : "TBA"}
                 location={getVenueAddress(event.venues)}
+                venueName={event.venues?.[0]?.name?.trim()}
                 description={splitDescription(event.description)}
                 link={event.eventUrl}
               />
