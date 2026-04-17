@@ -92,7 +92,11 @@ export function NostrProvider({ children }: NostrProviderProps) {
       let pubkey: string;
 
       if (privateKeyOrNsec) {
-        privateKey = normalizeToSecretKey(privateKeyOrNsec);
+        const normalizedKey = normalizeToSecretKey(privateKeyOrNsec);
+        if (!normalizedKey) {
+          throw new Error("Invalid private key or nsec format");
+        }
+        privateKey = normalizedKey;
       } else {
         // Generate new key pair
         privateKey = generateSecretKey();

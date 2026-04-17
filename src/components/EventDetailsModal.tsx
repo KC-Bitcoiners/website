@@ -1,5 +1,9 @@
 import React from "react";
 import { CalendarEvent } from "../types/calendar";
+import {
+  getDisplayLocationLines,
+  googleMapsSearchUrl,
+} from "../utils/calendar";
 import { XIcon } from "./Icons";
 import { naddrEncode } from "applesauce-core/helpers";
 
@@ -13,6 +17,15 @@ export default function EventDetailsModal({
   onClose,
 }: EventDetailsModalProps) {
   if (!event) return null;
+
+  const displayLocationLines = getDisplayLocationLines(event);
+
+  const isMappableLocation = (line: string) => {
+    const t = line.trim();
+    if (!t) return false;
+    if (t === "Location TBD" || t === "Venue TBA") return false;
+    return true;
+  };
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString("en-US", {
@@ -130,19 +143,28 @@ export default function EventDetailsModal({
             </div>
           )}
 
+          {/* Venue name (e.g. Meetup) */}
+          {event.venueName && (
+            <div className="mb-6">
+              <h4 className="font-semibold text-gray-900 mb-2">Venue</h4>
+              <p className="text-gray-800">{event.venueName}</p>
+            </div>
+          )}
+
           {/* Locations */}
-          {(event.location ||
-            (event.locations && event.locations.length > 0)) && (
+          {displayLocationLines.length > 0 && (
             <div className="mb-6">
               <h4 className="font-semibold text-gray-900 mb-2">
-                Location
-                {event.locations && event.locations.length > 1 ? "s" : ""}
+                Location{displayLocationLines.length > 1 ? "s" : ""}
               </h4>
               <div className="space-y-2">
-                {event.location && (
-                  <div className="flex items-center gap-2 text-gray-600">
+                {displayLocationLines.map((line, index) => (
+                  <div
+                    key={`${line}-${index}`}
+                    className="flex items-center gap-2 text-gray-600"
+                  >
                     <svg
-                      className="w-5 h-5"
+                      className="w-5 h-5 flex-shrink-0"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -160,37 +182,21 @@ export default function EventDetailsModal({
                         d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
                       />
                     </svg>
-                    <span>{event.location}</span>
-                  </div>
-                )}
-                {event.locations &&
-                  event.locations.map((location, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-2 text-gray-600"
-                    >
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
+                    {isMappableLocation(line) ? (
+                      <a
+                        href={googleMapsSearchUrl(line)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 underline hover:underline-offset-2"
+                        title="Open in Google Maps"
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                      </svg>
-                      <span>{location}</span>
-                    </div>
-                  ))}
+                        {line}
+                      </a>
+                    ) : (
+                      <span>{line}</span>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           )}

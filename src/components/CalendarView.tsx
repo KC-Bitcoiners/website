@@ -353,6 +353,11 @@ export default function CalendarView({
                           title={`${event.title} - ${event.kind === 31923 ? (event.start?.includes("-") ? new Date(event.start).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) : new Date(parseInt(event.start!) * 1000).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })) : "All day"}`}
                         >
                           <div className="font-semibold">{event.title}</div>
+                          {event.venueName && (
+                            <div className="text-[10px] opacity-95 truncate leading-tight">
+                              {event.venueName}
+                            </div>
+                          )}
                           {event.kind === 31923 && (
                             <div className="text-xs opacity-90">
                               {(event.start?.includes("-")
@@ -565,11 +570,20 @@ export default function CalendarView({
                               height: `${layoutItem.position.height}px`,
                               minHeight: "20px",
                             }}
-                            title={event.title}
+                            title={
+                              event.venueName
+                                ? `${event.title} — ${event.venueName}`
+                                : event.title
+                            }
                           >
                             <div className="font-semibold truncate">
                               {event.title}
                             </div>
+                            {event.venueName && (
+                              <div className="text-[10px] opacity-95 truncate leading-tight">
+                                {event.venueName}
+                              </div>
+                            )}
                             <div className="text-xs opacity-90">
                               {formatTime(eventStart)}
                               {event.end &&
@@ -751,6 +765,11 @@ export default function CalendarView({
                     <div className="font-semibold text-sm truncate">
                       {event.title}
                     </div>
+                    {event.venueName && (
+                      <div className="text-[10px] opacity-95 truncate leading-tight">
+                        {event.venueName}
+                      </div>
+                    )}
                     <div className="text-xs opacity-90">
                       {formatTime(start)}
                       {event.end && ` - ${formatTime(end)}`}
@@ -772,6 +791,11 @@ export default function CalendarView({
                   <div className="font-semibold text-sm truncate">
                     {event.title}
                   </div>
+                  {event.venueName && (
+                    <div className="text-[10px] opacity-95 truncate leading-tight">
+                      {event.venueName}
+                    </div>
+                  )}
                   <div className="text-xs text-gray-600">All day</div>
                 </div>
               ))}

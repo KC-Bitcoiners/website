@@ -117,6 +117,7 @@ export default function CalendarPage({
               description: event.description,
               location: getVenueAddress(event.venues),
               locations: event.venues?.map((v: any) => v.address) || [],
+              venueName: event.venues?.[0]?.name?.trim() || undefined,
               start: startTime.toString(),
               end: endTime.toString(),
               timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -680,6 +681,7 @@ export default function CalendarPage({
                           startTime={formatTime(event.start)}
                           endTime={event.end ? formatTime(event.end) : "TBA"}
                           location={event.location || "Location TBD"}
+                          venueName={event.venueName}
                           description={splitDescription(
                             event.description || "",
                           )}
@@ -706,6 +708,7 @@ export default function CalendarPage({
                           startTime={formatTime(event.start)}
                           endTime={event.end ? formatTime(event.end) : "TBA"}
                           location={event.location || "Location TBD"}
+                          venueName={event.venueName}
                           description={splitDescription(
                             event.description || "",
                           )}

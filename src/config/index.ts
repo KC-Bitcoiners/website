@@ -63,6 +63,7 @@ export interface AppConfig {
     calendar: PageConfig;
     events: PageConfig;
     shop: PageConfig;
+    committees: PageConfig;
   };
 }
 

@@ -186,6 +186,35 @@ export function formatEventTime(event: CalendarEvent): string {
   return "No time specified";
 }
 
+/** Google Maps search URL for an address or place string (shared with event UI). */
+export function googleMapsSearchUrl(query: string): string {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
+
+/**
+ * Deduplicates `location` vs `locations` for display (Nostr duplicates;
+ * Meetup full line + street-only lines).
+ */
+export function getDisplayLocationLines(event: CalendarEvent): string[] {
+  const primary = event.location?.trim() ?? "";
+  const raw = (event.locations ?? []).map((s) => s.trim()).filter(Boolean);
+
+  if (!primary && raw.length === 0) return [];
+
+  const out: string[] = [];
+
+  if (primary) out.push(primary);
+
+  for (const line of raw) {
+    if (primary && (line === primary || primary.includes(line))) continue;
+    if (out.includes(line)) continue;
+    if (out.some((o) => o !== line && o.includes(line))) continue;
+    out.push(line);
+  }
+
+  return out;
+}
+
 // Get event type label
 export function getEventTypeLabel(event: CalendarEvent): string {
   switch (event.kind) {
