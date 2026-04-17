@@ -208,6 +208,13 @@
         "description": "Curated Bitcoin education resources and reading lists"
       }
     },
+    "gallery": {
+      "title": "Gallery",
+      "meta": {
+        "title": "Gallery - KC Bitcoiners",
+        "description": "Photos from KC Bitcoiners events and community meetups"
+      }
+    },
     "committees": {
       "title": "Committees",
       "meta": {

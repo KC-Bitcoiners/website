@@ -77,6 +77,17 @@ function NavLinks({ currentPath }: { currentPath: string }) {
         Donate
       </Link>
       <Link
+        href="/gallery"
+        className={clsx(
+          "font-semibold transition-colors",
+          currentPath === "/gallery"
+            ? "bitcoin-orange"
+            : "hover:text-bitcoin-orange",
+        )}
+      >
+        Gallery
+      </Link>
+      <Link
         href="/committees"
         className={clsx(
           "font-semibold transition-colors",
