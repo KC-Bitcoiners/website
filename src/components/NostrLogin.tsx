@@ -16,6 +16,7 @@ export default function NostrLogin({
   const [showKeyInput, setShowKeyInput] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [newNsec, setNewNsec] = useState<string | null>(null);
 
   const handleExtensionLogin = async () => {
     setIsLoggingIn(true);
@@ -38,7 +39,10 @@ export default function NostrLogin({
     setIsLoggingIn(true);
     setError(null);
     try {
-      await login(); // Generate new key pair
+      const result = await login(); // Generate new key pair
+      if (result?.nsec) {
+        setNewNsec(result.nsec);
+      }
       onLoginSuccess?.();
     } catch (err) {
       setError("Failed to create account. Please try again.");
@@ -61,7 +65,9 @@ export default function NostrLogin({
       setPrivateKeyInput("");
       setShowKeyInput(false);
     } catch (err) {
-      setError("Invalid private key format. Please check and try again.");
+      setError(
+        err instanceof Error ? err.message : "Invalid private key format.",
+      );
     } finally {
       setIsLoggingIn(false);
     }
@@ -71,13 +77,59 @@ export default function NostrLogin({
     setPrivateKeyInput("");
     setShowKeyInput(false);
     setError(null);
-    // The actual logout is handled by the context
   };
 
   if (isLoading) {
     return (
       <div className={`p-4 ${className}`}>
         <div className="animate-pulse">Loading...</div>
+      </div>
+    );
+  }
+
+  // Show newly generated nsec with a warning to save it
+  if (newNsec) {
+    return (
+      <div
+        className={`p-4 bg-yellow-50 border-2 border-yellow-400 rounded-lg ${className}`}
+      >
+        <div className="space-y-4">
+          <div className="text-center">
+            <h3 className="text-lg font-bold text-yellow-800 mb-2">
+              Save Your Private Key!
+            </h3>
+            <p className="text-sm text-yellow-700">
+              This is your private key (nsec). You will{" "}
+              <strong>never</strong> see it again. Save it somewhere safe. Anyone
+              with this key can access your account.
+            </p>
+          </div>
+
+          <div className="bg-white p-3 rounded border border-yellow-300">
+            <p
+              className="text-xs font-mono break-all text-gray-900 select-all"
+              data-testid="new-nsec"
+            >
+              {newNsec}
+            </p>
+          </div>
+
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText(newNsec).catch(() => {});
+            }}
+            className="w-full px-4 py-2 bg-yellow-500 text-white rounded-lg font-semibold hover:bg-yellow-600 transition-colors"
+          >
+            Copy to Clipboard
+          </button>
+
+          <button
+            onClick={() => setNewNsec(null)}
+            className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+          >
+            I&apos;ve Saved My Key
+          </button>
+        </div>
       </div>
     );
   }

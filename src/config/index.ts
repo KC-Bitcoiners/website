@@ -45,6 +45,10 @@ export interface ApiConfig {
 export interface NostrConfig {
   relays: string[];
   whitelistedNpubs: string[];
+  whitelistedPubkeys?: string[];
+  blossom?: {
+    server: string;
+  };
 }
 
 export interface PageConfig {
@@ -119,20 +123,42 @@ export const socialLinks: SocialLink[] = Object.entries(externalLinks)
     ariaLabel: link.ariaLabel,
   }));
 
-// Whitelist functions (moved from whitelist.ts)
-import { normalizeToPubkey } from "applesauce-core/helpers";
+// Whitelist functions
+import { npubDecode } from "@/utils/bech32";
 
 export const WHITELISTED_NPUBS = whitelistedNpubs;
 
-// Convert npubs to hex for nostr relay filters
-export const WHITELISTED_PUBKEYS = WHITELISTED_NPUBS.map((npub) =>
-  normalizeToPubkey(npub),
-).filter((p) => p !== null);
+// Use pre-computed hex pubkeys from config if available, otherwise convert npubs at runtime
+function computeWhitelistedPubkeys(): string[] {
+  if (nostrConfig.whitelistedPubkeys?.length) {
+    return nostrConfig.whitelistedPubkeys;
+  }
+  return WHITELISTED_NPUBS.map((npub) => {
+    try {
+      return npubDecode(npub);
+    } catch {
+      return null;
+    }
+  }).filter((p): p is string => p !== null);
+}
 
-// Helper function to check if a pubkey is whitelisted
+export const WHITELISTED_PUBKEYS = computeWhitelistedPubkeys();
+
+// Blossom server config
+export const blossomConfig = nostrConfig.blossom;
+
+// Helper function to check if a pubkey is whitelisted (accepts hex or npub)
 export function isWhitelisted(pubkey: string): boolean {
-  const hex = normalizeToPubkey(pubkey);
-  if (!hex) return false;
+  let hex: string;
+  if (pubkey.startsWith("npub1")) {
+    try {
+      hex = npubDecode(pubkey);
+    } catch {
+      return false;
+    }
+  } else {
+    hex = pubkey;
+  }
   return WHITELISTED_PUBKEYS.includes(hex);
 }
 

@@ -1,10 +1,11 @@
 import { isWhitelisted, nostrRelays } from "@/config";
 import {
-  generateSecretKey,
-  getPublicKey,
-  normalizeToSecretKey,
+  generateKeyPair,
+  getPubkey,
   npubEncode,
-} from "applesauce-core/helpers";
+  nsecEncode,
+  nsecDecode,
+} from "@/utils/bech32";
 import {
   createContext,
   ReactNode,
@@ -12,25 +13,6 @@ import {
   useEffect,
   useState,
 } from "react";
-
-// NIP-07 interface for browser extensions
-declare global {
-  interface Window {
-    nostr?: {
-      getPublicKey(): Promise<string>;
-      signEvent(event: any): Promise<any>;
-      getRelays(): Promise<any>;
-      nip04?: {
-        encrypt?(pubkey: string, plaintext: string): Promise<string>;
-        decrypt?(pubkey: string, ciphertext: string): Promise<string>;
-      };
-      nip44?: {
-        encrypt?(pubkey: string, plaintext: string): Promise<string>;
-        decrypt?(pubkey: string, ciphertext: string): Promise<string>;
-      };
-    };
-  }
-}
 
 export interface NostrUser {
   pubkey: string;
@@ -47,7 +29,7 @@ export interface NostrUser {
 
 interface NostrContextType {
   user: NostrUser | null;
-  login: (privateKeyOrNsec?: string) => Promise<void>;
+  login: (privateKeyOrNsec?: string) => Promise<{ nsec: string } | undefined>;
   loginWithExtension: () => Promise<void>;
   logout: () => void;
   isLoading: boolean;
@@ -67,12 +49,10 @@ export function NostrProvider({ children }: NostrProviderProps) {
   const [hasExtension, setHasExtension] = useState(false);
 
   useEffect(() => {
-    // Check for NIP-07 extension availability only on client side
     if (typeof window !== "undefined") {
       setHasExtension(!!window.nostr);
     }
 
-    // Check for stored user data on mount
     const storedUser = localStorage.getItem("nostr_user");
     if (storedUser) {
       try {
@@ -86,46 +66,50 @@ export function NostrProvider({ children }: NostrProviderProps) {
     setIsLoading(false);
   }, []);
 
-  const login = async (privateKeyOrNsec?: string) => {
+  const login = async (
+    privateKeyOrNsec?: string,
+  ): Promise<{ nsec: string } | undefined> => {
     try {
-      let privateKey: Uint8Array;
-      let pubkey: string;
+      let privkeyHex: string;
+      let pubkeyHex: string;
+      const isGenerated = !privateKeyOrNsec;
 
       if (privateKeyOrNsec) {
-        const normalizedKey = normalizeToSecretKey(privateKeyOrNsec);
-        if (!normalizedKey) {
-          throw new Error("Invalid private key or nsec format");
+        // Decode nsec to hex, or use hex directly
+        if (privateKeyOrNsec.startsWith("nsec1")) {
+          privkeyHex = nsecDecode(privateKeyOrNsec);
+        } else {
+          privkeyHex = privateKeyOrNsec;
         }
-        privateKey = normalizedKey;
+        pubkeyHex = await getPubkey(privkeyHex);
       } else {
         // Generate new key pair
-        privateKey = generateSecretKey();
+        const keyPair = await generateKeyPair();
+        privkeyHex = keyPair.privkeyHex;
+        pubkeyHex = keyPair.pubkeyHex;
       }
 
-      // Derive public key
-      pubkey = await getPublicKey(privateKey);
+      const npub = npubEncode(pubkeyHex);
+      const nsec = nsecEncode(privkeyHex);
 
-      // Create npub encoding - use the hex string directly
-      const npub = npubEncode(pubkey);
-
-      // Check if user is whitelisted
-      if (!isWhitelisted(npub)) {
-        console.log("🚫 User not whitelisted:", npub);
+      // Only check whitelist for existing keys, not newly generated ones
+      if (!isGenerated && !isWhitelisted(pubkeyHex)) {
         throw new Error(
-          "This account is not whitelisted for calendar events. Only whitelisted users can access the calendar.",
+          "This account is not whitelisted. Only whitelisted users can publish content.",
         );
       }
 
-      console.log("✅ User is whitelisted:", npub);
-
       const userData: NostrUser = {
-        pubkey,
+        pubkey: pubkeyHex,
         npub,
-        privateKey: privateKey.toString(), // Store for signing events
+        privateKey: nsec,
       };
 
       setUser(userData);
       localStorage.setItem("nostr_user", JSON.stringify(userData));
+
+      // Return nsec for newly generated accounts so UI can display it
+      return isGenerated ? { nsec } : undefined;
     } catch (error) {
       console.error("Login failed:", error);
       throw error;
@@ -133,133 +117,77 @@ export function NostrProvider({ children }: NostrProviderProps) {
   };
 
   const fetchUserMetadata = async (pubkey: string) => {
-    console.log("🔍 Fetching metadata for pubkey:", pubkey);
-
     try {
-      // Follow plektos implementation - use WebSocket connections to relays
-      // This avoids CORS issues entirely
       const relays = nostrRelays;
 
-      console.log("🌐 Connecting to relays for metadata:", relays);
-
-      // Create filter for kind 0 (metadata) events
       const filter = {
         kinds: [0],
         authors: [pubkey],
         limit: 1,
       };
 
-      console.log("📤 Using metadata filter:", filter);
-
-      // Try each relay until we get metadata
       for (const relayUrl of relays) {
-        console.log(`🔌 Connecting to relay: ${relayUrl}`);
-
         try {
-          // Create WebSocket connection
           const ws = new WebSocket(relayUrl);
 
-          // Create a promise that resolves when we get the metadata
           const metadataPromise = new Promise((resolve, reject) => {
             const timeout = setTimeout(() => {
-              console.log(`⏰ Timeout on ${relayUrl}`);
               ws.close();
               reject(new Error("Timeout"));
             }, 5000);
 
             ws.onopen = () => {
-              console.log(`✅ Connected to ${relayUrl}`);
-
-              // Send REQ message for metadata
-              const reqMessage = JSON.stringify([
-                "REQ",
-                "metadata-sub",
-                filter,
-              ]);
-
-              console.log(`📤 Sending REQ to ${relayUrl}:`, reqMessage);
-              ws.send(reqMessage);
+              ws.send(JSON.stringify(["REQ", "metadata-sub", filter]));
             };
 
             ws.onmessage = (event) => {
               try {
                 const message = JSON.parse(event.data);
-                console.log(`📨 Message from ${relayUrl}:`, message);
 
                 if (message[0] === "EVENT") {
-                  const [type, subscriptionId, nostrEvent] = message;
+                  const [, subscriptionId, nostrEvent] = message;
 
                   if (subscriptionId === "metadata-sub") {
                     clearTimeout(timeout);
-                    console.log(
-                      `🎯 Found metadata event from ${relayUrl}:`,
-                      nostrEvent,
-                    );
-
                     try {
                       const metadata = JSON.parse(nostrEvent.content);
-                      console.log(
-                        `✅ Successfully parsed metadata from ${relayUrl}:`,
-                        metadata,
-                      );
-
-                      if (metadata.picture) {
-                        console.log(
-                          `🖼️ Found picture URL: ${metadata.picture}`,
-                        );
-                      } else {
-                        console.log(`⚠️ No picture in metadata for ${pubkey}`);
-                      }
-
                       ws.close();
                       resolve(metadata);
                     } catch (parseError) {
-                      console.error(
-                        `❌ Failed to parse metadata content:`,
-                        parseError,
-                      );
-                      console.log("Raw content:", nostrEvent.content);
+                      ws.close();
                       reject(parseError);
                     }
                   }
                 } else if (message[0] === "EOSE") {
-                  console.log(`📭 End of stored events from ${relayUrl}`);
                   clearTimeout(timeout);
                   ws.close();
                   reject(new Error("No metadata found"));
                 }
               } catch (error) {
-                console.error(
-                  `💥 Error parsing message from ${relayUrl}:`,
-                  error,
-                );
+                clearTimeout(timeout);
+                ws.close();
+                reject(error);
               }
             };
 
-            ws.onerror = (error) => {
-              console.error(`💥 WebSocket error from ${relayUrl}:`, error);
+            ws.onerror = () => {
               clearTimeout(timeout);
-              reject(error);
+              reject(new Error("WebSocket error"));
             };
 
             ws.onclose = () => {
-              console.log(`🔌 Closed connection to ${relayUrl}`);
               clearTimeout(timeout);
             };
           });
 
-          // Wait for metadata or timeout
           return await metadataPromise;
-        } catch (error) {
-          console.warn(`⚠️ Failed to connect to ${relayUrl}:`, error);
+        } catch {
           // Continue to next relay
         }
       }
 
-      console.log(`❌ No metadata found for pubkey ${pubkey} from any relay`);
       return null;
-    } catch (error) {
-      console.error("💥 Critical error in fetchUserMetadata:", error);
+    } catch {
       return null;
     }
   };
@@ -272,30 +200,23 @@ export function NostrProvider({ children }: NostrProviderProps) {
     }
 
     try {
-      // Request public key from extension
       const pubkey = await window.nostr.getPublicKey();
       const npub = npubEncode(pubkey);
 
-      // Check if the user is whitelisted
-      if (!isWhitelisted(npub)) {
-        console.log("🚫 User not whitelisted:", npub);
+      if (!isWhitelisted(pubkey)) {
         throw new Error(
-          "This account is not whitelisted for calendar events. Only whitelisted users can access the calendar.",
+          "This account is not whitelisted. Only whitelisted users can publish content.",
         );
       }
-
-      console.log("✅ User is whitelisted:", npub);
 
       const userData: NostrUser = {
         pubkey,
         npub,
-        // No private key when using extension - extension handles signing
       };
 
       setUser(userData);
       localStorage.setItem("nostr_user", JSON.stringify(userData));
 
-      // Fetch metadata in background
       fetchUserMetadata(pubkey).then((metadata) => {
         if (metadata) {
           setUser((prev) => (prev ? { ...prev, metadata } : null));
@@ -307,9 +228,7 @@ export function NostrProvider({ children }: NostrProviderProps) {
       });
     } catch (error) {
       console.error("Extension login failed:", error);
-      throw new Error(
-        "Failed to connect to nostr extension. Please try again.",
-      );
+      throw error;
     }
   };
 
