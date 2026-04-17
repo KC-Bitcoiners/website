@@ -4,6 +4,7 @@ import { meetupConfig } from "@/config";
 // TypeScript interfaces for the GraphQL response
 export interface Venue {
   id: string;
+  name?: string;
   lat: number;
   lon: number;
   postalCode: string;
@@ -55,7 +56,11 @@ const EVENTS_QUERY = gql`
       lon
       link
       description
-      events {
+      events(
+        first: 0
+        filter: { status: [PAST, ACTIVE] }
+        sort: DESC
+      ) {
         edges {
           node {
             id
@@ -68,6 +73,7 @@ const EVENTS_QUERY = gql`
             howToFindUs
             venues {
               id
+              name
               lat
               lon
               postalCode

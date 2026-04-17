@@ -16,6 +16,8 @@ export interface CalendarEvent {
   end?: string;
   location?: string;
   locations?: string[];
+  /** Display name of the primary venue (e.g. from Meetup). */
+  venueName?: string;
   geohash?: string;
   description?: string;
   timezone?: string;

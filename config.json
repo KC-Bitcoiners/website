@@ -197,6 +197,14 @@
         "title": "Education - KC Bitcoiners",
         "description": "Curated Bitcoin education resources and reading lists"
       }
+    },
+    "committees": {
+      "title": "Committees",
+      "meta": {
+        "title": "Committees - KC Bitcoiners",
+        "description": "Community committees and working groups"
+      },
+      "data": []
     }
   }
 }

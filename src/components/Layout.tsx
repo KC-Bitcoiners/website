@@ -76,6 +76,17 @@ function NavLinks({ currentPath }: { currentPath: string }) {
       >
         Donate
       </Link>
+      <Link
+        href="/committees"
+        className={clsx(
+          "font-semibold transition-colors",
+          currentPath === "/committees"
+            ? "bitcoin-orange"
+            : "hover:text-bitcoin-orange",
+        )}
+      >
+        Committees
+      </Link>
       <a
         href={config.site.externalLinks.meetup.url}
         target="_blank"

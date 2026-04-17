@@ -2,7 +2,7 @@ name: staticS3Deploy
 
 on:
   push:
-    branches: ["master", "dev", "bugFix", "nsyteDebug", "fixingHardCode"]
+    branches: ["master", "dev", "deployBug"]
   schedule:
     - cron: "0 0 * * 1,3,6"
 
@@ -50,7 +50,7 @@ jobs:
         continue-on-error: false
         with:
           nbunksec: ${{ secrets.NBUNKSEC }}
-          directory: './out'  
+          directory: "./out"
           relays: |
             wss://relay.nsite.lol
             wss://relay.damus.io
@@ -65,7 +65,7 @@ jobs:
           verbose: false
           purge: true
           # force: true
-          
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:

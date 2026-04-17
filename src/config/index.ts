@@ -60,6 +60,7 @@ export interface AppConfig {
     events: PageConfig;
     shop: PageConfig;
     education: PageConfig;
+    committees: PageConfig;
   };
 }
 

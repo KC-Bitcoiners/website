@@ -1,4 +1,5 @@
 import React from "react";
+import { googleMapsSearchUrl } from "@/utils/calendar";
 import { ClockIcon, MarkerIcon } from "./Icons";
 
 interface EventCardProps {
@@ -7,6 +8,8 @@ interface EventCardProps {
   startTime: string;
   endTime: string;
   location: string;
+  /** Primary venue display name when known (e.g. Meetup). */
+  venueName?: string;
   link?: string;
   description: string[];
   className?: string; // Allow custom background color
@@ -18,6 +21,7 @@ export default function EventCard({
   startTime,
   endTime,
   location,
+  venueName,
   description,
   link,
   className,
@@ -53,6 +57,12 @@ export default function EventCard({
           </div>
         </div>
 
+        {venueName && (
+          <p className="text-base sm:text-lg font-semibold text-gray-800">
+            {venueName}
+          </p>
+        )}
+
         {/* Time and location section */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-gray-600">
           <div className="flex items-center gap-2">
@@ -65,7 +75,7 @@ export default function EventCard({
             <MarkerIcon className="size-6 text-gray-500" />
             {location && location !== "Location TBD" ? (
               <a
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`}
+                href={googleMapsSearchUrl(location)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-sm sm:text-base text-blue-600 hover:text-blue-800 underline hover:underline-offset-2"
