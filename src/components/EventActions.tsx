@@ -18,13 +18,7 @@ interface EventActionsProps {
   onEdit?: () => void;
 }
 
-export default function EventActions({
-  event,
-  extraActions,
-  className,
-  onDelete,
-  onEdit,
-}: EventActionsProps) {
+export default function EventActions({ event, extraActions, className, onDelete, onEdit }: EventActionsProps) {
   const [open, setOpen] = useState(false);
   const [showRaw, setShowRaw] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
@@ -59,12 +53,14 @@ export default function EventActions({
       setCopied(label);
       setTimeout(() => setCopied(null), 2000);
     } catch {
-      // clipboard not available
+      // fallback
     }
   };
 
   const handleShare = async () => {
-    const text = eventId ? `nostr:${eventId}` : JSON.stringify(event);
+    const text = eventId
+      ? `nostr:${eventId}`
+      : JSON.stringify(event);
     await copyToClipboard(text, "Share link");
     setOpen(false);
   };
@@ -122,10 +118,7 @@ export default function EventActions({
           {
             label: "Edit",
             icon: "✏️",
-            onClick: () => {
-              onEdit();
-              setOpen(false);
-            },
+            onClick: () => { onEdit(); setOpen(false); },
           },
         ]
       : []),
@@ -134,10 +127,7 @@ export default function EventActions({
           {
             label: "Delete",
             icon: "🗑️",
-            onClick: () => {
-              onDelete();
-              setOpen(false);
-            },
+            onClick: () => { onDelete(); setOpen(false); },
           },
         ]
       : []),

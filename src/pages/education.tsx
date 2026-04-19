@@ -22,6 +22,7 @@ import {
   DetectedContent,
 } from "@/utils/pinboardEvents";
 import EventActions from "@/components/EventActions";
+import { logger } from "@/utils/logger";
 import { useNostr } from "@/contexts/NostrContext";
 
 function getYouTubeId(url: string): string | null {
@@ -76,7 +77,7 @@ function getPodcastIndexEpisodeUrl(externalRef: string): string | null {
 }
 
 export default function EducationPage() {
-  const { user, signEvent } = useNostr();
+  const { user, hasExtension, signEvent } = useNostr();
   const [pinboards, setPinboards] = useState<Pinboard[]>([]);
   const [featuredPins, setFeaturedPins] = useState<Pin[]>([]);
   const [selectedBoard, setSelectedBoard] = useState<Pinboard | null>(null);
@@ -90,27 +91,29 @@ export default function EducationPage() {
   const [editPin, setEditPin] = useState<Pin | null>(null);
   const [sortBy, setSortBy] = useState<"date" | "title">("date");
 
-  useEffect(() => { loadAll(); }, []);
-
-  const loadAll = async () => {
+  const loadAll = useCallback(async () => {
     setLoadingFeatured(true);
     setLoadingBoards(true);
-    let boards: Pinboard[] = [];
-    let pins: Pin[] = [];
-    try { boards = await fetchPinboards(); } catch (err) { console.warn("Failed to load pinboards:", err); }
-    try { pins = await fetchFeaturedPins(); } catch (err) { console.warn("Failed to load featured pins:", err); }
-    setPinboards(boards);
-    setFeaturedPins(pins);
-    setLoadingFeatured(false);
-    setLoadingBoards(false);
-  };
+    try {
+      const [pins, boards] = await Promise.all([fetchFeaturedPins(), fetchPinboards()]);
+      setFeaturedPins(pins.sort((a, b) => b.created_at - a.created_at));
+      setPinboards(boards);
+    } catch (err) {
+      logger.warn("Failed to load data:", err);
+    } finally {
+      setLoadingFeatured(false);
+      setLoadingBoards(false);
+    }
+  }, []);
+
+  useEffect(() => { loadAll(); }, [loadAll]);
 
   const loadPins = useCallback(async (board: Pinboard) => {
     setLoadingPins(true);
     try {
       setBoardPins(await fetchPinsForBoard(board));
     } catch (err) {
-      console.warn("Failed to load pins:", err);
+      logger.warn("Failed to load pins:", err);
       setBoardPins([]);
     }
     setLoadingPins(false);
@@ -132,7 +135,11 @@ export default function EducationPage() {
     setShowAddPin(false);
     setEditPin(null);
     if (selectedBoard) loadPins(selectedBoard);
-    else loadAll();
+    // Re-fetch to pick up the new pin
+    fetchFeaturedPins().then((pins) => {
+      setFeaturedPins(pins.sort((a, b) => b.created_at - a.created_at));
+    }).catch(() => {});
+    fetchPinboards().then((boards) => setPinboards(boards)).catch(() => {});
   }, [selectedBoard, loadPins]);
 
   const handleDeletePin = useCallback(async (pin: Pin) => {
@@ -150,7 +157,7 @@ export default function EducationPage() {
       eventKind: 39067,
       reason: "Deleted by author",
     });
-    const signedDelete = await signEvent(unsignedDelete);
+    const signedDelete = await signEvent(unsignedDelete as { kind: number; content: string; tags: string[][]; created_at: number });
     await publishDelete(signedDelete);
   }, [user, signEvent]);
 
@@ -169,11 +176,10 @@ export default function EducationPage() {
   });
 
   // Get the default board coordinate for adding pins.
-  // When a NIP-07 extension is present, always allow adding -- the pinboard
+  // When a NIP-07 extension is present, always allow adding — the pinboard
   // will be auto-created on first publish if none exists yet.
   const defaultBoardCoord = pinboards.length > 0 ? pinboards[0].coordinate : null;
-  const hasNostr = typeof window !== "undefined" && !!(window as any).nostr;
-  const canAdd = !!defaultBoardCoord || hasNostr;
+  const canAdd = !!defaultBoardCoord || !!user || hasExtension;
 
   return (
     <>
@@ -190,7 +196,7 @@ export default function EducationPage() {
             Education Resources
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Curated collections of educational content, articles, links, and media about Bitcoin and sound money.
+            Curated collections of educational content, articles, links, and media about conservative values and civic engagement.
           </p>
         </div>
 
@@ -219,33 +225,51 @@ export default function EducationPage() {
         {/* Featured Resources View */}
         {view === "featured" && (
           <>
-            {loadingFeatured ? (
+            {/* Show action buttons and filter bar immediately */}
+            {(canAdd || featuredPins.length > 0) && (
+              <FilterBar
+                pins={activePins}
+                filter={displayFilter}
+                setFilter={setDisplayFilter}
+                sortBy={sortBy}
+                setSortBy={setSortBy}
+                onAddClick={() => setShowAddPin(true)}
+                canAdd={canAdd}
+              />
+            )}
+
+            {/* Loading state — only show spinner when no pins have arrived yet */}
+            {loadingFeatured && featuredPins.length === 0 && (
               <LoadingSpinner text="Loading featured resources..." />
-            ) : featuredPins.length === 0 && pinboards.length === 0 && !canAdd ? (
+            )}
+
+            {/* Empty state — only when loading is done and nothing arrived */}
+            {!loadingFeatured && featuredPins.length === 0 && pinboards.length === 0 && !canAdd && (
               <EmptyState />
-            ) : (
-              <>
-                <FilterBar
-                  pins={activePins}
-                  filter={displayFilter}
-                  setFilter={setDisplayFilter}
-                  sortBy={sortBy}
-                  setSortBy={setSortBy}
-                  onAddClick={() => setShowAddPin(true)}
-                  canAdd={canAdd}
-                />
-                {filteredPins.length === 0 ? (
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-10 text-center">
-                    <p className="text-gray-600">No resources match this filter.</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredPins.map((pin) => (
-                      <PinCard key={pin.id} pin={pin} onDelete={() => handleDeletePin(pin)} onEdit={() => handleEditPin(pin)} />
-                    ))}
-                  </div>
-                )}
-              </>
+            )}
+
+            {/* No results for filter */}
+            {!loadingFeatured && featuredPins.length > 0 && filteredPins.length === 0 && (
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-10 text-center">
+                <p className="text-gray-600">No resources match this filter.</p>
+              </div>
+            )}
+
+            {/* Pin grid — render as pins arrive */}
+            {filteredPins.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredPins.map((pin) => (
+                  <PinCard key={pin.id} pin={pin} onDelete={() => handleDeletePin(pin)} onEdit={() => handleEditPin(pin)} />
+                ))}
+              </div>
+            )}
+
+            {/* Subtle loading indicator while still streaming more pins */}
+            {loadingFeatured && featuredPins.length > 0 && (
+              <div className="flex justify-center items-center py-4 gap-2 text-sm text-gray-400">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400" />
+                Loading more...
+              </div>
             )}
           </>
         )}
@@ -363,6 +387,8 @@ export default function EducationPage() {
             onDone={handlePinAdded}
             onCancel={() => { setShowAddPin(false); setEditPin(null); }}
             editPin={editPin}
+            pubkey={user?.pubkey}
+            signEvent={signEvent}
           />
         )}
       </div>
@@ -703,6 +729,10 @@ function PinCard({ pin, onDelete, onEdit }: { pin: Pin; onDelete: () => void; on
             ))}
           </div>
         )}
+
+        <div className="mt-2 pt-2 border-t border-gray-100 text-xs text-gray-400">
+          {new Date(pin.created_at * 1000).toLocaleDateString()}
+        </div>
       </div>
     </div>
   );
@@ -714,11 +744,15 @@ function AddPinModal({
   onDone,
   onCancel,
   editPin,
+  pubkey,
+  signEvent,
 }: {
   boardCoordinate: string;
   onDone: () => void;
   onCancel: () => void;
   editPin?: Pin | null;
+  pubkey?: string;
+  signEvent?: (event: { kind: number; content: string; tags: string[][]; created_at: number }) => Promise<Record<string, unknown>>;
 }) {
   const { user, signEvent } = useNostr();
   const [title, setTitle] = useState(editPin?.title || "");
@@ -838,7 +872,7 @@ function AddPinModal({
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. The Bitcoin Standard"
+              placeholder="e.g. How a Bill Becomes a Law"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
             />
           </div>
@@ -919,7 +953,7 @@ function AddPinModal({
               type="text"
               value={tags}
               onChange={(e) => setTags(e.target.value)}
-              placeholder="bitcoin, economics, education"
+              placeholder="education, civics, conservative"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
             />
           </div>
@@ -962,7 +996,7 @@ function LoadingSpinner({ text }: { text: string }) {
 function EmptyState() {
   return (
     <div className="bg-gray-50 border border-gray-200 rounded-lg p-12 text-center">
-      <span className="text-6xl block mb-4">{"{}"}</span>
+      <span className="text-6xl block mb-4">📌</span>
       <h3 className="text-xl font-bold text-gray-800 mb-2">No Pinboards Yet</h3>
       <p className="text-gray-600">Pinboards are curated collections of educational content. Check back soon for new resources!</p>
     </div>
