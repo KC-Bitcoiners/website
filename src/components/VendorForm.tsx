@@ -2,8 +2,11 @@ import { useNostr } from "@/contexts/NostrContext";
 import { naddrEncode } from "applesauce-core/helpers";
 import { useEffect, useState } from "react";
 import { XIcon } from "./Icons";
-import { nostrRelays } from "@/config";
+import { nostrRelays, siteConfig } from "@/config";
 import { logger } from "@/utils/logger";
+
+// Default coordinates from config
+const { lat: DEFAULT_LAT, lon: DEFAULT_LON } = siteConfig.organization.coordinates;
 
 // RochesterKC business data
 const ROCHESTERKC_DATA = {
@@ -14,18 +17,18 @@ const ROCHESTERKC_DATA = {
   lightningAddress: "rochesterkc@getalby.com",
   onchainAddress:
     "bc1qxfzq9yp7s4xqfz8xq7hj0xvq7xq5xq3xq7hj0xvq7xq5xq3xq7hj0xvq7",
-  notes: "Coworking space and Bitcoin community hub in Kansas City",
+  notes: `Coworking space and Bitcoin community hub in ${siteConfig.organization.location}`,
   contact: "913-491-2969",
-  address: "1520 Holmes St, Kansas City, MO 64102",
+  address: `1520 Holmes St, ${siteConfig.organization.location}, MO 64102`,
   website: "https://rochesterkc.com",
   phone: "913-491-2969",
-  lat: 39.0943,
-  lon: -94.5829,
+  lat: DEFAULT_LAT,
+  lon: DEFAULT_LON,
   email: "info@rochesterkc.com",
   twitter: "@RochesterKC",
   mastodon: "@rochesterkc@mastodon.social",
   description:
-    "RochesterKC is a vibrant coworking space and Bitcoin community hub located in the Crossroads Arts District of Kansas City. We provide a collaborative environment for entrepreneurs, developers, and Bitcoin enthusiasts to work, network, and learn together.",
+    `RochesterKC is a vibrant coworking space and Bitcoin community hub located in the Crossroads Arts District of ${siteConfig.organization.location}. We provide a collaborative environment for entrepreneurs, developers, and Bitcoin enthusiasts to work, network, and learn together.`,
   opening_hours: "Mon-Fri 9am-6pm, Sat 10am-4pm, Closed Sunday",
 };
 
@@ -757,7 +760,7 @@ export default function VendorForm({
                     )
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
-                  placeholder="39.0997"
+                  placeholder={String(DEFAULT_LAT)}
                 />
               </div>
 
@@ -776,7 +779,7 @@ export default function VendorForm({
                     )
                   }
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
-                  placeholder="-94.5786"
+                  placeholder={String(DEFAULT_LON)}
                 />
               </div>
             </div>

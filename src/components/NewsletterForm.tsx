@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { siteConfig } from "@/config";
 
 interface NewsletterFormData {
   name: string;
@@ -97,7 +98,7 @@ export default function NewsletterForm() {
         {isSubmitting ? "Subscribing..." : "Subscribe"}
       </button>
       <p className="text-xs text-gray-500 text-center">
-        By subscribing, you agree to receive email updates from KC Bitcoiners.
+        By subscribing, you agree to receive email updates from {siteConfig.organization.name}.
       </p>
     </form>
   );

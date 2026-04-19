@@ -5,7 +5,7 @@ import EventActions from "@/components/EventActions";
 import { useNostr } from "@/contexts/NostrContext";
 import { fetchBTCMapVendors, BTCMapVendor } from "@/utils/btcmap";
 import { pool } from "@/lib/nostr";
-import { config, nostrRelays, getWhitelistFilter } from "@/config";
+import { config, nostrRelays, getWhitelistFilter, siteConfig } from "@/config";
 import type { Icon, LatLngBounds, DivIcon } from "leaflet";
 import { getEventHash, type NostrEvent } from "applesauce-core/helpers/event";
 
@@ -1154,7 +1154,7 @@ export default function ShopPage() {
                 🚀 Add Your First Vendor
               </h3>
               <p className="text-gray-600 mb-4">
-                Help grow the Bitcoin ecosystem in Kansas City by submitting local businesses that accept Bitcoin payments.
+                Help grow the Bitcoin ecosystem in {siteConfig.organization.location} by submitting local businesses that accept Bitcoin payments.
               </p>
               <button
                 onClick={() => setShowVendorForm(true)}

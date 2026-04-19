@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Head from "next/head";
-import { config } from "@/config";
+import { config, siteConfig } from "@/config";
 import {
   fetchPinboards,
   fetchFeaturedPins,
@@ -905,7 +905,7 @@ function AddPinModal({
                 {selectedType === "book" && "Enter an ISBN like isbn:978... or a bare ISBN number"}
                 {selectedType === "movie" && "Enter an ISAN like isan:XXXX-XXXX-XXXX"}
                 {selectedType === "paper" && "Enter a DOI like doi:10.xxx or 10.xxx/yyy"}
-                {selectedType === "location" && "Enter coordinates like geo:39.23,-94.03 or lat,lon"}
+                {selectedType === "location" && `Enter coordinates like geo:${siteConfig.organization.coordinates.lat},${siteConfig.organization.coordinates.lon} or lat,lon`}
               </p>
             )}
           </div>
@@ -924,7 +924,7 @@ function AddPinModal({
                 : selectedType === "book" ? "isbn:9780743273565 or bare ISBN"
                 : selectedType === "movie" ? "isan:XXXX-XXXX-XXXX-XXXX"
                 : selectedType === "paper" ? "doi:10.1000/xyz123 or 10.xxxx/yyyy"
-                : selectedType === "location" ? "geo:39.23,-94.03 or 39.23,-94.03"
+                : selectedType === "location" ? `geo:${siteConfig.organization.coordinates.lat},${siteConfig.organization.coordinates.lon} or ${siteConfig.organization.coordinates.lat},${siteConfig.organization.coordinates.lon}`
                 : "Select a content type first"
               }
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
