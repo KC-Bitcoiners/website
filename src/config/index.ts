@@ -64,6 +64,7 @@ export interface AppConfig {
     events: PageConfig;
     shop: PageConfig;
     education: PageConfig;
+    gallery: PageConfig;
     committees: PageConfig;
   };
 }
@@ -162,6 +163,10 @@ export function isWhitelisted(pubkey: string): boolean {
     }
   } else {
     hex = pubkey;
+  }
+  // In test mode, use the dynamically injected whitelist
+  if (typeof window !== "undefined" && (window as any).__TEST_WHITELIST) {
+    return (window as any).__TEST_WHITELIST.includes(hex);
   }
   return WHITELISTED_PUBKEYS.includes(hex);
 }

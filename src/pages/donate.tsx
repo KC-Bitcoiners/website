@@ -1,4 +1,5 @@
 import { nostrRelays, WHITELISTED_PUBKEYS } from "@/config";
+import EventActions from "@/components/EventActions";
 import { pool } from "@/lib/nostr";
 import {
   getZapGoalAmount,
@@ -317,8 +318,8 @@ const ZapraiserCard = ({
             />
           </div>
 
-          {/* Three Dot Menu */}
-          <NoteIdMenu noteId={zapraiser.goal.id} />
+          {/* Event actions */}
+          <EventActions event={zapraiser.goal as Record<string, unknown>} />
         </div>
       </div>
 

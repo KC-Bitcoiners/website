@@ -23,6 +23,7 @@ export interface NostrCalendarEvent {
   start?: string;
   end?: string;
   created_at: number;
+  rawEvent?: Record<string, unknown>;
 }
 
 // Fetch calendar events from nostr relays using RelayPool
@@ -88,6 +89,7 @@ export async function fetchNostrCalendarEvents(): Promise<
                 (tag: string[]) => tag[0] === "end",
               )?.[1],
               created_at: nostrEvent.created_at,
+              rawEvent: nostrEvent as Record<string, unknown>,
             };
 
             events.push(calendarEvent);

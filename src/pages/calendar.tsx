@@ -71,7 +71,18 @@ export default function CalendarPage({
     eventId: string;
     naddr: string;
   } | null>(null);
-  const { user } = useNostr();
+  const { user, signEvent } = useNostr();
+
+  const handleDeleteEvent = async (event: CalendarEvent) => {
+    if (!user || !event.rawEvent || user.pubkey !== event.pubkey) return;
+    setEvents((prev) => prev.filter((e) => e.id !== event.id));
+    const kind = (event.rawEvent as any).kind as number;
+    const unsignedDelete = { kind: 5, content: "Deleted by author", tags: [["e", event.id], ["k", String(kind)]], created_at: Math.floor(Date.now() / 1000) };
+    const signedDelete = await signEvent(unsignedDelete);
+    const { pool } = await import("@/lib/nostr");
+    const { nostrRelays } = await import("@/config");
+    try { await pool.publish(nostrRelays, signedDelete as any); } catch {}
+  };
 
   // Load events from localStorage, meetup data, and nostr
   useEffect(() => {
@@ -687,19 +698,9 @@ export default function CalendarPage({
                             event.description || "",
                           )}
                           link={event.references?.[0]}
+                          rawEvent={event.rawEvent}
+                          onDelete={user && user.pubkey === event.pubkey ? () => handleDeleteEvent(event) : undefined}
                         />
-                      ))}
-                    </div>
-                  </section>
-                )}
-
-                {/* Past Events Section */}
-                {pastEvents.length > 0 && (
-                  <section>
-                    <h2 className="text-3xl font-bold mb-8 font-archivo-black text-gray-700">
-                      Past Events
-                    </h2>
-                    <div className="space-y-8 opacity-75">
                       {pastEvents.slice(0, 5).map((event) => (
                         <EventCard
                           key={event.id}
@@ -714,11 +715,9 @@ export default function CalendarPage({
                             event.description || "",
                           )}
                           link={event.references?.[0]}
+                          rawEvent={event.rawEvent}
+                          onDelete={user && user.pubkey === event.pubkey ? () => handleDeleteEvent(event) : undefined}
                         />
-                      ))}
-                    </div>
-                  </section>
-                )}
 
                 {events.length === 0 && !isLoadingNostrEvents && (
                   <div className="text-center py-12">

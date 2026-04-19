@@ -1,6 +1,14 @@
 import { pool } from "@/lib/nostr";
 import { nostrRelays, WHITELISTED_PUBKEYS } from "@/config";
 
+// In test mode, use the dynamically injected whitelist
+function getWhitelistedAuthors(): string[] {
+  if (typeof window !== "undefined" && (window as any).__TEST_WHITELIST) {
+    return (window as any).__TEST_WHITELIST;
+  }
+  return WHITELISTED_PUBKEYS;
+}
+
 // Pinboard types
 export interface Pinboard {
   id: string;
@@ -243,7 +251,7 @@ export async function fetchPinboards(): Promise<Pinboard[]> {
 
     pool.request(relays, {
       kinds: [30067],
-      authors: WHITELISTED_PUBKEYS,
+      authors: getWhitelistedAuthors(),
       limit: 100,
     }).subscribe({
       next: (event) => rawEvents.push(event),
@@ -251,7 +259,7 @@ export async function fetchPinboards(): Promise<Pinboard[]> {
       complete: () => {
         clearTimeout(timeout);
         // Client-side author filter (belts-and-suspenders: some relays ignore `authors`)
-        const authorSet = new Set(WHITELISTED_PUBKEYS);
+        const authorSet = new Set(getWhitelistedAuthors());
         const filtered = rawEvents.filter((e: any) => authorSet.has(e.pubkey));
         const deduped = deduplicateByCoordinate(filtered, 30067);
         const pinboards: Pinboard[] = deduped.map(parsePinboardEvent).filter(Boolean) as Pinboard[];
@@ -265,13 +273,14 @@ export async function fetchPinboards(): Promise<Pinboard[]> {
 export async function fetchFeaturedPins(): Promise<Pin[]> {
   const relays = nostrRelays;
 
-  if (WHITELISTED_PUBKEYS.length === 0) return [];
+  const authors = getWhitelistedAuthors();
+  if (authors.length === 0) return [];
 
   // Fetch all kind 39067 events from whitelisted authors
   // then filter client-side to only include pins referencing our boards
   const boards = await fetchPinboards();
   const boardCoords = new Set(boards.map((b) => b.coordinate));
-  const authorSet = new Set(WHITELISTED_PUBKEYS);
+  const authorSet = new Set(authors);
 
   return new Promise((resolve) => {
     const timeout = setTimeout(() => resolve([]), 15000);
@@ -279,7 +288,7 @@ export async function fetchFeaturedPins(): Promise<Pin[]> {
 
     pool.request(relays, {
       kinds: [39067],
-      authors: WHITELISTED_PUBKEYS,
+      authors,
       limit: 500,
     }).subscribe({
       next: (event) => rawEvents.push(event),

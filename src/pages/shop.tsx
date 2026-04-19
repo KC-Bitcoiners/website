@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import VendorForm from "@/components/VendorForm";
+import EventActions from "@/components/EventActions";
 import { useNostr } from "@/contexts/NostrContext";
 import { fetchBTCMapVendors, BTCMapVendor } from "@/utils/btcmap";
 import { pool } from "@/lib/nostr";
@@ -61,13 +62,14 @@ interface NostrVendor {
   // For submitter profile info
   submitterName?: string;
   submitterPicture?: string;
+  rawEvent?: Record<string, unknown>;
 }
 
 type SortField = keyof NostrVendor | "submitterName";
 type SortDirection = "asc" | "desc";
 
 export default function ShopPage() {
-  const { user } = useNostr();
+  const { user, signEvent } = useNostr();
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [filters, setFilters] = useState<Record<string, string>>({
@@ -253,6 +255,7 @@ export default function ShopPage() {
               dTag, // Store the dTag for replaceable events
               submitterName: profileInfo.name,
               submitterPicture: profileInfo.picture,
+              rawEvent: event as Record<string, unknown>,
             };
 
             vendors.push(vendor);
@@ -463,17 +466,12 @@ export default function ShopPage() {
       };
 
       // Sign the event using the user's signing method
-      if (!window.nostr) {
-        throw new Error(
-          "Nostr extension not found. Please install a Nostr extension like Nos2x or Snort.",
-        );
-      }
-      const signedEvent = await window.nostr.signEvent(deleteEventTemplate);
+      const signedEvent = await signEvent(deleteEventTemplate);
 
       // Add the ID to the signed event
       const deleteEvent = {
         ...signedEvent,
-        id: signedEvent.id || getEventHash(signedEvent),
+        id: (signedEvent as any).id || getEventHash(signedEvent as any),
       };
 
       // Publish the delete event to relays
@@ -892,36 +890,21 @@ export default function ShopPage() {
                     })()}
                   </div>
 
-                  {/* Edit/Delete buttons for owners */}
-                  {user && "npub" in vendor && vendor.npub === user.pubkey && (
-                    <div className="flex gap-2 ml-2">
-                      <button
-                        onClick={() => {
-                          setEditVendor(vendor as NostrVendor);
-                          setIsEdit(true);
-                          setShowVendorForm(true);
-                        }}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="Edit vendor"
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (
-                            window.confirm(
-                              `Are you sure you want to delete "${vendor.name}"? This action cannot be undone.`,
-                            )
-                          ) {
-                            handleDeleteVendor(vendor as NostrVendor);
-                          }
-                        }}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Delete vendor"
-                      >
-                        🗑️
-                      </button>
-                    </div>
+                  {/* Event actions */}
+                  {"npub" in vendor && (vendor as NostrVendor).rawEvent && (
+                    <EventActions
+                      event={(vendor as NostrVendor).rawEvent!}
+                      onEdit={user && vendor.npub === user.pubkey ? () => {
+                        setEditVendor(vendor as NostrVendor);
+                        setIsEdit(true);
+                        setShowVendorForm(true);
+                      } : undefined}
+                      onDelete={user && vendor.npub === user.pubkey ? () => {
+                        if (window.confirm(`Are you sure you want to delete "${vendor.name}"? This action cannot be undone.`)) {
+                          handleDeleteVendor(vendor as NostrVendor);
+                        }
+                      } : undefined}
+                    />
                   )}
                 </div>
 

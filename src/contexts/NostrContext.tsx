@@ -35,6 +35,7 @@ interface NostrContextType {
   isLoading: boolean;
   hasExtension: boolean;
   refreshMetadata: () => Promise<void>;
+  signEvent: (event: { kind: number; content: string; tags: string[][]; created_at: number }) => Promise<Record<string, unknown>>;
 }
 
 const NostrContext = createContext<NostrContextType | undefined>(undefined);
@@ -247,6 +248,30 @@ export function NostrProvider({ children }: NostrProviderProps) {
     }
   };
 
+  const signEvent = async (event: { kind: number; content: string; tags: string[][]; created_at: number }): Promise<Record<string, unknown>> => {
+    // If user logged in with nsec/private key, sign locally
+    if (user?.privateKey) {
+      const privkeyHex = nsecDecode(user.privateKey);
+      const pubkey = await getPubkey(privkeyHex);
+      const fullEvent = { ...event, pubkey };
+      // Serialize and hash
+      const serialized = JSON.stringify([0, fullEvent.pubkey, fullEvent.created_at, fullEvent.kind, fullEvent.tags, fullEvent.content]);
+      const msgBytes = new TextEncoder().encode(serialized);
+      const hashBytes = await crypto.subtle.digest("SHA-256", msgBytes);
+      const id = Array.from(new Uint8Array(hashBytes)).map(b => b.toString(16).padStart(2, "0")).join("");
+      // Sign with schnorr
+      const s = await import("@noble/curves/secp256k1.js").then(m => m.schnorr);
+      const sig = s.sign(id, privkeyHex);
+      return { ...fullEvent, id, sig: sig.toHex() };
+    }
+    // Fallback to extension
+    if (window.nostr) {
+      const pk = await window.nostr.getPublicKey();
+      return window.nostr.signEvent({ ...event, pubkey: pk });
+    }
+    throw new Error("No signing method available. Login with nsec or install a Nostr extension.");
+  };
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem("nostr_user");
@@ -260,6 +285,7 @@ export function NostrProvider({ children }: NostrProviderProps) {
     isLoading,
     hasExtension,
     refreshMetadata,
+    signEvent,
   };
 
   return (

@@ -1,6 +1,7 @@
 import React from "react";
 import { googleMapsSearchUrl } from "@/utils/calendar";
 import { ClockIcon, MarkerIcon } from "./Icons";
+import EventActions from "./EventActions";
 
 interface EventCardProps {
   date: string;
@@ -13,6 +14,8 @@ interface EventCardProps {
   link?: string;
   description: string[];
   className?: string; // Allow custom background color
+  rawEvent?: Record<string, unknown>;
+  onDelete?: () => void;
 }
 
 export default function EventCard({
@@ -25,6 +28,8 @@ export default function EventCard({
   description,
   link,
   className,
+  rawEvent,
+  onDelete,
 }: EventCardProps) {
   return (
     <div
@@ -50,10 +55,11 @@ export default function EventCard({
               )}
             </h4>
           </div>
-          <div className="order-1 sm:order-2 flex-shrink-0">
+          <div className="order-1 sm:order-2 flex-shrink-0 flex items-center gap-2">
             <h3 className="text-2xl sm:text-3xl font-bold bitcoin-orange font-archivo-black">
               {date}
             </h3>
+            {rawEvent && <EventActions event={rawEvent} onDelete={onDelete} />}
           </div>
         </div>
 

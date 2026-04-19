@@ -22,6 +22,7 @@ import {
   DetectedContent,
 } from "@/utils/pinboardEvents";
 import EventActions from "@/components/EventActions";
+import { useNostr } from "@/contexts/NostrContext";
 
 function getYouTubeId(url: string): string | null {
   const match = url.match(
@@ -75,6 +76,7 @@ function getPodcastIndexEpisodeUrl(externalRef: string): string | null {
 }
 
 export default function EducationPage() {
+  const { user, signEvent } = useNostr();
   const [pinboards, setPinboards] = useState<Pinboard[]>([]);
   const [featuredPins, setFeaturedPins] = useState<Pin[]>([]);
   const [selectedBoard, setSelectedBoard] = useState<Pinboard | null>(null);
@@ -134,10 +136,9 @@ export default function EducationPage() {
   }, [selectedBoard, loadPins]);
 
   const handleDeletePin = useCallback(async (pin: Pin) => {
-    if (!window.nostr || !pin.rawEvent) return;
-    const pubkey = await window.nostr.getPublicKey();
+    if (!user || !pin.rawEvent) return;
     // Only allow deleting your own pins
-    if (pubkey !== pin.pubkey) return;
+    if (user.pubkey !== pin.pubkey) return;
 
     // Optimistically remove from local state
     const pinId = pin.id;
@@ -149,9 +150,9 @@ export default function EducationPage() {
       eventKind: 39067,
       reason: "Deleted by author",
     });
-    const signedDelete = await window.nostr.signEvent({ ...unsignedDelete, pubkey });
+    const signedDelete = await signEvent(unsignedDelete);
     await publishDelete(signedDelete);
-  }, []);
+  }, [user, signEvent]);
 
   const handleEditPin = useCallback((pin: Pin) => {
     setEditPin(pin);
@@ -719,6 +720,7 @@ function AddPinModal({
   onCancel: () => void;
   editPin?: Pin | null;
 }) {
+  const { user, signEvent } = useNostr();
   const [title, setTitle] = useState(editPin?.title || "");
   const [url, setUrl] = useState(editPin?.externalRef || "");
   const [description, setDescription] = useState(editPin?.content || "");
@@ -755,13 +757,13 @@ function AddPinModal({
     setError("");
 
     try {
-      if (!window.nostr) {
-        setError("No Nostr extension found. Please install one to publish.");
+      if (!user) {
+        setError("Please log in to publish.");
         setPublishing(false);
         return;
       }
 
-      const pubkey = await window.nostr.getPublicKey();
+      const pubkey = user.pubkey;
 
       // Auto-create a pinboard if none exists yet ("auto" sentinel)
       let resolvedBoardCoord = boardCoordinate;
@@ -771,7 +773,7 @@ function AddPinModal({
           title: "Education",
           description: "Educational resources",
         });
-        const signedBoard = await window.nostr.signEvent({ ...unsignedBoard, pubkey });
+        const signedBoard = await signEvent(unsignedBoard);
         const boardOk = await publishPinboard(signedBoard);
         if (!boardOk) {
           setError("Failed to create pinboard on relays.");
@@ -805,9 +807,9 @@ function AddPinModal({
         dTag: isEditing ? (editPin?.rawEvent?.tags as string[][] | undefined)?.find((t) => t[0] === "d")?.[1] : undefined,
       });
 
-      const signedEvent = await window.nostr.signEvent({ ...unsignedEvent, pubkey });
+      const signedEv = await signEvent(unsignedEvent);
 
-      const success = await publishPin(signedEvent);
+      const success = await publishPin(signedEv);
       if (success) {
         onDone();
       } else {

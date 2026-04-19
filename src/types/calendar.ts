@@ -29,6 +29,9 @@ export interface CalendarEvent {
   // UI properties
   color?: string;
   source?: string;
+
+  // Raw event data for EventActions
+  rawEvent?: Record<string, unknown>;
 }
 
 // Event creation form data
