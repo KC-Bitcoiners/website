@@ -11,6 +11,11 @@ const outDir = path.join(__dirname, '../out');
 // Pages that need clean URLs
 const pages = [
   'calendar',
+  'committees',
+  'donate',
+  'education',
+  'events',
+  'gallery',
   'shop',
 ];
 
