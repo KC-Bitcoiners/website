@@ -387,8 +387,6 @@ export default function EducationPage() {
             onDone={handlePinAdded}
             onCancel={() => { setShowAddPin(false); setEditPin(null); }}
             editPin={editPin}
-            pubkey={user?.pubkey}
-            signEvent={signEvent}
           />
         )}
       </div>
@@ -744,15 +742,11 @@ function AddPinModal({
   onDone,
   onCancel,
   editPin,
-  pubkey,
-  signEvent,
 }: {
   boardCoordinate: string;
   onDone: () => void;
   onCancel: () => void;
   editPin?: Pin | null;
-  pubkey?: string;
-  signEvent?: (event: { kind: number; content: string; tags: string[][]; created_at: number }) => Promise<Record<string, unknown>>;
 }) {
   const { user, signEvent } = useNostr();
   const [title, setTitle] = useState(editPin?.title || "");
@@ -807,7 +801,7 @@ function AddPinModal({
           title: "Education",
           description: "Educational resources",
         });
-        const signedBoard = await signEvent(unsignedBoard);
+        const signedBoard = await signEvent(unsignedBoard as { kind: number; content: string; tags: string[][]; created_at: number });
         const boardOk = await publishPinboard(signedBoard);
         if (!boardOk) {
           setError("Failed to create pinboard on relays.");
@@ -841,7 +835,7 @@ function AddPinModal({
         dTag: isEditing ? (editPin?.rawEvent?.tags as string[][] | undefined)?.find((t) => t[0] === "d")?.[1] : undefined,
       });
 
-      const signedEv = await signEvent(unsignedEvent);
+      const signedEv = await signEvent(unsignedEvent as { kind: number; content: string; tags: string[][]; created_at: number });
 
       const success = await publishPin(signedEv);
       if (success) {

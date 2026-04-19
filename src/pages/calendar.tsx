@@ -78,7 +78,7 @@ export default function CalendarPage({
     setEvents((prev) => prev.filter((e) => e.id !== event.id));
     const kind = (event.rawEvent as any).kind as number;
     const unsignedDelete = { kind: 5, content: "Deleted by author", tags: [["e", event.id], ["k", String(kind)]], created_at: Math.floor(Date.now() / 1000) };
-    const signedDelete = await signEvent(unsignedDelete);
+    const signedDelete = await signEvent(unsignedDelete as { kind: number; content: string; tags: string[][]; created_at: number });
     const { pool } = await import("@/lib/nostr");
     const { nostrRelays } = await import("@/config");
     try { await pool.publish(nostrRelays, signedDelete as any); } catch {}
@@ -701,6 +701,18 @@ export default function CalendarPage({
                           rawEvent={event.rawEvent}
                           onDelete={user && user.pubkey === event.pubkey ? () => handleDeleteEvent(event) : undefined}
                         />
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {/* Past Events Section */}
+                {pastEvents.length > 0 && (
+                  <section>
+                    <h3 className="text-xl font-bold text-gray-900 mb-4 font-archivo-black">
+                      Past Events
+                    </h3>
+                    <div className="space-y-8">
                       {pastEvents.slice(0, 5).map((event) => (
                         <EventCard
                           key={event.id}
@@ -718,6 +730,10 @@ export default function CalendarPage({
                           rawEvent={event.rawEvent}
                           onDelete={user && user.pubkey === event.pubkey ? () => handleDeleteEvent(event) : undefined}
                         />
+                      ))}
+                    </div>
+                  </section>
+                )}
 
                 {events.length === 0 && !isLoadingNostrEvents && (
                   <div className="text-center py-12">
