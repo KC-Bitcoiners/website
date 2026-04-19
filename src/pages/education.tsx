@@ -196,7 +196,7 @@ export default function EducationPage() {
             Education Resources
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Curated collections of educational content, articles, links, and media about conservative values and civic engagement.
+            Curated collections of educational content, articles, links, and media bitcoin.
           </p>
         </div>
 
@@ -947,7 +947,7 @@ function AddPinModal({
               type="text"
               value={tags}
               onChange={(e) => setTags(e.target.value)}
-              placeholder="education, civics, conservative"
+              placeholder="bitcoin, nostr, privacy"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
             />
           </div>
