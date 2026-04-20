@@ -7,7 +7,7 @@ import {
   getUpcomingEvents,
   getPastEvents,
   getEventTypeLabel,
-} from "../calendar";
+} from "@/utils/calendar";
 import type { CalendarEvent } from "@/types/calendar";
 
 // ---------------------------------------------------------------------------
