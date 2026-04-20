@@ -261,8 +261,11 @@ export function NostrProvider({ children }: NostrProviderProps) {
       const id = Array.from(new Uint8Array(hashBytes)).map(b => b.toString(16).padStart(2, "0")).join("");
       // Sign with schnorr
       const s = await import("@noble/curves/secp256k1.js").then(m => m.schnorr);
-      const sig = s.sign(id, privkeyHex);
-      return { ...fullEvent, id, sig: sig.toHex() };
+      const idBytes = new Uint8Array(hashBytes);
+      const privBytes = new Uint8Array(privkeyHex.match(/.{1,2}/g)!.map(b => parseInt(b, 16)));
+      const sig = s.sign(idBytes, privBytes);
+      const sigHex = Array.from(sig).map(b => b.toString(16).padStart(2, "0")).join("");
+      return { ...fullEvent, id, sig: sigHex };
     }
     // Fallback to extension
     if (window.nostr) {

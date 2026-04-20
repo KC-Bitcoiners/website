@@ -8,15 +8,14 @@ const path = require('path');
 
 const outDir = path.join(__dirname, '../out');
 
-// Pages that need clean URLs
-const pages = [
-  'calendar',
-  'shop',
-];
+// Automatically detect all page HTML files (skip index.html and 404.html)
+const pages = fs.readdirSync(outDir)
+  .filter(f => f.endsWith('.html') && f !== 'index.html' && f !== '404.html')
+  .map(f => f.replace('.html', ''));
 
 function createCleanUrls() {
   console.log('Creating clean URL structure...');
-  
+
   pages.forEach(page => {
     const sourceFile = path.join(outDir, `${page}.html`);
     const targetDir = path.join(outDir, page);
