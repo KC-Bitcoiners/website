@@ -700,8 +700,7 @@ export default function ShopPage() {
             <div className="bg-white rounded-lg shadow-md p-6">
               {/* Leaflet Map */}
               <div
-                className="rounded-lg overflow-hidden"
-                style={{ height: "500px" }}
+                className="rounded-lg overflow-hidden h-64 sm:h-80 md:h-[500px]"
               >
                 <MapContainer
                   center={[config.site.organization.coordinates.lat, config.site.organization.coordinates.lon]}

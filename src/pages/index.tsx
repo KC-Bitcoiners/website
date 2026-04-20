@@ -22,19 +22,17 @@ export default function Home() {
 
       {/* Main Content Section - White Background */}
       <section className="bg-white text-black py-16">
-        <div className="container mx-auto px-6 max-w-6xl ">
+        <div className="container mx-auto px-6 max-w-6xl">
           {/* Title */}
           <h1 className="text-4xl md:text-6xl font-black bitcoin-orange mb-16 text-center font-archivo-black">
             {config.pages.home.hero.title}
           </h1>
 
-        <div className="container mx-auto px-6 max-w-6xl ">
-
           {/* Two Column Layout */}
-          <div className="grid md:grid-cols-2 gap-16 items-start">
+          <div className="grid md:grid-cols-2 gap-8 md:gap-16 items-start">
             {/* Left Column - Bitcoin Logo */}
             <div className="flex justify-center">
-              <BitcoinLogo size={350} className="shadow-lg" />
+              <BitcoinLogo size={280} className="shadow-lg max-w-full" />
             </div>
 
             {/* Right Column - Content */}
@@ -54,7 +52,6 @@ export default function Home() {
               </ul>
             </div>
           </div>
-        </div>
         </div>
       </section>
 

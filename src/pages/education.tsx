@@ -446,7 +446,7 @@ function FilterBar({
       })}
 
       {/* Sort controls */}
-      <div className="flex items-center gap-1 ml-2" data-testid="sort-controls">
+      <div className="flex items-center gap-1 w-full sm:w-auto sm:ml-2 mt-2 sm:mt-0" data-testid="sort-controls">
         <span className="text-xs text-gray-500 mr-1">Sort:</span>
         {(["date", "title"] as const).map((s) => (
           <button
@@ -465,7 +465,7 @@ function FilterBar({
         <button
           data-testid="add-pin-btn"
           onClick={onAddClick}
-          className="ml-auto px-4 py-2 rounded-lg font-semibold transition-colors text-sm bg-bitcoin-orange text-white hover:bg-bitcoin-orange-hover"
+          className="w-full sm:w-auto sm:ml-auto px-4 py-2 rounded-lg font-semibold transition-colors text-sm bg-bitcoin-orange text-white hover:bg-bitcoin-orange-hover"
         >
           + Add Resource
         </button>

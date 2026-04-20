@@ -645,7 +645,7 @@ export default function CalendarPage({
                 {/* Orange plus button for creating events */}
                 <button
                   onClick={() => setShowCreateForm(true)}
-                  className="inline-flex items-center justify-center w-10 h-10 bg-bitcoin-orange text-white rounded-full hover:bg-bitcoin-orange-hover transition-colors"
+                  className="inline-flex items-center justify-center w-11 h-11 sm:w-10 sm:h-10 bg-bitcoin-orange text-white rounded-full hover:bg-bitcoin-orange-hover transition-colors"
                   title="Create New Event"
                 >
                   <PlusIcon className="w-5 h-5" />

@@ -159,7 +159,7 @@ export default function Layout({ children, className }: LayoutProps) {
                   className="h-8 w-auto"
                 />
               )}
-              {config.site.organization.name}
+              <span className="hidden sm:inline">{config.site.organization.name}</span>
             </Link>
 
             {/* Desktop Navigation */}
