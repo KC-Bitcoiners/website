@@ -35,6 +35,7 @@ jobs:
           node scripts/post-build.js
         env:
           NEXT_SHARP_REQUIRE_CDN: 1
+          BASE_PATH: /bodarc
 
       - name: Add .nojekyll
         run: touch out/.nojekyll
