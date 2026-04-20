@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Head from "next/head";
-import { config, siteConfig } from "@/config";
+import { config, siteConfig, basePath } from "@/config";
 import { streamGalleryImages, GalleryImage, publishGalleryImage, uploadToBlossom } from "@/utils/galleryEvents";
 import { buildDeleteEvent, publishDelete } from "@/utils/pinboardEvents";
 import { useNostr } from "@/contexts/NostrContext";
@@ -41,7 +41,7 @@ export default function GalleryPage() {
       <Head>
         <title>{config.pages.gallery.meta.title}</title>
         <meta name="description" content={config.pages.gallery.meta.description} />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href={`${basePath}/favicon.ico`} />
       </Head>
 
       <div className="container mx-auto px-4 py-12" data-testid="gallery-page">

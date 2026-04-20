@@ -1,4 +1,4 @@
-import { nostrRelays, WHITELISTED_PUBKEYS } from "@/config";
+import { nostrRelays, WHITELISTED_PUBKEYS, basePath } from "@/config";
 import EventActions from "@/components/EventActions";
 import { pool } from "@/lib/nostr";
 import {
@@ -711,7 +711,7 @@ export default function DonatePage() {
           <h1 className="text-4xl font-bold mb-8 font-archivo-black">Donate</h1>
           <div className="bitcoin-shaka-container">
             <img
-              src="/bitcoinShaka.jpg"
+              src={`${basePath}/bitcoinShaka.jpg`}
               alt="Loading..."
               className="bitcoin-shaka-spinner"
             />

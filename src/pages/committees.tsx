@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Head from "next/head";
-import { config } from "@/config";
+import { config, basePath } from "@/config";
 import { isWhitelisted } from "@/config";
 import { useNostr } from "@/contexts/NostrContext";
 import {
@@ -242,7 +242,7 @@ export default function CommitteesPage() {
         <title>{config.pages.committees.meta.title}</title>
         <meta name="description" content={config.pages.committees.meta.description} />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href={`${basePath}/favicon.ico`} />
       </Head>
 
       <div className="container mx-auto px-4 py-12">

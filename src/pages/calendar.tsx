@@ -20,7 +20,7 @@ import {
 } from "../utils/nostrEvents";
 import { PlusIcon } from "../components/Icons";
 import { GetStaticProps, InferGetStaticPropsType } from "next";
-import { WHITELISTED_NPUBS, WHITELISTED_PUBKEYS } from "@/config";
+import { WHITELISTED_NPUBS, WHITELISTED_PUBKEYS, basePath } from "@/config";
 import { config } from "@/config";
 import { useNostr } from "../contexts/NostrContext";
 import { useRef, useCallback } from "react";
@@ -639,7 +639,7 @@ export default function CalendarPage({
               <div className="absolute top-4 left-0 right-0 z-50 flex justify-center">
                 <div className="flex flex-col items-center gap-3 px-6 py-3 bg-white bg-opacity-95 rounded-lg shadow-lg backdrop-blur-sm">
                   <img
-                    src="/bitcoinShaka.jpg"
+                    src={`${basePath}/bitcoinShaka.jpg`}
                     alt="Loading..."
                     className="w-auto h-auto max-w-12 max-h-12 rounded-full animate-spin"
                   />
@@ -724,7 +724,7 @@ export default function CalendarPage({
                   <div className="bitcoin-shaka-loading-overlay mb-8">
                     <div className="bitcoin-shaka-container">
                       <img
-                        src="/bitcoinShaka.jpg"
+                        src={`${basePath}/bitcoinShaka.jpg`}
                         alt="Loading..."
                         className="bitcoin-shaka-spinner"
                       />

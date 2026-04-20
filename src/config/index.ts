@@ -1,5 +1,8 @@
 import configData from '../../config.json';
 
+// Build-time basePath for GitHub Pages subpath hosting (inlined by Next.js)
+export const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+
 // Type definitions for the configuration
 export interface SiteConfig {
   title: string;

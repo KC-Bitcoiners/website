@@ -7,7 +7,7 @@ import { useNostr } from "@/contexts/NostrContext";
 import UserProfile from "./UserProfile";
 import NostrLogin from "./NostrLogin";
 import SocialLinks from "./SocialLinks";
-import { config } from "@/config";
+import { config, basePath } from "@/config";
 
 function NavLinks({ currentPath }: { currentPath: string }) {
   return (
@@ -134,19 +134,18 @@ export default function Layout({ children, className }: LayoutProps) {
               className="flex items-center gap-3 text-xl font-black bitcoin-orange uppercase tracking-wider font-archivo-black"
             >
               {config.site.images.logo.startsWith('http') ? (
-                <img 
-                  src={config.site.images.logo} 
+                <img
+                  src={config.site.images.logo}
                   alt={config.site.organization.name}
                   className="h-8 w-auto"
                   onError={(e) => {
-                    // Fallback to logoFallback if URL fails to load
                     const target = e.target as HTMLImageElement;
                     target.src = config.site.images.logoFallback;
                   }}
                 />
               ) : (
-                <img 
-                  src={config.site.images.logo} 
+                <img
+                  src={`${basePath}${config.site.images.logo}`}
                   alt={config.site.organization.name}
                   className="h-8 w-auto"
                 />
