@@ -466,13 +466,13 @@ export default function ShopPage() {
       };
 
       // Sign the event using the user's signing method
-      const signedEvent = await signEvent(deleteEventTemplate);
+      const signedEvent = await signEvent(deleteEventTemplate as { kind: number; content: string; tags: string[][]; created_at: number });
 
       // Add the ID to the signed event
       const deleteEvent = {
         ...signedEvent,
         id: (signedEvent as any).id || getEventHash(signedEvent as any),
-      };
+      } as NostrEvent;
 
       // Publish the delete event to relays
       const responses = await pool.publish(RELAYS, deleteEvent);

@@ -32,7 +32,7 @@ export default function GalleryPage() {
     setImages((prev) => prev.filter((i) => i.id !== image.id));
     if (selectedImage?.id === image.id) setSelectedImage(null);
     const unsignedDelete = buildDeleteEvent({ eventId: image.id, eventKind: image.kind, reason: "Deleted by author" });
-    const signedDelete = await signEvent(unsignedDelete);
+    const signedDelete = await signEvent(unsignedDelete as { kind: number; content: string; tags: string[][]; created_at: number });
     await publishDelete(signedDelete);
   };
 

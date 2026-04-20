@@ -196,7 +196,7 @@ export default function EducationPage() {
             Education Resources
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Curated collections of educational content, articles, links, and media about conservative values and civic engagement.
+            Curated collections of educational content, articles, links, and media bitcoin.
           </p>
         </div>
 
@@ -387,8 +387,6 @@ export default function EducationPage() {
             onDone={handlePinAdded}
             onCancel={() => { setShowAddPin(false); setEditPin(null); }}
             editPin={editPin}
-            pubkey={user?.pubkey}
-            signEvent={signEvent}
           />
         )}
       </div>
@@ -744,15 +742,11 @@ function AddPinModal({
   onDone,
   onCancel,
   editPin,
-  pubkey,
-  signEvent,
 }: {
   boardCoordinate: string;
   onDone: () => void;
   onCancel: () => void;
   editPin?: Pin | null;
-  pubkey?: string;
-  signEvent?: (event: { kind: number; content: string; tags: string[][]; created_at: number }) => Promise<Record<string, unknown>>;
 }) {
   const { user, signEvent } = useNostr();
   const [title, setTitle] = useState(editPin?.title || "");
@@ -807,7 +801,7 @@ function AddPinModal({
           title: "Education",
           description: "Educational resources",
         });
-        const signedBoard = await signEvent(unsignedBoard);
+        const signedBoard = await signEvent(unsignedBoard as { kind: number; content: string; tags: string[][]; created_at: number });
         const boardOk = await publishPinboard(signedBoard);
         if (!boardOk) {
           setError("Failed to create pinboard on relays.");
@@ -841,7 +835,7 @@ function AddPinModal({
         dTag: isEditing ? (editPin?.rawEvent?.tags as string[][] | undefined)?.find((t) => t[0] === "d")?.[1] : undefined,
       });
 
-      const signedEv = await signEvent(unsignedEvent);
+      const signedEv = await signEvent(unsignedEvent as { kind: number; content: string; tags: string[][]; created_at: number });
 
       const success = await publishPin(signedEv);
       if (success) {
@@ -953,7 +947,7 @@ function AddPinModal({
               type="text"
               value={tags}
               onChange={(e) => setTags(e.target.value)}
-              placeholder="education, civics, conservative"
+              placeholder="bitcoin, nostr, privacy"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
             />
           </div>
