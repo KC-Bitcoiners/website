@@ -1,5 +1,13 @@
 import { naddrEncode } from "applesauce-core/helpers";
-import { nostrRelays } from "@/config";
+import { nostrRelays, WHITELISTED_PUBKEYS } from "@/config";
+
+// In test mode, use the dynamically injected whitelist
+function getWhitelistedAuthors(): string[] {
+  if (typeof window !== "undefined" && (window as any).__TEST_WHITELIST) {
+    return (window as any).__TEST_WHITELIST;
+  }
+  return WHITELISTED_PUBKEYS;
+}
 
 export interface VendorData {
   name: string;
@@ -38,9 +46,12 @@ export async function fetchVendorAttestations(): Promise<VendorAttestation[]> {
   const allEvents: VendorAttestation[] = [];
 
   // Filter for vendor attestations (kind 30023 with vendor tags)
+  const authors = getWhitelistedAuthors();
+  const authorSet = new Set(authors);
   const filter = {
     kinds: [30023],
     "#t": ["vendor"],
+    authors,
     limit: 100,
   };
 
@@ -97,10 +108,8 @@ export async function fetchVendorAttestations(): Promise<VendorAttestation[]> {
               const [type, subscriptionId, nostrEvent] = message;
 
               if (subscriptionId === "vendor-attestations-sub") {
-                console.log(
-                  `🎯 Found vendor attestation from ${primaryRelay}:`,
-                  nostrEvent,
-                );
+                // Client-side whitelist check (belt-and-suspenders)
+                if (!authorSet.has(nostrEvent.pubkey)) return;
 
                 const vendorAttestation: VendorAttestation = {
                   id: nostrEvent.id,
@@ -242,10 +251,8 @@ export async function fetchVendorAttestations(): Promise<VendorAttestation[]> {
                 const [type, subscriptionId, nostrEvent] = message;
 
                 if (subscriptionId === "vendor-attestations-sub") {
-                  console.log(
-                    `🎯 Found vendor attestation from ${relayUrl}:`,
-                    nostrEvent,
-                  );
+                  // Client-side whitelist check (belt-and-suspenders)
+                  if (!authorSet.has(nostrEvent.pubkey)) return;
 
                   const vendorAttestation: VendorAttestation = {
                     id: nostrEvent.id,
