@@ -98,25 +98,6 @@ function NavLinks({ currentPath }: { currentPath: string }) {
       >
         Committees
       </Link>
-      <Link
-        href="/chat"
-        className={clsx(
-          "font-semibold transition-colors",
-          currentPath === "/chat"
-            ? "bitcoin-orange"
-            : "hover:text-bitcoin-orange",
-        )}
-      >
-        Chat
-      </Link>
-      <a
-        href={config.site.externalLinks.meetup.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="hover:text-bitcoin-orange font-semibold transition-colors"
-      >
-        Meetup.com
-      </a>
     </>
   );
 }
@@ -264,7 +245,17 @@ export default function Layout({ children, className }: LayoutProps) {
         <div className="container mx-auto px-6">
           <div className="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
             <p>&copy; 2025 {config.site.organization.name} - All Rights Reserved.</p>
-            <SocialLinks />
+            <div className="flex items-center gap-4">
+              <a
+                href={config.site.externalLinks.meetup.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-400 hover:text-white transition-colors text-sm"
+              >
+                Meetup.com
+              </a>
+              <SocialLinks />
+            </div>
           </div>
         </div>
       </footer>

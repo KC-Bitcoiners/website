@@ -21,7 +21,9 @@ import {
 import { PlusIcon } from "../components/Icons";
 import { GetStaticProps, InferGetStaticPropsType } from "next";
 import { WHITELISTED_NPUBS, WHITELISTED_PUBKEYS } from "@/config";
+import { config } from "@/config";
 import { useNostr } from "../contexts/NostrContext";
+import { useRef, useCallback } from "react";
 import { logger } from "@/utils/logger";
 
 interface CalendarPageProps {
@@ -72,6 +74,32 @@ export default function CalendarPage({
     naddr: string;
   } | null>(null);
   const { user, signEvent } = useNostr();
+  const [chatOpen, setChatOpen] = useState(false);
+  const chatIframeRef = useRef<HTMLIFrameElement>(null);
+
+  const CORNYCHAT_URL = "https://cornychat.com";
+
+  // Pass nsec to CornyChat iframe when it's ready
+  const handleChatMessage = useCallback(
+    (event: MessageEvent) => {
+      if (
+        event.data?.type === "cornychat-ready" &&
+        chatIframeRef.current &&
+        user?.privateKey
+      ) {
+        chatIframeRef.current.contentWindow?.postMessage(
+          { type: "cornychat-signin", nsec: user.privateKey },
+          "*",
+        );
+      }
+    },
+    [user?.privateKey],
+  );
+
+  useEffect(() => {
+    window.addEventListener("message", handleChatMessage);
+    return () => window.removeEventListener("message", handleChatMessage);
+  }, [handleChatMessage]);
 
   const handleDeleteEvent = async (event: CalendarEvent) => {
     if (!user || !event.rawEvent || user.pubkey !== event.pubkey) return;
@@ -551,6 +579,17 @@ export default function CalendarPage({
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="relative">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold font-archivo-black">Calendar</h1>
+          <a
+            href={config.site.externalLinks.meetup.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-bitcoin-orange hover:underline font-semibold"
+          >
+            View on Meetup.com (nostr events excluded) &rarr;
+          </a>
+        </div>
         {/* Mobile Stats Row */}
         <div className="flex md:hidden gap-3 mb-6">
           <div className="flex-1 bg-white border border-gray-200 rounded-lg p-2 text-center shadow-sm">
@@ -969,6 +1008,42 @@ export default function CalendarPage({
             </div>
           </div>
         )}
+
+        {/* CornyChat collapsible embed */}
+        <div className="mt-8 border border-gray-200 rounded-lg overflow-hidden bg-white">
+          <button
+            onClick={() => setChatOpen(!chatOpen)}
+            className="w-full flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5 text-bitcoin-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+              </svg>
+              <span className="font-semibold text-gray-800">Live Chat</span>
+              <span className="text-xs text-gray-500 hidden sm:inline">
+                CornyChat audio space
+              </span>
+            </div>
+            <svg
+              className={`w-5 h-5 text-gray-400 transition-transform ${chatOpen ? "rotate-180" : ""}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          {chatOpen && (
+            <iframe
+              ref={chatIframeRef}
+              src={CORNYCHAT_URL}
+              className="w-full border-0"
+              style={{ height: "calc(100vh - 200px)", minHeight: "400px" }}
+              allow="microphone; camera; autoplay"
+              title="CornyChat"
+            />
+          )}
+        </div>
       </div>
     </div>
   );
