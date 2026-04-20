@@ -316,14 +316,19 @@ export async function fetchFeaturedPins(): Promise<Pin[]> {
 export async function fetchPinsForBoard(board: Pinboard): Promise<Pin[]> {
   const relays = nostrRelays;
   const coordinate = board.coordinate;
+  const whitelistedAuthors = getWhitelistedAuthors();
+  const authorSet = new Set(whitelistedAuthors);
 
-  // Fetch by author and filter client-side by board coordinate
-  const authors = board.collaborative ? undefined : [board.pubkey];
+  // Always apply whitelist filtering at relay level
+  // For non-collaborative boards, further restrict to board owner
+  const authors = board.collaborative
+    ? whitelistedAuthors
+    : [board.pubkey].filter((p) => authorSet.has(p));
   const filter: any = {
     kinds: [39067],
+    authors,
     limit: 200,
   };
-  if (authors) filter.authors = authors;
 
   return new Promise((resolve) => {
     const timeout = setTimeout(() => resolve([]), 15000);
@@ -334,7 +339,9 @@ export async function fetchPinsForBoard(board: Pinboard): Promise<Pin[]> {
       error: () => { clearTimeout(timeout); resolve([]); },
       complete: () => {
         clearTimeout(timeout);
-        const deduped = deduplicateByCoordinate(rawEvents, 39067);
+        // Belt-and-suspenders: client-side whitelist check
+        const filtered = rawEvents.filter((e: any) => authorSet.has(e.pubkey));
+        const deduped = deduplicateByCoordinate(filtered, 39067);
         const pins: Pin[] = [];
         for (const event of deduped) {
           const pin = parsePinEvent(event);

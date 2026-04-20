@@ -249,12 +249,8 @@ export default function CommitteesPage() {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-black bitcoin-orange mb-4 font-archivo-black">
-            Committees
+            Get Involved!
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Get involved in the Ray County bitcoin-orange Party by joining one of our committees.
-            We have positions open for dedicated bitcoin-oranges who want to make a difference.
-          </p>
         </div>
 
         {/* Statistics */}

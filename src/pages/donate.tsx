@@ -263,9 +263,9 @@ const ZapraiserCard = ({
         animationFillMode: "both",
       }}
     >
-      <div className="flex gap-6">
+      <div className="flex flex-col sm:flex-row gap-6">
         {/* Left Column: Metadata, Note Text, and Progress Bar */}
-        <div className="flex-grow">
+        <div className="flex-grow min-w-0">
           {/* Author Info */}
           <div className="flex items-center mb-4">
             {zapraiser.author?.picture && (

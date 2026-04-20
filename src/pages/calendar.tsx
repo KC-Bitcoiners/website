@@ -78,7 +78,7 @@ export default function CalendarPage({
     setEvents((prev) => prev.filter((e) => e.id !== event.id));
     const kind = (event.rawEvent as any).kind as number;
     const unsignedDelete = { kind: 5, content: "Deleted by author", tags: [["e", event.id], ["k", String(kind)]], created_at: Math.floor(Date.now() / 1000) };
-    const signedDelete = await signEvent(unsignedDelete);
+    const signedDelete = await signEvent(unsignedDelete as { kind: number; content: string; tags: string[][]; created_at: number });
     const { pool } = await import("@/lib/nostr");
     const { nostrRelays } = await import("@/config");
     try { await pool.publish(nostrRelays, signedDelete as any); } catch {}
@@ -597,8 +597,8 @@ export default function CalendarPage({
 
             {/* Always show view selector */}
             <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
                   <button
                     onClick={() => setViewMode("month")}
                     className={`px-4 py-2 text-sm font-medium transition-colors rounded-l-lg ${
@@ -645,7 +645,7 @@ export default function CalendarPage({
                 {/* Orange plus button for creating events */}
                 <button
                   onClick={() => setShowCreateForm(true)}
-                  className="inline-flex items-center justify-center w-10 h-10 bg-bitcoin-orange text-white rounded-full hover:bg-bitcoin-orange-hover transition-colors"
+                  className="inline-flex items-center justify-center w-11 h-11 sm:w-10 sm:h-10 bg-bitcoin-orange text-white rounded-full hover:bg-bitcoin-orange-hover transition-colors"
                   title="Create New Event"
                 >
                   <PlusIcon className="w-5 h-5" />
@@ -680,6 +680,20 @@ export default function CalendarPage({
                   </div>
                 )}
 
+                {/* Loading skeleton for initial load */}
+                {events.length === 0 && isLoadingNostrEvents && (
+                  <div className="space-y-4">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="animate-pulse bg-white border border-gray-200 rounded-lg p-6">
+                        <div className="h-4 bg-gray-200 rounded w-1/4 mb-3" />
+                        <div className="h-6 bg-gray-200 rounded w-3/4 mb-2" />
+                        <div className="h-4 bg-gray-200 rounded w-1/2 mb-4" />
+                        <div className="h-4 bg-gray-200 rounded w-full" />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {/* Upcoming Events Section */}
                 {upcomingEvents.length > 0 && (
                   <section className="mb-16">
@@ -701,6 +715,18 @@ export default function CalendarPage({
                           rawEvent={event.rawEvent}
                           onDelete={user && user.pubkey === event.pubkey ? () => handleDeleteEvent(event) : undefined}
                         />
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {/* Past Events Section */}
+                {pastEvents.length > 0 && (
+                  <section>
+                    <h3 className="text-xl font-bold text-gray-900 mb-4 font-archivo-black">
+                      Past Events
+                    </h3>
+                    <div className="space-y-8">
                       {pastEvents.slice(0, 5).map((event) => (
                         <EventCard
                           key={event.id}
@@ -718,6 +744,10 @@ export default function CalendarPage({
                           rawEvent={event.rawEvent}
                           onDelete={user && user.pubkey === event.pubkey ? () => handleDeleteEvent(event) : undefined}
                         />
+                      ))}
+                    </div>
+                  </section>
+                )}
 
                 {events.length === 0 && !isLoadingNostrEvents && (
                   <div className="text-center py-12">

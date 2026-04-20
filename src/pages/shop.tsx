@@ -5,7 +5,7 @@ import EventActions from "@/components/EventActions";
 import { useNostr } from "@/contexts/NostrContext";
 import { fetchBTCMapVendors, BTCMapVendor } from "@/utils/btcmap";
 import { pool } from "@/lib/nostr";
-import { config, nostrRelays, getWhitelistFilter } from "@/config";
+import { config, nostrRelays, getWhitelistFilter, siteConfig } from "@/config";
 import type { Icon, LatLngBounds, DivIcon } from "leaflet";
 import { getEventHash, type NostrEvent } from "applesauce-core/helpers/event";
 
@@ -466,13 +466,13 @@ export default function ShopPage() {
       };
 
       // Sign the event using the user's signing method
-      const signedEvent = await signEvent(deleteEventTemplate);
+      const signedEvent = await signEvent(deleteEventTemplate as { kind: number; content: string; tags: string[][]; created_at: number });
 
       // Add the ID to the signed event
       const deleteEvent = {
         ...signedEvent,
         id: (signedEvent as any).id || getEventHash(signedEvent as any),
-      };
+      } as NostrEvent;
 
       // Publish the delete event to relays
       const responses = await pool.publish(RELAYS, deleteEvent);
@@ -700,8 +700,7 @@ export default function ShopPage() {
             <div className="bg-white rounded-lg shadow-md p-6">
               {/* Leaflet Map */}
               <div
-                className="rounded-lg overflow-hidden"
-                style={{ height: "500px" }}
+                className="rounded-lg overflow-hidden h-64 sm:h-80 md:h-[500px]"
               >
                 <MapContainer
                   center={[config.site.organization.coordinates.lat, config.site.organization.coordinates.lon]}
@@ -1154,7 +1153,7 @@ export default function ShopPage() {
                 🚀 Add Your First Vendor
               </h3>
               <p className="text-gray-600 mb-4">
-                Help grow the Bitcoin ecosystem in Kansas City by submitting local businesses that accept Bitcoin payments.
+                Help grow the Bitcoin ecosystem in {siteConfig.organization.location} by submitting local businesses that accept Bitcoin payments.
               </p>
               <button
                 onClick={() => setShowVendorForm(true)}

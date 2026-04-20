@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Head from "next/head";
-import { config } from "@/config";
+import { config, siteConfig } from "@/config";
 import { streamGalleryImages, GalleryImage, publishGalleryImage, uploadToBlossom } from "@/utils/galleryEvents";
 import { buildDeleteEvent, publishDelete } from "@/utils/pinboardEvents";
 import { useNostr } from "@/contexts/NostrContext";
@@ -32,7 +32,7 @@ export default function GalleryPage() {
     setImages((prev) => prev.filter((i) => i.id !== image.id));
     if (selectedImage?.id === image.id) setSelectedImage(null);
     const unsignedDelete = buildDeleteEvent({ eventId: image.id, eventKind: image.kind, reason: "Deleted by author" });
-    const signedDelete = await signEvent(unsignedDelete);
+    const signedDelete = await signEvent(unsignedDelete as { kind: number; content: string; tags: string[][]; created_at: number });
     await publishDelete(signedDelete);
   };
 
@@ -50,7 +50,7 @@ export default function GalleryPage() {
             Gallery
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Photos from KC Bitcoiners events, meetups, and community activities.
+            Photos from {siteConfig.organization.name} events, meetups, and community activities.
           </p>
         </div>
 

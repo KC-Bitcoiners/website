@@ -141,7 +141,7 @@ export default function EventActions({ event, extraActions, className, onDelete,
         ref={triggerRef}
         onClick={toggleMenu}
         title="Actions"
-        className={`px-2 py-1 rounded hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-700 font-bold text-lg leading-none ${className || ""}`}
+        className={`px-2.5 py-1.5 rounded hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-700 font-bold text-lg leading-none min-w-[36px] min-h-[36px] flex items-center justify-center ${className || ""}`}
       >
         ...
       </button>
