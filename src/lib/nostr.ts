@@ -11,7 +11,14 @@ const isClient = typeof window !== "undefined";
 // Conditionally import window.nostrdb.js only on the client
 if (isClient) {
   try {
-    // window.nostrdb.js auto connects to a local nostr event cache for the browser
+    // Disable localhost relay connection to prevent Chrome false-positive errors.
+    // window.nostrdb.js defaults to ws://localhost:4869/ which causes ERR_CONNECTION_REFUSED
+    // in Chrome DevTools when no local relay is running. Setting localRelays to an empty
+    // array forces it to fall back to IndexedDB (NostrIDBWrapper) instead.
+    (window as any).nostrdbConfig = {
+      ...(window as any).nostrdbConfig,
+      localRelays: [],
+    };
     await import("window.nostrdb.js");
   } catch (error) {}
 }
