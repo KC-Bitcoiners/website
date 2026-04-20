@@ -97,7 +97,7 @@ export default function NewsletterForm() {
         {isSubmitting ? "Subscribing..." : "Subscribe"}
       </button>
       <p className="text-xs text-gray-500 text-center">
-        By subscribing, you agree to receive email updates from KC Bitcoiners.
+        Newsletter service coming soon. Your subscription will be saved locally until the backend is configured.
       </p>
     </form>
   );
