@@ -597,8 +597,8 @@ export default function CalendarPage({
 
             {/* Always show view selector */}
             <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
                   <button
                     onClick={() => setViewMode("month")}
                     className={`px-4 py-2 text-sm font-medium transition-colors rounded-l-lg ${
@@ -680,6 +680,20 @@ export default function CalendarPage({
                   </div>
                 )}
 
+                {/* Loading skeleton for initial load */}
+                {events.length === 0 && isLoadingNostrEvents && (
+                  <div className="space-y-4">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="animate-pulse bg-white border border-gray-200 rounded-lg p-6">
+                        <div className="h-4 bg-gray-200 rounded w-1/4 mb-3" />
+                        <div className="h-6 bg-gray-200 rounded w-3/4 mb-2" />
+                        <div className="h-4 bg-gray-200 rounded w-1/2 mb-4" />
+                        <div className="h-4 bg-gray-200 rounded w-full" />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {/* Upcoming Events Section */}
                 {upcomingEvents.length > 0 && (
                   <section className="mb-16">
@@ -701,6 +715,16 @@ export default function CalendarPage({
                           rawEvent={event.rawEvent}
                           onDelete={user && user.pubkey === event.pubkey ? () => handleDeleteEvent(event) : undefined}
                         />
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {/* Past Events Section */}
+                {pastEvents.length > 0 && (
+                  <section className="mb-16">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-6">Past Events</h3>
+                    <div className="space-y-8">
                       {pastEvents.slice(0, 5).map((event) => (
                         <EventCard
                           key={event.id}
@@ -718,6 +742,10 @@ export default function CalendarPage({
                           rawEvent={event.rawEvent}
                           onDelete={user && user.pubkey === event.pubkey ? () => handleDeleteEvent(event) : undefined}
                         />
+                      ))}
+                    </div>
+                  </section>
+                )}
 
                 {events.length === 0 && !isLoadingNostrEvents && (
                   <div className="text-center py-12">
