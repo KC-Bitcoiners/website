@@ -98,6 +98,17 @@ function NavLinks({ currentPath }: { currentPath: string }) {
       >
         Committees
       </Link>
+      <Link
+        href="/chat"
+        className={clsx(
+          "font-semibold transition-colors",
+          currentPath === "/chat"
+            ? "bitcoin-orange"
+            : "hover:text-bitcoin-orange",
+        )}
+      >
+        Chat
+      </Link>
       <a
         href={config.site.externalLinks.meetup.url}
         target="_blank"
