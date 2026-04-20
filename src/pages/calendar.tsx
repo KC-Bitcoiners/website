@@ -20,7 +20,7 @@ import {
 } from "../utils/nostrEvents";
 import { PlusIcon } from "../components/Icons";
 import { GetStaticProps, InferGetStaticPropsType } from "next";
-import { WHITELISTED_NPUBS, WHITELISTED_PUBKEYS, basePath } from "@/config";
+import { WHITELISTED_NPUBS, WHITELISTED_PUBKEYS, basePath, CLIENT_TAG } from "@/config";
 import { config } from "@/config";
 import { useNostr } from "../contexts/NostrContext";
 import { useRef, useCallback } from "react";
@@ -105,7 +105,7 @@ export default function CalendarPage({
     if (!user || !event.rawEvent || user.pubkey !== event.pubkey) return;
     setEvents((prev) => prev.filter((e) => e.id !== event.id));
     const kind = (event.rawEvent as any).kind as number;
-    const unsignedDelete = { kind: 5, content: "Deleted by author", tags: [["e", event.id], ["k", String(kind)]], created_at: Math.floor(Date.now() / 1000) };
+    const unsignedDelete = { kind: 5, content: "Deleted by author", tags: [[...CLIENT_TAG], ["e", event.id], ["k", String(kind)]], created_at: Math.floor(Date.now() / 1000) };
     const signedDelete = await signEvent(unsignedDelete as { kind: number; content: string; tags: string[][]; created_at: number });
     const { pool } = await import("@/lib/nostr");
     const { nostrRelays } = await import("@/config");

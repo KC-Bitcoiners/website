@@ -1,5 +1,5 @@
 import { pool } from "@/lib/nostr";
-import { nostrRelays, WHITELISTED_PUBKEYS } from "@/config";
+import { nostrRelays, WHITELISTED_PUBKEYS, CLIENT_TAG, LOCATION_TAG } from "@/config";
 
 // In test mode, use the dynamically injected whitelist
 function getWhitelistedAuthors(): string[] {
@@ -368,6 +368,8 @@ export function buildPinEvent(opts: {
   dTag?: string;
 }): Record<string, unknown> {
   const tags: string[][] = [
+    [...CLIENT_TAG],
+    [...LOCATION_TAG],
     ["A", opts.boardCoordinate],
   ];
 
@@ -415,7 +417,7 @@ export function buildPinboardEvent(opts: {
   description?: string;
   content?: string;
 }): Record<string, unknown> {
-  const tags: string[][] = [["d", opts.dTag]];
+  const tags: string[][] = [[...CLIENT_TAG], ["d", opts.dTag]];
   if (opts.title) tags.push(["title", opts.title]);
   if (opts.description) tags.push(["description", opts.description]);
   return {
@@ -443,6 +445,7 @@ export function buildDeleteEvent(opts: {
   reason?: string;
 }): Record<string, unknown> {
   const tags: string[][] = [
+    [...CLIENT_TAG],
     ["e", opts.eventId],
     ["k", String(opts.eventKind)],
   ];
