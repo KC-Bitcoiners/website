@@ -217,6 +217,8 @@ export async function fetchMembersForAllCommittees(
   if (committees.length === 0) return result;
 
   const coordinates = committees.map((c) => c.coordinate);
+  const authors = getAuthorPubkeys();
+  const authorSet = new Set(authors);
 
   return new Promise((resolve) => {
     const timeout = setTimeout(() => resolve(result), 15000);
@@ -225,13 +227,15 @@ export async function fetchMembersForAllCommittees(
     pool.request(relays, {
       kinds: [39068],
       "#a": coordinates,
+      authors,
       limit: 500,
     }).subscribe({
       next: (event) => rawEvents.push(event),
       error: () => { clearTimeout(timeout); resolve(result); },
       complete: () => {
         clearTimeout(timeout);
-        for (const event of rawEvents) {
+        const filtered = rawEvents.filter((e: any) => authorSet.has(e.pubkey));
+        for (const event of filtered) {
           const member = parseCommitteeMemberEvent(event);
           if (member) {
             const existing = result.get(member.committeeCoordinate) || [];
@@ -259,6 +263,8 @@ export async function fetchMembersForCommittee(
 ): Promise<CommitteeMember[]> {
   const relays = nostrRelays;
   const coordinate = committee.coordinate;
+  const authors = getAuthorPubkeys();
+  const authorSet = new Set(authors);
 
   return new Promise((resolve) => {
     const timeout = setTimeout(() => resolve([]), 15000);
@@ -267,13 +273,15 @@ export async function fetchMembersForCommittee(
     pool.request(relays, {
       kinds: [39068],
       "#a": [coordinate],
+      authors,
       limit: 200,
     }).subscribe({
       next: (event) => rawEvents.push(event),
       error: () => { clearTimeout(timeout); resolve([]); },
       complete: () => {
         clearTimeout(timeout);
-        const members: CommitteeMember[] = rawEvents
+        const filtered = rawEvents.filter((e: any) => authorSet.has(e.pubkey));
+        const members: CommitteeMember[] = filtered
           .map(parseCommitteeMemberEvent)
           .filter((m): m is CommitteeMember => {
             if (!m) return false;
@@ -313,6 +321,8 @@ export async function fetchOpeningsForAllCommittees(
   if (committees.length === 0) return result;
 
   const coordinates = committees.map((c) => c.coordinate);
+  const authors = getAuthorPubkeys();
+  const authorSet = new Set(authors);
 
   return new Promise((resolve) => {
     const timeout = setTimeout(() => resolve(result), 15000);
@@ -321,14 +331,16 @@ export async function fetchOpeningsForAllCommittees(
     pool.request(relays, {
       kinds: [39069],
       "#a": coordinates,
+      authors,
       limit: 500,
     }).subscribe({
       next: (event) => rawEvents.push(event),
       error: () => { clearTimeout(timeout); resolve(result); },
       complete: () => {
         clearTimeout(timeout);
+        const filtered = rawEvents.filter((e: any) => authorSet.has(e.pubkey));
         const byDTag = new Map<string, CommitteeOpening>();
-        for (const event of rawEvents) {
+        for (const event of filtered) {
           const opening = parseCommitteeOpeningEvent(event);
           if (opening) {
             const key = `${opening.committeeCoordinate}:${opening.dTag}`;
