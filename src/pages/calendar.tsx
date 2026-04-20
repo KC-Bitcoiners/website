@@ -551,10 +551,26 @@ export default function CalendarPage({
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="relative">
+        {/* Mobile Stats Row */}
+        <div className="flex md:hidden gap-3 mb-6">
+          <div className="flex-1 bg-white border border-gray-200 rounded-lg p-2 text-center shadow-sm">
+            <div className="text-lg font-bold text-bitcoin-orange">{events.length}</div>
+            <div className="text-xs text-gray-600">Total</div>
+          </div>
+          <div className="flex-1 bg-white border border-gray-200 rounded-lg p-2 text-center shadow-sm">
+            <div className="text-lg font-bold text-green-600">{upcomingEvents.length}</div>
+            <div className="text-xs text-gray-600">Upcoming</div>
+          </div>
+          <div className="flex-1 bg-white border border-gray-200 rounded-lg p-2 text-center shadow-sm">
+            <div className="text-lg font-bold text-gray-600">{pastEvents.length}</div>
+            <div className="text-xs text-gray-600">Past</div>
+          </div>
+        </div>
+
         {/* Main Content */}
         <div className="flex gap-6">
-          {/* Statistics Sidebar - Fixed in left margin */}
-          <div className="w-24 flex-shrink-0">
+          {/* Statistics Sidebar - Hidden on mobile */}
+          <div className="hidden md:block w-24 flex-shrink-0">
             <div className="sticky top-24 space-y-2">
               <div className="bg-white border border-gray-200 rounded-lg p-2 text-center shadow-sm">
                 <div className="text-lg font-bold text-bitcoin-orange mb-1">
@@ -578,7 +594,7 @@ export default function CalendarPage({
           </div>
 
           {/* Calendar Content */}
-          <div className="flex-1 relative">
+          <div className="flex-1 min-w-0 relative">
             {/* Loading Overlay - Over calendar with transparent background */}
             {viewMode !== "list" && isLoadingNostrEvents && (
               <div className="absolute top-4 left-0 right-0 z-50 flex justify-center">
