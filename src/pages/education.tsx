@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Head from "next/head";
-import { config, siteConfig } from "@/config";
+import { config, siteConfig, basePath } from "@/config";
 import {
   fetchPinboards,
   fetchFeaturedPins,
@@ -186,7 +186,7 @@ export default function EducationPage() {
       <Head>
         <title>{config.pages.education.meta.title}</title>
         <meta name="description" content={config.pages.education.meta.description} />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href={`${basePath}/favicon.ico`} />
       </Head>
 
       <div className="container mx-auto px-4 py-12 max-w-6xl">

@@ -2,7 +2,7 @@ import React from "react";
 import Head from "next/head";
 import BitcoinLogo from "@/components/BitcoinLogo";
 import NewsletterForm from "@/components/NewsletterForm";
-import { config, newsletterConfig } from "@/config";
+import { config, newsletterConfig, basePath } from "@/config";
 
 export default function Home() {
   console.log('🏠 Home page - config.images.hero:', config.site.images.hero);
@@ -17,7 +17,7 @@ export default function Home() {
           content={config.pages.home.meta.description}
         />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href={`${basePath}/favicon.ico`} />
       </Head>
 
       {/* Main Content Section - White Background */}

@@ -1,6 +1,6 @@
 import React from "react";
 import Image from "next/image";
-import { config } from "@/config";
+import { config, basePath } from "@/config";
 
 interface BitcoinLogoProps {
   size?: number;
@@ -13,7 +13,8 @@ export default function BitcoinLogo({
   className = "",
   useFallback = false,
 }: BitcoinLogoProps) {
-  const logoSrc = useFallback ? config.site.images.logoFallback : config.site.images.logo;
+  const rawSrc = useFallback ? config.site.images.logoFallback : config.site.images.logo;
+  const logoSrc = rawSrc.startsWith('http') ? rawSrc : `${basePath}${rawSrc}`;
 
   return (
     <div
