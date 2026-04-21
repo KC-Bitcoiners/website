@@ -52,8 +52,7 @@ export async function fetchLivestreams(): Promise<Livestream[]> {
       .request(relays, {
         kinds: [30311],
         authors,
-        "#status": ["live"],
-        limit: 20,
+        limit: 50,
       })
       .subscribe({
         next: (event) => rawEvents.push(event),
@@ -63,20 +62,24 @@ export async function fetchLivestreams(): Promise<Livestream[]> {
         },
         complete: () => {
           clearTimeout(timeout);
-          // Deduplicate by d tag (keep most recent)
+
+          // Deduplicate by d tag (keep most recent per pubkey)
           const seen = new Map<string, any>();
           for (const e of rawEvents) {
             const d = getTag(e.tags, "d");
-            const existing = seen.get(d);
+            const key = `${e.pubkey}:${d}`;
+            const existing = seen.get(key);
             if (!existing || e.created_at > existing.created_at) {
-              seen.set(d, e);
+              seen.set(key, e);
             }
           }
-          resolve(
-            Array.from(seen.values())
-              .map(parseLivestream)
-              .sort((a, b) => b.created_at - a.created_at)
-          );
+
+          const liveStreams = Array.from(seen.values())
+            .map(parseLivestream)
+            .filter((s) => s.status === "live")
+            .sort((a, b) => b.created_at - a.created_at);
+
+          resolve(liveStreams);
         },
       });
   });
