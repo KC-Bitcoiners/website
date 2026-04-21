@@ -92,6 +92,7 @@ export default function EducationPage() {
   const [showAddPin, setShowAddPin] = useState(false);
   const [editPin, setEditPin] = useState<Pin | null>(null);
   const [sortBy, setSortBy] = useState<"date" | "title">("date");
+  const [selectedArticle, setSelectedArticle] = useState<Pin | null>(null);
 
   const loadAll = useCallback(async () => {
     setLoadingFeatured(true);
@@ -202,6 +203,47 @@ export default function EducationPage() {
           </p>
         </div>
 
+        {/* Article detail view */}
+        {selectedArticle && (
+          <div className="mb-8">
+            <button
+              onClick={() => setSelectedArticle(null)}
+              className="text-sm text-gray-500 hover:text-bitcoin-orange mb-4 flex items-center gap-1"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd"/></svg>
+              Back to resources
+            </button>
+            <div className="bg-white border border-gray-200 rounded-xl p-6 max-w-3xl mx-auto">
+              <div className="flex items-center gap-2 mb-4">
+                <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded bg-orange-100 text-orange-700">
+                  📰 Article
+                </span>
+                <span className="text-xs text-gray-400">
+                  {new Date(selectedArticle.created_at * 1000).toLocaleDateString()}
+                </span>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">{selectedArticle.title}</h2>
+              {selectedArticle.content && (
+                <div className="prose prose-sm max-w-none text-gray-700 mb-4">
+                  <ReactMarkdown>{selectedArticle.content}</ReactMarkdown>
+                </div>
+              )}
+              <div className="pt-4 border-t border-gray-100 flex items-center gap-4">
+                <a
+                  href={`https://yakihonne.com/article/${selectedArticle.eventRef || selectedArticle.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-bitcoin-orange hover:underline font-semibold"
+                >
+                  Open in Yakihonne &rarr;
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!selectedArticle && (
+        <>
         {/* Tab Navigation */}
         <div className="flex justify-center gap-4 mb-10">
           <button
@@ -261,7 +303,7 @@ export default function EducationPage() {
             {filteredPins.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredPins.map((pin) => (
-                  <PinCard key={pin.id} pin={pin} onDelete={() => handleDeletePin(pin)} onEdit={() => handleEditPin(pin)} />
+                  <PinCard key={pin.id} pin={pin} onDelete={() => handleDeletePin(pin)} onEdit={() => handleEditPin(pin)} onOpenArticle={setSelectedArticle} />
                 ))}
               </div>
             )}
@@ -335,7 +377,7 @@ export default function EducationPage() {
                     />
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {filteredPins.map((pin) => (
-                        <PinCard key={pin.id} pin={pin} onDelete={() => handleDeletePin(pin)} onEdit={() => handleEditPin(pin)} />
+                        <PinCard key={pin.id} pin={pin} onDelete={() => handleDeletePin(pin)} onEdit={() => handleEditPin(pin)} onOpenArticle={setSelectedArticle} />
                       ))}
                     </div>
                   </>
@@ -390,6 +432,8 @@ export default function EducationPage() {
             onCancel={() => { setShowAddPin(false); setEditPin(null); }}
             editPin={editPin}
           />
+        )}
+        </>
         )}
       </div>
     </>
@@ -517,7 +561,7 @@ function usePodcastFeedMeta(feedUrl: string | null): PodcastFeedMeta | null {
   return meta;
 }
 
-function PinCard({ pin, onDelete, onEdit }: { pin: Pin; onDelete: () => void; onEdit: () => void }) {
+function PinCard({ pin, onDelete, onEdit, onOpenArticle }: { pin: Pin; onDelete: () => void; onEdit: () => void; onOpenArticle?: (pin: Pin) => void }) {
   const url = getPinUrl(pin);
   const dt = getDisplayType(pin);
   const ytId = dt === "youtube" ? getYouTubeId(pin.externalRef || "") : null;
@@ -683,7 +727,19 @@ function PinCard({ pin, onDelete, onEdit }: { pin: Pin; onDelete: () => void; on
           {pin.rawEvent && <EventActions event={pin.rawEvent} onDelete={onDelete} onEdit={onEdit} />}
         </div>
 
-        {finalDisplayUrl ? (
+        {dt === "newsletter" && onOpenArticle ? (
+          <button
+            onClick={() => onOpenArticle(pin)}
+            className="text-left w-full"
+          >
+            <h4 className="text-lg font-bold text-gray-900 mb-1 hover:text-bitcoin-orange transition-colors">
+              {pin.title || "Untitled"}
+            </h4>
+            {pin.content && (
+              <p className="text-sm text-gray-600 line-clamp-2 mb-2">{pin.content}</p>
+            )}
+          </button>
+        ) : finalDisplayUrl ? (
           <a
             href={finalDisplayUrl}
             target="_blank"
@@ -702,7 +758,7 @@ function PinCard({ pin, onDelete, onEdit }: { pin: Pin; onDelete: () => void; on
           </h4>
         )}
 
-        {pin.content && pin.title && (
+        {dt !== "newsletter" && pin.content && pin.title && (
           <p className="text-sm text-gray-600 line-clamp-2 mb-2">{pin.content}</p>
         )}
 
@@ -758,6 +814,7 @@ function AddPinModal({
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState("");
   const [showPreview, setShowPreview] = useState(false);
+  const [newsletterMode, setNewsletterMode] = useState<"create" | "existing">("create");
   const [selectedType, setSelectedType] = useState<DisplayType | null>(
     editPin ? getDisplayType(editPin) : null
   );
@@ -780,9 +837,10 @@ function AddPinModal({
   };
 
   const handlePublish = async () => {
-    if (selectedType !== "newsletter" && !url.trim()) { setError("URL or identifier is required"); return; }
-    if (!title.trim()) { setError("Title is required"); return; }
-    if (selectedType === "newsletter" && !description.trim()) { setError("Newsletter content is required"); return; }
+    if (selectedType !== "newsletter" && selectedType !== "link" && !url.trim()) { setError("URL or identifier is required"); return; }
+    if (!title.trim() && selectedType !== "newsletter") { setError("Title is required"); return; }
+    if (selectedType === "newsletter" && newsletterMode === "create" && !description.trim()) { setError("Newsletter content is required"); return; }
+    if (selectedType === "newsletter" && newsletterMode === "existing" && !url.trim()) { setError("naddr or event ID is required"); return; }
     if (!selectedType) { setError("Please select a content type"); return; }
 
     setPublishing(true);
@@ -817,23 +875,31 @@ function AddPinModal({
         resolvedBoardCoord = `30067:${pubkey}:${dTag}`;
       }
 
-      // Newsletter flow: publish kind 30023 article, then pin it
+      // Newsletter flow
       if (selectedType === "newsletter") {
         const tagList = tags.split(",").map((t) => t.trim()).filter(Boolean);
-        const unsignedArticle = buildNewsletterEvent({
-          title: title.trim(),
-          content: description.trim(),
-          tags: tagList,
-        });
-        const signedArticle = await signEvent(unsignedArticle as { kind: number; content: string; tags: string[][]; created_at: number });
-        const articleOk = await publishNewsletter(signedArticle);
-        if (!articleOk) {
-          setError("Failed to publish newsletter to relays.");
-          setPublishing(false);
-          return;
+        let articleId: string;
+
+        if (newsletterMode === "create") {
+          // Create new kind 30023 article
+          const existingDTag = isEditing
+            ? (editPin?.rawEvent?.tags as string[][] | undefined)?.find((t) => t[0] === "d")?.[1]
+            : undefined;
+          const unsignedArticle = buildNewsletterEvent({
+            title: title.trim(),
+            content: description.trim(),
+            tags: tagList,
+            dTag: existingDTag,
+          });
+          const signedArticle = await signEvent(unsignedArticle as { kind: number; content: string; tags: string[][]; created_at: number });
+          await publishNewsletter(signedArticle);
+          articleId = (signedArticle as any).id;
+        } else {
+          // Pin existing article — use the URL as the event reference
+          articleId = url.trim();
         }
+
         // Pin the article to the education board
-        const articleId = (signedArticle as any).id;
         let resolvedBoardCoord = boardCoordinate;
         if (boardCoordinate === "auto" || !boardCoordinate) {
           const unsignedBoard = buildPinboardEvent({
@@ -848,19 +914,17 @@ function AddPinModal({
         }
         const unsignedPin = buildPinEvent({
           boardCoordinate: resolvedBoardCoord,
-          content: "",
+          content: newsletterMode === "create" ? "" : description.trim(),
           title: title.trim(),
           eventRef: articleId,
           eventRelay: nostrRelays[0],
+          externalKind: "article",
           tags: tagList,
+          dTag: isEditing ? (editPin?.rawEvent?.tags as string[][] | undefined)?.find((t) => t[0] === "d")?.[1] : undefined,
         });
         const signedPin = await signEvent(unsignedPin as { kind: number; content: string; tags: string[][]; created_at: number });
-        const pinOk = await publishPin(signedPin);
-        if (pinOk) {
-          onDone();
-        } else {
-          setError("Newsletter published but pin failed. It may appear later.");
-        }
+        await publishPin(signedPin);
+        onDone();
         setPublishing(false);
         return;
       }
@@ -903,9 +967,9 @@ function AddPinModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onCancel}>
+    <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto" onClick={onCancel}>
       <div
-        className={`bg-white rounded-lg w-full p-6 shadow-xl ${selectedType === "newsletter" ? "max-w-2xl" : "max-w-md"}`}
+        className={`bg-white rounded-lg w-full p-6 shadow-xl my-8 ${selectedType === "newsletter" ? "max-w-2xl" : "max-w-md"}`}
         data-testid="add-pin-modal"
         onClick={(e) => e.stopPropagation()}
       >
@@ -953,10 +1017,40 @@ function AddPinModal({
                 {selectedType === "movie" && "Enter an ISAN like isan:XXXX-XXXX-XXXX"}
                 {selectedType === "paper" && "Enter a DOI like doi:10.xxx or 10.xxx/yyy"}
                 {selectedType === "location" && `Enter coordinates like geo:${siteConfig.organization.coordinates.lat},${siteConfig.organization.coordinates.lon} or lat,lon`}
-                {selectedType === "newsletter" && "Write a newsletter in Markdown — it will be published as a long-form article"}
+                {selectedType === "newsletter" && "Write an article or pin an existing long-form article"}
               </p>
             )}
           </div>
+          {selectedType === "newsletter" && (
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setNewsletterMode("create")}
+                className={`px-3 py-1 text-xs rounded font-medium ${newsletterMode === "create" ? "bg-bitcoin-orange text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+              >
+                Create New
+              </button>
+              <button
+                type="button"
+                onClick={() => setNewsletterMode("existing")}
+                className={`px-3 py-1 text-xs rounded font-medium ${newsletterMode === "existing" ? "bg-bitcoin-orange text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+              >
+                Pin Existing (naddr)
+              </button>
+            </div>
+          )}
+          {selectedType === "newsletter" && newsletterMode === "existing" && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Article naddr or event ID *</label>
+            <input
+              type="text"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="naddr1... or hex event ID"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
+            />
+          </div>
+          )}
           {selectedType !== "newsletter" && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">URL or Identifier *</label>
@@ -987,9 +1081,9 @@ function AddPinModal({
           )}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              {selectedType === "newsletter" ? "Content (Markdown) *" : "Description"}
+              {selectedType === "newsletter" && newsletterMode === "create" ? "Content (Markdown) *" : "Description"}
             </label>
-            {selectedType === "newsletter" && (
+            {selectedType === "newsletter" && newsletterMode === "create" && (
               <div className="flex gap-2 mb-2">
                 <button
                   type="button"
@@ -1016,8 +1110,8 @@ function AddPinModal({
                 data-testid="pin-description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder={selectedType === "newsletter" ? "# My Newsletter\n\nWrite your content here using **Markdown**..." : "Brief description of this resource"}
-                rows={selectedType === "newsletter" ? 12 : 2}
+                placeholder={selectedType === "newsletter" && newsletterMode === "create" ? "# My Newsletter\n\nWrite your content here using **Markdown**..." : "Brief description of this resource"}
+                rows={selectedType === "newsletter" && newsletterMode === "create" ? 12 : 2}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent font-mono"
               />
             )}

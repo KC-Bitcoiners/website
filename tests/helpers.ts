@@ -67,11 +67,11 @@ async function signEvent(evt: any): Promise<any> {
  * Must be called before page.goto().
  */
 export async function injectNostrExtension(page: Page) {
-  const { pubkeyHex } = loadTestKeys();
+  const { pubkeyHex, npub } = loadTestKeys();
 
   await page.exposeFunction("__nostrSign", (evt: any) => signEvent(evt));
 
-  await page.addInitScript((pubkey: string) => {
+  await page.addInitScript(({ pubkey, npubStr }: { pubkey: string; npubStr: string }) => {
     (window as any).nostr = {
       async getPublicKey() {
         return pubkey;
@@ -88,7 +88,9 @@ export async function injectNostrExtension(page: Page) {
     };
     // Override the whitelist so the app only shows content from the test key
     (window as any).__TEST_WHITELIST = [pubkey];
-  }, pubkeyHex);
+    // Pre-populate localStorage so NostrContext auto-restores the user
+    localStorage.setItem("nostr_user", JSON.stringify({ pubkey, npub: npubStr }));
+  }, { pubkey: pubkeyHex, npubStr: npub });
 }
 
 /**
