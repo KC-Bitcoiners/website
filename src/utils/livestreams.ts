@@ -77,7 +77,7 @@ export async function fetchLivestreams(): Promise<Livestream[]> {
             .filter((s) => s.status === "live")
             .sort((a, b) => b.created_at - a.created_at);
 
-          resolve(liveStreams);
+          resolve(liveStreams.slice(0, 1));
         },
       });
   });

@@ -40,7 +40,7 @@
           "npub187w4ykkurr3e89mm0rg5p49x6lveqtq0pp0um7qyk6xyrpeerx3s84exkz",
           "npub1nv5c7sj2zxtjv7uayp2q2mneymm39mfp93wjhl5287y6yp6ey02qrsjhcn",
           "npub1yvscx9vrmpcmwcmydrm8lauqdpngum4ne8xmkgc2d4rcaxrx7tkswdwzdu",
-          "npub12hcytyr8fumy3axde8wgeced523gyp6v6zczqktwuqeaztfc2xzsz3rdp4"
+          "npub19ha7tju4teqp3dmwv4p28wrcy9zd6h6hxkg5mwvjrlfycweazpkse2q0fa"
       ],
       "whitelistedPubkeys": [
           "d70d50091504b992d1838822af245d5f6b3a16b82d917acb7924cef61ed4acee",
@@ -48,7 +48,7 @@
           "3f9d525adc18e393977b78d140d4a6d7d9902c0f085fcdf804b68c41873919a3",
           "9b298f424a1197267b9d2054056e7926f712ed212c5d2bfe8a3f89a2075923d4",
           "2321831583d871b7636468f67ff78068668e6eb3c9cdbb230a6d478e9866f2ed",
-          "55f04590674f3648f4cdc9dc8ce32da2a282074cd0b020596ee033d12d385185"
+          "2dfbe5cb955e4018b76e6542a3b8782144dd5f5735914db9921fd24c3b3d106d"
       ],
       "blossom": {
           "server": "https://blossom.f7z.io"
