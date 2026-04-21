@@ -1,3 +1,4 @@
+import { logger } from "@/utils/logger";
 import { useState, useMemo, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import VendorForm from "@/components/VendorForm";
@@ -139,7 +140,7 @@ export default function ShopPage() {
         };
       }
     } catch (error) {
-      console.warn("Failed to fetch profile for", npub, error);
+      logger.warn(`Failed to fetch profile for ${npub}`, error);
     }
     return {};
   };
@@ -165,7 +166,7 @@ export default function ShopPage() {
 
         const eventsPromise = new Promise<NostrEvent[]>((resolve, reject) => {
           const timeout = setTimeout(() => {
-            console.log(`⏰ Request timeout`);
+            logger.debug(`⏰ Request timeout`);
             reject(new Error("Request timeout"));
           }, 30000); // 30 second timeout for all relays
 
@@ -176,12 +177,12 @@ export default function ShopPage() {
               events.push(event);
             },
             error: (error) => {
-              console.error(`💥 Error fetching vendor events:`, error);
+              logger.error(`💥 Error fetching vendor events:`, error);
               clearTimeout(timeout);
               reject(error);
             },
             complete: () => {
-              console.log(`📭 End of stored vendor events`);
+              logger.debug(`📭 End of stored vendor events`);
               clearTimeout(timeout);
               resolve(events);
             },
@@ -260,7 +261,7 @@ export default function ShopPage() {
 
             vendors.push(vendor);
           } catch (parseError) {
-            console.warn("Failed to parse vendor event:", event.id, parseError);
+            logger.warn(`Failed to parse vendor event: ${event.id}`, parseError);
           }
         }
 
@@ -279,7 +280,7 @@ export default function ShopPage() {
           );
         }
       } catch (error) {
-        console.error("Error fetching nostr vendors:", error);
+        logger.error("Error fetching nostr vendors:", error);
         setNostrError(
           error instanceof Error
             ? error.message
@@ -323,12 +324,12 @@ export default function ShopPage() {
       setBTCMapError(null);
 
       try {
-        console.log("🗺️ Fetching BTCMap vendors...");
+        logger.debug("🗺️ Fetching BTCMap vendors...");
         const btcMapData = await fetchBTCMapVendors();
-        console.log("🗺️ BTCMap vendors fetched:", btcMapData.length);
+        logger.debug("🗺️ BTCMap vendors fetched:", btcMapData.length);
         setBTCMapVendors(btcMapData);
       } catch (error) {
-        console.error("🗺️ Error fetching BTCMap vendors:", error);
+        logger.error("🗺️ Error fetching BTCMap vendors:", error);
         setBTCMapError("Failed to fetch BTCMap vendors");
         setBTCMapVendors([]);
       } finally {
@@ -505,7 +506,7 @@ export default function ShopPage() {
         naddr: `Deleted "${vendor.name}" from the directory`,
       });
     } catch (error) {
-      console.error("Error deleting vendor:", error);
+      logger.error("Error deleting vendor:", error);
       alert("Failed to delete vendor. Please try again.");
     }
   };

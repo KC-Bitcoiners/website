@@ -9,6 +9,7 @@ import {
   ZAP_GOAL_KIND,
 } from "@/utils/zapGoals";
 import { Filter } from "applesauce-core/helpers";
+import { logger } from "@/utils/logger";
 import { kinds, NostrEvent } from "applesauce-core/helpers/event";
 import {
   getEventPointerForEvent,
@@ -64,11 +65,11 @@ const ProgressBar = ({
 
     // Reset to 0
     setDisplayPercentage(0);
-    console.log("🔹 Reset to 0%");
+    logger.debug("🔹 Reset to 0%");
 
     // Start animation after a delay
     const timer = setTimeout(() => {
-      console.log("🔹 Starting animation to", targetPercentage);
+      logger.debug(`Starting animation to ${targetPercentage}`);
       setDisplayPercentage(targetPercentage);
     }, 300);
 
@@ -171,7 +172,7 @@ const NoteQRCode = ({
         setQrCodeUrl(url);
       })
       .catch((err) => {
-        console.error("Error generating QR code:", err);
+        logger.error("Error generating QR code:", err);
       });
   }, [goal, relays]);
 
@@ -220,7 +221,7 @@ const NoteIdQRCode = ({
         setQrCodeUrl(url);
       })
       .catch((err) => {
-        console.error("Error generating QR code:", err);
+        logger.error("Error generating QR code:", err);
       });
   }, [goal, relays, pointer]);
 
@@ -344,7 +345,7 @@ const ZapraiserCard = ({
 
 // Fetch zapraisers from whitelisted users (NIP-75 zap goals)
 async function fetchZapraisers(): Promise<Zapraiser[]> {
-  console.log("🔍 Starting to fetch zap goals...");
+  logger.debug("🔍 Starting to fetch zap goals...");
 
   const filter = {
     kinds: [ZAP_GOAL_KIND], // NIP-75 zap goals
@@ -352,15 +353,15 @@ async function fetchZapraisers(): Promise<Zapraiser[]> {
     limit: 100,
   };
 
-  console.log("🎯 Using zap goals filter:", filter);
-  console.log("🌐 Using relays:", nostrRelays);
+  logger.debug("🎯 Using zap goals filter:", filter);
+  logger.debug("🌐 Using relays:", nostrRelays);
 
   const zapraisers: Zapraiser[] = [];
 
   try {
     const eventsPromise = new Promise<NostrEvent[]>((resolve, reject) => {
       const timeout = setTimeout(() => {
-        console.log("⏰ Request timeout");
+        logger.debug("⏰ Request timeout");
         reject(new Error("Request timeout"));
       }, 30000); // 30 second timeout
 
@@ -368,7 +369,7 @@ async function fetchZapraisers(): Promise<Zapraiser[]> {
 
       pool.request(nostrRelays, filter).subscribe({
         next: (nostrEvent: NostrEvent) => {
-          console.log(`🎯 Found potential zap goal:`, nostrEvent.id);
+          logger.debug(`Found potential zap goal: ${nostrEvent.id}`);
 
           // Validate it's a valid zap goal event
           if (isValidZapGoal(nostrEvent)) {
@@ -378,16 +379,16 @@ async function fetchZapraisers(): Promise<Zapraiser[]> {
               `➕ Added zap goal: ${nostrEvent.content.substring(0, 50)}... Goal: ${amount} sats`,
             );
           } else {
-            console.log(`⏭ Skipping invalid zap goal: ${nostrEvent.id}`);
+            logger.debug(`⏭ Skipping invalid zap goal: ${nostrEvent.id}`);
           }
         },
         error: (error) => {
-          console.error("💥 Error fetching zap goals:", error);
+          logger.error("💥 Error fetching zap goals:", error);
           clearTimeout(timeout);
           reject(error);
         },
         complete: () => {
-          console.log("📭 End of stored zap goals");
+          logger.debug("📭 End of stored zap goals");
           clearTimeout(timeout);
           resolve(events);
         },
@@ -411,16 +412,16 @@ async function fetchZapraisers(): Promise<Zapraiser[]> {
       zapraisers.push(zapraiser);
     }
   } catch (error) {
-    console.warn("⚠️ Failed to fetch zap goals:", error);
+    logger.warn("⚠️ Failed to fetch zap goals:", error);
   }
 
-  console.log(`📊 Total zap goals fetched: ${zapraisers.length}`);
+  logger.debug(`📊 Total zap goals fetched: ${zapraisers.length}`);
   return zapraisers;
 }
 
 // Fetch zap receipts for a specific zap goal
 async function fetchZapReceipts(goal: NostrEvent): Promise<ZapReceipt[]> {
-  console.log(`🔍 Fetching zap receipts for zap goal: ${goal.id}`);
+  logger.debug(`🔍 Fetching zap receipts for zap goal: ${goal.id}`);
 
   const relays = getZapGoalRelays(goal);
   const closedAt = getZapGoalClosedAt(goal);
@@ -432,8 +433,8 @@ async function fetchZapReceipts(goal: NostrEvent): Promise<ZapReceipt[]> {
   // Set upper limit on zaps
   if (closedAt) filter.until = closedAt;
 
-  console.log("🎯 Using zap receipts filter:", filter);
-  console.log("🌐 Using goal relays:", relays);
+  logger.debug("🎯 Using zap receipts filter:", filter);
+  logger.debug("🌐 Using goal relays:", relays);
 
   const receipts: ZapReceipt[] = [];
   const receiptIds = new Set<string>(); // Track unique receipt IDs to prevent duplicates
@@ -441,7 +442,7 @@ async function fetchZapReceipts(goal: NostrEvent): Promise<ZapReceipt[]> {
   try {
     const eventsPromise = new Promise<ZapReceipt[]>((resolve, reject) => {
       const timeout = setTimeout(() => {
-        console.log("⏰ Zap receipts timeout");
+        logger.debug("⏰ Zap receipts timeout");
         reject(new Error("Request timeout"));
       }, 15000); // 15 second timeout
 
@@ -452,7 +453,7 @@ async function fetchZapReceipts(goal: NostrEvent): Promise<ZapReceipt[]> {
 
       pool.request(relaysToUse, filter).subscribe({
         next: (nostrEvent) => {
-          console.log(`🎯 Found zap receipt:`, nostrEvent.id);
+          logger.debug(`Found zap receipt: ${nostrEvent.id}`);
 
           // Filter by closed_at if present - only count zaps before closed_at
           if (closedAt && nostrEvent.created_at > closedAt) {
@@ -467,7 +468,7 @@ async function fetchZapReceipts(goal: NostrEvent): Promise<ZapReceipt[]> {
           if (amount > 0) {
             // Skip duplicates
             if (receiptIds.has(nostrEvent.id)) {
-              console.log(`⏭ Skipping duplicate receipt: ${nostrEvent.id}`);
+              logger.debug(`⏭ Skipping duplicate receipt: ${nostrEvent.id}`);
               return;
             }
 
@@ -483,16 +484,16 @@ async function fetchZapReceipts(goal: NostrEvent): Promise<ZapReceipt[]> {
 
             events.push(receipt);
             receipts.push(receipt);
-            console.log(`➕ Added zap receipt: ${amount} sats`);
+            logger.debug(`➕ Added zap receipt: ${amount} sats`);
           }
         },
         error: (error) => {
-          console.error("💥 Error fetching zap receipts:", error);
+          logger.error("💥 Error fetching zap receipts:", error);
           clearTimeout(timeout);
           reject(error);
         },
         complete: () => {
-          console.log("📭 End of stored zap receipts");
+          logger.debug("📭 End of stored zap receipts");
           clearTimeout(timeout);
           resolve(events);
         },
@@ -500,9 +501,9 @@ async function fetchZapReceipts(goal: NostrEvent): Promise<ZapReceipt[]> {
     });
 
     await eventsPromise;
-    console.log(`📊 Total zap receipts for ${goal.id}: ${receipts.length}`);
+    logger.debug(`📊 Total zap receipts for ${goal.id}: ${receipts.length}`);
   } catch (error) {
-    console.warn(`⚠️ Failed to fetch zap receipts for ${goal.id}:`, error);
+    logger.warn(`⚠️ Failed to fetch zap receipts for ${goal.id}:`, error);
   }
 
   return receipts;
@@ -553,7 +554,7 @@ function extractZapAmount(event: NostrEvent): number {
 
 // Fetch user metadata
 async function fetchUserMetadata(pubkey: string) {
-  console.log("🔍 Fetching metadata for pubkey:", pubkey);
+  logger.debug("🔍 Fetching metadata for pubkey:", pubkey);
 
   const filter = {
     kinds: [0],
@@ -590,7 +591,7 @@ async function fetchUserMetadata(pubkey: string) {
 
     return await eventsPromise;
   } catch (error) {
-    console.warn(`⚠️ Failed to fetch metadata for ${pubkey}:`, error);
+    logger.warn(`⚠️ Failed to fetch metadata for ${pubkey}:`, error);
     return {};
   }
 }
@@ -627,7 +628,7 @@ export default function DonatePage() {
     if (zapraisers.length === 0) return; // Don't refresh if no zapraisers
 
     const interval = setInterval(async () => {
-      console.log("🔄 Auto-refreshing zap receipts...");
+      logger.debug("🔄 Auto-refreshing zap receipts...");
 
       // Update each zapraiser with new zap receipts
       const updatedzapraisers = await Promise.all(
@@ -692,7 +693,7 @@ export default function DonatePage() {
 
         setzapraisers(zapraisersWithProgress);
       } catch (err) {
-        console.error("Failed to load zapraisers:", err);
+        logger.error("Failed to load zapraisers:", err);
         setError(
           err instanceof Error ? err.message : "Failed to load zapraisers",
         );

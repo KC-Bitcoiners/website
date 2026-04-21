@@ -43,6 +43,7 @@ next-env.d.ts
 
 # Generated files
 public/events.ics
+SANTAFE.json
 
 terraform/.terraform
 # terraform/*.tfstate
