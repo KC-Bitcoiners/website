@@ -216,7 +216,7 @@ export default function EducationPage() {
               const author = parts[1];
               const identifier = parts[2];
               if (identifier && author) {
-                const naddr = naddrEncode({ identifier, pubkey: author, kind, relays: nostrRelays.slice(0, 2) });
+                const naddr = naddrEncode({ identifier, pubkey: author, kind, relays: nostrRelays });
                 yakihonneUrl = `https://yakihonne.com/article/${naddr}`;
               }
             } catch (e) {
