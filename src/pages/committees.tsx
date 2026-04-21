@@ -262,7 +262,7 @@ export default function CommitteesPage() {
             <div className="text-gray-600">Active Committees</div>
           </div>
           <div className="bg-white border border-gray-200 rounded-lg p-6 text-center shadow-sm">
-            <div className="text-3xl font-bold green-600 mb-2">
+            <div className="text-3xl font-bold text-green-600 mb-2">
               {totalOpenings}
             </div>
             <div className="text-gray-600">Open Positions</div>

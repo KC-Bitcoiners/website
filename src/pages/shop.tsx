@@ -1148,7 +1148,7 @@ export default function ShopPage() {
             <div className="text-lg text-gray-600 mb-6">
               Be the first to add a Bitcoin-accepting business to our directory!
             </div>
-            <div className="bg-gradient-to-r from-bitcoin-orange/10 to-orange-10 border border-bitcoin-orange/20 rounded-lg p-6 max-w-md mx-auto">
+            <div className="bg-gradient-to-r from-bitcoin-orange/10 to-orange-100 border border-bitcoin-orange/20 rounded-lg p-6 max-w-md mx-auto">
               <h3 className="text-lg font-bold text-gray-800 mb-3">
                 🚀 Add Your First Vendor
               </h3>

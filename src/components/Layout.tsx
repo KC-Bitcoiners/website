@@ -239,7 +239,7 @@ export default function Layout({ children, className }: LayoutProps) {
       <footer className="bg-black text-gray-400 py-8">
         <div className="container mx-auto px-6">
           <div className="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
-            <p>&copy; 2025 {config.site.organization.name} - All Rights Reserved.</p>
+            <p>&copy; {new Date().getFullYear()} {config.site.organization.name} - All Rights Reserved.</p>
             <div className="flex items-center gap-4">
               <a
                 href={config.site.externalLinks.meetup.url}
