@@ -14,6 +14,7 @@ export interface NewsletterEvent {
 export function buildNewsletterEvent(opts: {
   title: string;
   content: string;
+  description?: string;
   tags?: string[];
   dTag?: string;
 }): NewsletterEvent {
@@ -31,6 +32,10 @@ export function buildNewsletterEvent(opts: {
     ["title", opts.title],
     ["published_at", Math.floor(Date.now() / 1000).toString()],
   ];
+
+  if (opts.description) {
+    tags.push(["summary", opts.description]);
+  }
 
   if (opts.tags) {
     for (const t of opts.tags) tags.push(["t", t]);

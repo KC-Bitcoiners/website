@@ -209,14 +209,14 @@ export default function EducationPage() {
           // Build naddr for Yakihonne link from the article coordinate
           let yakihonneUrl = "";
           const coordRef = selectedArticle.coordinateRef;
-          if (coordRef && selectedArticle.pubkey) {
+          if (coordRef) {
             try {
               const parts = coordRef.split(":");
               const kind = parseInt(parts[0], 10);
               const author = parts[1];
-              const d = parts[2];
-              if (d && author) {
-                const naddr = naddrEncode({ d, pubkey: author, kind, relays: nostrRelays.slice(0, 2) });
+              const identifier = parts[2];
+              if (identifier && author) {
+                const naddr = naddrEncode({ identifier, pubkey: author, kind, relays: nostrRelays.slice(0, 2) });
                 yakihonneUrl = `https://yakihonne.com/article/${naddr}`;
               }
             } catch (e) {
@@ -838,6 +838,7 @@ function AddPinModal({
   const [title, setTitle] = useState(editPin?.title || "");
   const [url, setUrl] = useState(editPin?.externalRef || "");
   const [description, setDescription] = useState(editPin?.content || "");
+  const [summary, setSummary] = useState("");
   const [tags, setTags] = useState(editPin?.tags?.join(", ") || "");
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState("");
@@ -917,6 +918,7 @@ function AddPinModal({
           const unsignedArticle = buildNewsletterEvent({
             title: title.trim(),
             content: description.trim(),
+            description: summary.trim(),
             tags: tagList,
             dTag: existingDTag,
           });
@@ -1020,6 +1022,19 @@ function AddPinModal({
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
             />
           </div>
+          {selectedType === "newsletter" && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <input
+                data-testid="pin-summary"
+                type="text"
+                value={summary}
+                onChange={(e) => setSummary(e.target.value)}
+                placeholder="Brief summary of the article"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
+              />
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Content Type *</label>
             <div className="flex flex-wrap gap-2" data-testid="type-selector">

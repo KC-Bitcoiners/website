@@ -387,7 +387,8 @@ test.describe("Education Page - Add Resources via UI @education @whitelist", () 
     // Verify Create New mode is active by default
     await expect(page.getByText("Create New")).toBeVisible();
 
-    // Fill markdown content
+    // Fill description and markdown content
+    await page.getByTestId("pin-summary").fill("A test article description for Playwright");
     await page.getByTestId("pin-description").fill("# Test Article\n\nThis is a **test article** with markdown content for Playwright.");
     await page.getByTestId("pin-tags").fill("test, article");
 

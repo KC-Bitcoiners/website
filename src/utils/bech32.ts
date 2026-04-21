@@ -71,23 +71,20 @@ export async function getPubkey(privkeyHex: string): Promise<string> {
   return bytesToHex(s.getPublicKey(hexToBytes(privkeyHex)));
 }
 
-/** Encode a Nostr address (naddr) for parameterized replaceable events. */
-export function naddrEncode(opts: { d: string; pubkey: string; kind: number; relays?: string[] }): string {
+/** Encode a Nostr address (naddr) per NIP-19 using bech32m. */
+export function naddrEncode(opts: { identifier: string; pubkey: string; kind: number; relays?: string[] }): string {
   const tlv: { type: number; value: Uint8Array }[] = [];
 
-  // Type 0: special (d-tag value, utf-8)
-  tlv.push({ type: 0, value: new TextEncoder().encode(opts.d) });
-
+  // Type 0: d-tag value (utf-8)
+  tlv.push({ type: 0, value: new TextEncoder().encode(opts.identifier) });
   // Type 2: author (pubkey hex → 32 bytes)
   tlv.push({ type: 2, value: hexToBytes(opts.pubkey) });
-
   // Type 3: relays (utf-8)
   if (opts.relays) {
     for (const relay of opts.relays) {
       tlv.push({ type: 3, value: new TextEncoder().encode(relay) });
     }
   }
-
   // Type 1: kind (4-byte big-endian unsigned integer)
   const kindBytes = new Uint8Array(4);
   kindBytes[0] = (opts.kind >> 24) & 0xff;
@@ -97,23 +94,21 @@ export function naddrEncode(opts: { d: string; pubkey: string; kind: number; rel
   tlv.push({ type: 1, value: kindBytes });
 
   // Encode TLV: type (1 byte) + length (varint) + value
-  // Varint: 7 bits per byte, MSB = continuation bit
-  const totalLen = tlv.reduce((sum, entry) => sum + 1 + varintSize(entry.value.length) + entry.value.length, 0);
+  const totalLen = tlv.reduce((sum, e) => sum + 1 + varintSize(e.value.length) + e.value.length, 0);
   const buf = new Uint8Array(totalLen);
   let offset = 0;
-  for (const entry of tlv) {
-    buf[offset++] = entry.type;
-    offset = writeVarint(buf, offset, entry.value.length);
-    buf.set(entry.value, offset);
-    offset += entry.value.length;
+  for (const e of tlv) {
+    buf[offset++] = e.type;
+    offset = writeVarint(buf, offset, e.value.length);
+    buf.set(e.value, offset);
+    offset += e.value.length;
   }
 
   return bech32m.encode("naddr", bech32m.toWords(buf), false);
 }
 
 function varintSize(n: number): number {
-  let size = 0;
-  let v = n;
+  let size = 0, v = n;
   do { size++; v >>>= 7; } while (v > 0);
   return size;
 }
