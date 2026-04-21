@@ -42,7 +42,6 @@ function parseLivestream(event: any): Livestream {
 
 export async function fetchLivestreams(): Promise<Livestream[]> {
   const relays = nostrRelays;
-  const authors = WHITELISTED_PUBKEYS;
 
   return new Promise((resolve) => {
     const timeout = setTimeout(() => resolve([]), 15000);
@@ -51,7 +50,7 @@ export async function fetchLivestreams(): Promise<Livestream[]> {
     pool
       .request(relays, {
         kinds: [30311],
-        authors,
+        "#p": WHITELISTED_PUBKEYS,
         limit: 50,
       })
       .subscribe({
