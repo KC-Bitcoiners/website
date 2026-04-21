@@ -59,7 +59,7 @@ export default function Home() {
             Ready to Join Community?
           </h2>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            {config.pages.home.callToAction.buttons.map((button: any, index: number) => (
+            {config.pages.home.callToAction.buttons.map((button: { text: string; url: string; style: string }, index: number) => (
               <a
                 key={index}
                 href={button.url}

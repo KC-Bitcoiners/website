@@ -469,9 +469,10 @@ export default function ShopPage() {
       const signedEvent = await signEvent(deleteEventTemplate as { kind: number; content: string; tags: string[][]; created_at: number });
 
       // Add the ID to the signed event
+      const signedRecord = signedEvent as Record<string, unknown>;
       const deleteEvent = {
         ...signedEvent,
-        id: (signedEvent as any).id || getEventHash(signedEvent as any),
+        id: (signedRecord.id as string) || getEventHash(signedEvent as NostrEvent),
       } as NostrEvent;
 
       // Publish the delete event to relays

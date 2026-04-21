@@ -54,8 +54,13 @@ export interface NostrConfig {
   };
 }
 
-export interface PageConfig {
-  [key: string]: any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export interface PageConfig extends Record<string, any> {
+  title: string;
+  meta: {
+    title: string;
+    description: string;
+  };
 }
 
 export interface AppConfig {

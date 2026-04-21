@@ -439,7 +439,7 @@ async function fetchZapReceipts(goal: NostrEvent): Promise<ZapReceipt[]> {
   const receiptIds = new Set<string>(); // Track unique receipt IDs to prevent duplicates
 
   try {
-    const eventsPromise = new Promise<any[]>((resolve, reject) => {
+    const eventsPromise = new Promise<ZapReceipt[]>((resolve, reject) => {
       const timeout = setTimeout(() => {
         console.log("⏰ Zap receipts timeout");
         reject(new Error("Request timeout"));
@@ -509,7 +509,7 @@ async function fetchZapReceipts(goal: NostrEvent): Promise<ZapReceipt[]> {
 }
 
 // Extract zap amount from a zap receipt event
-function extractZapAmount(event: any): number {
+function extractZapAmount(event: NostrEvent): number {
   // Try to find amount in bolt11 tag
   const bolt11Tag = event.tags?.find((tag: string[]) => tag[0] === "bolt11");
   if (bolt11Tag && bolt11Tag[1]) {
@@ -562,7 +562,7 @@ async function fetchUserMetadata(pubkey: string) {
   };
 
   try {
-    const eventsPromise = new Promise<any>((resolve, reject) => {
+    const eventsPromise = new Promise<{ name?: string; display_name?: string; picture?: string; about?: string }>((resolve, reject) => {
       const timeout = setTimeout(() => {
         reject(new Error("Metadata timeout"));
       }, 5000);

@@ -105,7 +105,7 @@ export default function CalendarPage({
   const handleDeleteEvent = async (event: CalendarEvent) => {
     if (!user || !event.rawEvent || user.pubkey !== event.pubkey) return;
     setEvents((prev) => prev.filter((e) => e.id !== event.id));
-    const kind = (event.rawEvent as any).kind as number;
+    const kind = (event.rawEvent as { kind?: number }).kind ?? 31923;
     const unsignedDelete = { kind: 5, content: "Deleted by author", tags: [[...CLIENT_TAG], ["e", event.id], ["k", String(kind)]], created_at: Math.floor(Date.now() / 1000) };
     const signedDelete = await signEvent(unsignedDelete as { kind: number; content: string; tags: string[][]; created_at: number });
     const { pool } = await import("@/lib/nostr");
