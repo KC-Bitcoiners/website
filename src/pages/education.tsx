@@ -4,6 +4,8 @@ import ReactMarkdown from "react-markdown";
 import { config, siteConfig, basePath, nostrRelays } from "@/config";
 import { naddrEncode } from "@/utils/bech32";
 import { buildNewsletterEvent, publishNewsletter } from "@/utils/newsletterEvents";
+import { fetchLivestreams, Livestream } from "@/utils/livestreams";
+import LivestreamPlayer from "@/components/LivestreamPlayer";
 import {
   fetchPinboards,
   fetchFeaturedPins,
@@ -94,6 +96,7 @@ export default function EducationPage() {
   const [editPin, setEditPin] = useState<Pin | null>(null);
   const [sortBy, setSortBy] = useState<"date" | "title">("date");
   const [selectedArticle, setSelectedArticle] = useState<Pin | null>(null);
+  const [livestreams, setLivestreams] = useState<Livestream[]>([]);
 
   const loadAll = useCallback(async () => {
     setLoadingFeatured(true);
@@ -111,6 +114,16 @@ export default function EducationPage() {
   }, []);
 
   useEffect(() => { loadAll(); }, [loadAll]);
+
+  // Fetch active livestreams and poll every 60s
+  useEffect(() => {
+    const loadStreams = () => {
+      fetchLivestreams().then(setLivestreams).catch(() => {});
+    };
+    loadStreams();
+    const interval = setInterval(loadStreams, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const loadPins = useCallback(async (board: Pinboard) => {
     setLoadingPins(true);
@@ -271,6 +284,9 @@ export default function EducationPage() {
             </div>
           );
         })()}
+
+        {/* Active Livestreams */}
+        <LivestreamPlayer streams={livestreams} />
 
         {/* Tab Navigation */}
         <div className="flex justify-center gap-4 mb-10">

@@ -114,6 +114,10 @@ export const getGithubUrl = () => externalLinks.GitHub?.url;
 // Community relay -- first relay from config is the community relay
 export const KC_BITCOINERS_RELAY = nostrRelays[0] || "wss://kcbtc.hzrd149.com/";
 
+// Tags added to all events published from this site
+export const CLIENT_TAG = ["client", "bodarc"] as const;
+export const LOCATION_TAG = ["location", organization.location] as const;
+
 // Social links interface and data (moved from socialLinks.ts)
 export interface SocialLink {
   name: string;

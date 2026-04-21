@@ -1,4 +1,4 @@
-import { getWhitelistFilter, WHITELISTED_NPUBS, WHITELISTED_PUBKEYS, nostrRelays } from "@/config";
+import { getWhitelistFilter, WHITELISTED_NPUBS, WHITELISTED_PUBKEYS, nostrRelays, CLIENT_TAG, LOCATION_TAG } from "@/config";
 import { pool } from "@/lib/nostr";
 import { logger } from "@/utils/logger";
 import {
@@ -225,6 +225,10 @@ export async function publishNostrEvent(
 
     // Convert EventFormData to nostr event format
     const tags: string[][] = [];
+
+    // Add client and location tags
+    tags.push([...CLIENT_TAG]);
+    tags.push([...LOCATION_TAG]);
 
     // Add required tags
     tags.push(["d", dTag]); // Unique identifier

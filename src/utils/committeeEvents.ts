@@ -1,5 +1,5 @@
 import { pool } from "@/lib/nostr";
-import { nostrRelays, WHITELISTED_PUBKEYS } from "@/config";
+import { nostrRelays, WHITELISTED_PUBKEYS, CLIENT_TAG, LOCATION_TAG } from "@/config";
 import { buildDeleteEvent, publishDelete } from "@/utils/pinboardEvents";
 import { logger } from "@/utils/logger";
 
@@ -56,7 +56,7 @@ export function buildCommitteeEvent(opts: {
   openings?: number;
   topicTags?: string[];
 }): Record<string, unknown> {
-  const tags: string[][] = [["d", opts.dTag]];
+  const tags: string[][] = [[...CLIENT_TAG], [...LOCATION_TAG], ["d", opts.dTag]];
   if (opts.title) tags.push(["title", opts.title]);
   if (opts.description) tags.push(["description", opts.description]);
   if (opts.image) tags.push(["image", opts.image]);
@@ -83,6 +83,7 @@ export function buildCommitteeMemberEvent(opts: {
   nostrPubkey?: string;
 }): Record<string, unknown> {
   const tags: string[][] = [
+    [...CLIENT_TAG],
     ["a", opts.committeeCoordinate],
     ["d", opts.dTag],
     ["role", opts.role],
@@ -106,6 +107,7 @@ export function buildCommitteeOpeningEvent(opts: {
   description?: string;
 }): Record<string, unknown> {
   const tags: string[][] = [
+    [...CLIENT_TAG],
     ["a", opts.committeeCoordinate],
     ["d", opts.dTag],
     ["title", opts.title],

@@ -1,5 +1,5 @@
 import { pool } from "@/lib/nostr";
-import { WHITELISTED_PUBKEYS, nostrRelays, blossomConfig } from "@/config";
+import { WHITELISTED_PUBKEYS, nostrRelays, blossomConfig, CLIENT_TAG, LOCATION_TAG } from "@/config";
 
 export type SignerFn = (event: { kind: number; content: string; tags: string[][]; created_at: number }) => Promise<Record<string, unknown>>;
 
@@ -153,7 +153,7 @@ export async function publishGalleryImage(
   const imageEvent = {
     kind: 20,
     created_at: Math.floor(Date.now() / 1000),
-    tags: [["imeta", imetaContent]],
+    tags: [[...CLIENT_TAG], [...LOCATION_TAG], ["imeta", imetaContent]],
     content: caption,
   };
   const signedImage = await signer(imageEvent);
@@ -167,6 +167,8 @@ export async function publishGalleryImage(
     kind: 39067,
     created_at: Math.floor(Date.now() / 1000),
     tags: [
+      [...CLIENT_TAG],
+      [...LOCATION_TAG],
       ["A", galleryCoord],
       ["d", `gallery-${Date.now()}`],
       ["e", (signedImage as any).id, nostrRelays[0]],
