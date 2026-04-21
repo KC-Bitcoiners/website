@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Head from "next/head";
 import { config, siteConfig, basePath } from "@/config";
 import { streamGalleryImages, GalleryImage, publishGalleryImage, uploadToBlossom } from "@/utils/galleryEvents";
 import { buildDeleteEvent, publishDelete } from "@/utils/pinboardEvents";
 import { useNostr } from "@/contexts/NostrContext";
 import EventActions from "@/components/EventActions";
+import { useModal } from "@/hooks/useModal";
 
 export default function GalleryPage() {
   const [images, setImages] = useState<GalleryImage[]>([]);
@@ -15,6 +16,12 @@ export default function GalleryPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const { user, hasExtension, loginWithExtension, signEvent } = useNostr();
+
+  // Modal accessibility: Escape key + scroll lock
+  const closeImageModal = useCallback(() => setSelectedImage(null), []);
+  const closeUploadModal = useCallback(() => setShowUploadModal(false), []);
+  useModal(!!selectedImage, closeImageModal);
+  useModal(showUploadModal, closeUploadModal);
 
   useEffect(() => {
     const stream = streamGalleryImages((image) => {

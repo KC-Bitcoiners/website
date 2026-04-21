@@ -3,6 +3,7 @@ import Head from "next/head";
 import { config, basePath } from "@/config";
 import { isWhitelisted } from "@/config";
 import { useNostr } from "@/contexts/NostrContext";
+import { useModal } from "@/hooks/useModal";
 import {
   Committee,
   CommitteeMember,
@@ -96,9 +97,15 @@ export default function CommitteesPage() {
     throw new Error("No signing method available");
   };
 
-  // Show admin controls if user has a whitelisted pubkey OR if NIP-07 extension is present
-  // (extension users can sign events — the whitelist is checked server-side on publish)
-  const isAdmin = (user && isWhitelisted(user.pubkey)) || hasExtension;
+  // Show admin controls only if user has a whitelisted pubkey
+  // (this is a static site — there is no server-side whitelist enforcement)
+  const isAdmin = !!(user && isWhitelisted(user.pubkey));
+
+  // Modal accessibility: Escape key + scroll lock
+  const closeSelectedCommittee = useCallback(() => setSelectedCommittee(null), []);
+  const closeApplicationForm = useCallback(() => setShowApplicationForm(false), []);
+  useModal(!!selectedCommittee, closeSelectedCommittee);
+  useModal(showApplicationForm, closeApplicationForm);
 
   const loadAll = useCallback(async () => {
     setLoading(true);

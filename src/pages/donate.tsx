@@ -182,7 +182,7 @@ const NoteQRCode = ({
         <div className="p-2 bg-white border border-gray-200 rounded-lg">
           <img
             src={qrCodeUrl}
-            alt="QR Code for zapping"
+            alt={`QR code to zap: ${goal.content?.slice(0, 50) || 'fundraising goal'}`}
             className="w-32 h-32"
           />
         </div>
@@ -231,7 +231,7 @@ const NoteIdQRCode = ({
         <div className="p-2 bg-white border border-gray-200 rounded-lg">
           <img
             src={qrCodeUrl}
-            alt="QR Code for nostr URI"
+            alt={`QR code for note: ${goal.content?.slice(0, 50) || 'nostr event'}`}
             className="w-32 h-32"
           />
         </div>
