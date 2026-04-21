@@ -68,8 +68,8 @@ h6 {
   background-color: var(--bitcoin-orange-hover);
 }
 
-/* Smooth transitions for better UX */
-* {
+/* Smooth transitions for interactive elements */
+a, button, input, textarea, select, summary, details {
   transition-property:
     color, background-color, border-color, text-decoration-color, fill, stroke;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
