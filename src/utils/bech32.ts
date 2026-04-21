@@ -70,3 +70,71 @@ export async function getPubkey(privkeyHex: string): Promise<string> {
   const s = await getSchnorr();
   return bytesToHex(s.getPublicKey(hexToBytes(privkeyHex)));
 }
+
+/** Encode a Nostr address (naddr) for parameterized replaceable events. */
+export function naddrEncode(opts: { d: string; pubkey: string; kind: number; relays?: string[] }): string {
+  const tlv: { type: number; value: Uint8Array }[] = [];
+
+  // Type 0: special (d-tag value)
+  tlv.push({ type: 0, value: new TextEncoder().encode(opts.d) });
+
+  // Type 2: author (pubkey hex → bytes)
+  tlv.push({ type: 2, value: hexToBytes(opts.pubkey) });
+
+  // Type 3: relays
+  if (opts.relays) {
+    for (const relay of opts.relays) {
+      tlv.push({ type: 3, value: new TextEncoder().encode(relay) });
+    }
+  }
+
+  // Type 1: kind (as varuint bytes)
+  const kindBytes = kindToVarUint(opts.kind);
+  tlv.push({ type: 1, value: kindBytes });
+
+  // Encode TLV into a single byte array
+  const totalLen = tlv.reduce((sum, entry) => sum + 1 + varIntLen(entry.value.length) + entry.value.length, 0);
+  const buf = new Uint8Array(totalLen);
+  let offset = 0;
+  for (const entry of tlv) {
+    buf[offset++] = entry.type;
+    offset = writeVarInt(buf, offset, entry.value.length);
+    buf.set(entry.value, offset);
+    offset += entry.value.length;
+  }
+
+  return bech32.encode("naddr", bech32.toWords(buf));
+}
+
+function kindToVarUint(kind: number): Uint8Array {
+  if (kind < 0x80) return new Uint8Array([kind]);
+  if (kind < 0x4000) return new Uint8Array([(kind >> 8) | 0x80, kind & 0xff]);
+  if (kind < 0x200000) return new Uint8Array([(kind >> 16) | 0xc0, (kind >> 8) & 0xff, kind & 0xff]);
+  return new Uint8Array([(kind >> 24) | 0xe0, (kind >> 16) & 0xff, (kind >> 8) & 0xff, kind & 0xff]);
+}
+
+function varIntLen(len: number): number {
+  if (len < 0x80) return 1;
+  if (len < 0x4000) return 2;
+  if (len < 0x200000) return 3;
+  return 4;
+}
+
+function writeVarInt(buf: Uint8Array, offset: number, len: number): number {
+  if (len < 0x80) {
+    buf[offset++] = len;
+  } else if (len < 0x4000) {
+    buf[offset++] = (len >> 8) | 0x80;
+    buf[offset++] = len & 0xff;
+  } else if (len < 0x200000) {
+    buf[offset++] = (len >> 16) | 0xc0;
+    buf[offset++] = (len >> 8) & 0xff;
+    buf[offset++] = len & 0xff;
+  } else {
+    buf[offset++] = (len >> 24) | 0xe0;
+    buf[offset++] = (len >> 16) & 0xff;
+    buf[offset++] = (len >> 8) & 0xff;
+    buf[offset++] = len & 0xff;
+  }
+  return offset;
+}

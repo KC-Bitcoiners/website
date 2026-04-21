@@ -374,6 +374,7 @@ export function buildPinEvent(opts: {
   externalKind?: string;
   eventRef?: string;
   eventRelay?: string;
+  articleCoordinate?: string;
   tags?: string[];
   dTag?: string;
 }): Record<string, unknown> {
@@ -396,6 +397,9 @@ export function buildPinEvent(opts: {
     const eTag = ["e", opts.eventRef];
     if (opts.eventRelay) eTag.push(opts.eventRelay);
     tags.push(eTag);
+  }
+  if (opts.articleCoordinate) {
+    tags.push(["a", opts.articleCoordinate]);
   }
   if (opts.title) tags.push(["title", opts.title]);
   if (opts.tags) {
@@ -533,6 +537,11 @@ function parsePinEvent(event: any): Pin | null {
     if (kTag) {
       pin.externalKind = kTag[1];
       if (kTag[1] === "article") pin.contentType = "article";
+    }
+    // Also store article coordinate if present
+    if (aTag) {
+      pin.coordinateRef = aTag[1];
+      pin.coordinateRelay = aTag[2];
     }
   } else if (aTag) {
     pin.coordinateRef = aTag[1];

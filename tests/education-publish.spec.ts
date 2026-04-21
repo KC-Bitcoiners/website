@@ -413,7 +413,7 @@ test.describe("Education Page - Add Resources via UI @education @whitelist", () 
     await page.locator('[data-testid^="pin-"]').filter({ hasText: uniqueTitle }).first().waitFor({ timeout: 15000 });
     const articlePin = page.locator('[data-testid^="pin-"]').filter({ hasText: uniqueTitle });
     await articlePin.locator("button.text-left").click();
-    // Article detail view should show with Yakihonne link
+    // Article detail modal should show with Yakihonne link
     await expect(page.getByText("Open in Yakihonne")).toBeVisible();
   });
 });

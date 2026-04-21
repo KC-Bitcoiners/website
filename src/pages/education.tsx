@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import Head from "next/head";
 import ReactMarkdown from "react-markdown";
 import { config, siteConfig, basePath, nostrRelays } from "@/config";
+import { naddrEncode } from "@/utils/bech32";
 import { buildNewsletterEvent, publishNewsletter } from "@/utils/newsletterEvents";
 import {
   fetchPinboards,
@@ -203,47 +204,74 @@ export default function EducationPage() {
           </p>
         </div>
 
-        {/* Article detail view */}
-        {selectedArticle && (
-          <div className="mb-8">
-            <button
-              onClick={() => setSelectedArticle(null)}
-              className="text-sm text-gray-500 hover:text-bitcoin-orange mb-4 flex items-center gap-1"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd"/></svg>
-              Back to resources
-            </button>
-            <div className="bg-white border border-gray-200 rounded-xl p-6 max-w-3xl mx-auto">
-              <div className="flex items-center gap-2 mb-4">
-                <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded bg-orange-100 text-orange-700">
-                  📰 Article
-                </span>
-                <span className="text-xs text-gray-400">
-                  {new Date(selectedArticle.created_at * 1000).toLocaleDateString()}
-                </span>
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">{selectedArticle.title}</h2>
-              {selectedArticle.content && (
-                <div className="prose prose-sm max-w-none text-gray-700 mb-4">
-                  <ReactMarkdown>{selectedArticle.content}</ReactMarkdown>
+        {/* Article detail modal overlay */}
+        {selectedArticle && (() => {
+          // Build naddr for Yakihonne link from the article coordinate
+          let yakihonneUrl = "";
+          const coordRef = selectedArticle.coordinateRef;
+          if (coordRef && selectedArticle.pubkey) {
+            try {
+              const parts = coordRef.split(":");
+              const kind = parseInt(parts[0], 10);
+              const author = parts[1];
+              const d = parts[2];
+              if (d && author) {
+                const naddr = naddrEncode({ d, pubkey: author, kind, relays: nostrRelays.slice(0, 2) });
+                yakihonneUrl = `https://yakihonne.com/article/${naddr}`;
+              }
+            } catch (e) {
+              console.error("naddr encode error:", e);
+            }
+          }
+          // Fallback: use eventRef (hex event ID) if naddr failed
+          if (!yakihonneUrl && selectedArticle.eventRef) {
+            yakihonneUrl = `https://yakihonne.com/article/${selectedArticle.eventRef}`;
+          }
+          return (
+            <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto" onClick={() => setSelectedArticle(null)}>
+              <div
+                className="bg-white rounded-xl w-full max-w-3xl p-6 shadow-xl my-8"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded bg-orange-100 text-orange-700">
+                      📰 Article
+                    </span>
+                    <span className="text-xs text-gray-400">
+                      {new Date(selectedArticle.created_at * 1000).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setSelectedArticle(null)}
+                    className="text-gray-400 hover:text-gray-600 text-xl font-bold"
+                  >
+                    &times;
+                  </button>
                 </div>
-              )}
-              <div className="pt-4 border-t border-gray-100 flex items-center gap-4">
-                <a
-                  href={`https://yakihonne.com/article/${selectedArticle.eventRef || selectedArticle.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-bitcoin-orange hover:underline font-semibold"
-                >
-                  Open in Yakihonne &rarr;
-                </a>
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">{selectedArticle.title}</h2>
+                {selectedArticle.content && (
+                  <div className="prose prose-sm max-w-none text-gray-700 mb-4">
+                    <ReactMarkdown>{selectedArticle.content}</ReactMarkdown>
+                  </div>
+                )}
+                <div className="pt-4 border-t border-gray-100 flex items-center gap-4">
+                  {yakihonneUrl && (
+                    <a
+                      href={yakihonneUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-bitcoin-orange hover:underline font-semibold"
+                    >
+                      Open in Yakihonne &rarr;
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
-        {!selectedArticle && (
-        <>
         {/* Tab Navigation */}
         <div className="flex justify-center gap-4 mb-10">
           <button
@@ -432,8 +460,6 @@ export default function EducationPage() {
             onCancel={() => { setShowAddPin(false); setEditPin(null); }}
             editPin={editPin}
           />
-        )}
-        </>
         )}
       </div>
     </>
@@ -736,7 +762,9 @@ function PinCard({ pin, onDelete, onEdit, onOpenArticle }: { pin: Pin; onDelete:
               {pin.title || "Untitled"}
             </h4>
             {pin.content && (
-              <p className="text-sm text-gray-600 line-clamp-2 mb-2">{pin.content}</p>
+              <p className="text-sm text-gray-600 line-clamp-3 mb-2">
+                {pin.content.replace(/[#*_`\[\]>]/g, "").replace(/\n+/g, " ").slice(0, 200)}
+              </p>
             )}
           </button>
         ) : finalDisplayUrl ? (
@@ -879,6 +907,7 @@ function AddPinModal({
       if (selectedType === "newsletter") {
         const tagList = tags.split(",").map((t) => t.trim()).filter(Boolean);
         let articleId: string;
+        let articleCoordinate: string | undefined;
 
         if (newsletterMode === "create") {
           // Create new kind 30023 article
@@ -894,6 +923,9 @@ function AddPinModal({
           const signedArticle = await signEvent(unsignedArticle as { kind: number; content: string; tags: string[][]; created_at: number });
           await publishNewsletter(signedArticle);
           articleId = (signedArticle as any).id;
+          // Store article coordinate for naddr link
+          const articleDTag = (signedArticle.tags as string[][]).find((t: string[]) => t[0] === "d")?.[1] || "";
+          articleCoordinate = `30023:${pubkey}:${articleDTag}`;
         } else {
           // Pin existing article — use the URL as the event reference
           articleId = url.trim();
@@ -914,11 +946,12 @@ function AddPinModal({
         }
         const unsignedPin = buildPinEvent({
           boardCoordinate: resolvedBoardCoord,
-          content: newsletterMode === "create" ? "" : description.trim(),
+          content: description.trim(),
           title: title.trim(),
           eventRef: articleId,
           eventRelay: nostrRelays[0],
           externalKind: "article",
+          articleCoordinate,
           tags: tagList,
           dTag: isEditing ? (editPin?.rawEvent?.tags as string[][] | undefined)?.find((t) => t[0] === "d")?.[1] : undefined,
         });
