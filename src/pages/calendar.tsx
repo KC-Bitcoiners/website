@@ -25,6 +25,7 @@ import { config } from "@/config";
 import { useNostr } from "../contexts/NostrContext";
 import { useRef, useCallback } from "react";
 import { logger } from "@/utils/logger";
+import { formatDate, formatTime, splitDescription } from "@/utils/formatting";
 
 interface CalendarPageProps {
   meetupGroup: MeetupGroup | null;
@@ -545,36 +546,6 @@ export default function CalendarPage({
       color: getEventColor(e),
     })),
   );
-
-  // Helper functions to format data for EventCard
-  const formatDate = (timestamp: string | undefined): string => {
-    if (!timestamp) return "TBD";
-    const date = new Date(parseInt(timestamp) * 1000);
-    return date.toLocaleDateString("en-US", {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-    });
-  };
-
-  const formatTime = (timestamp: string | undefined): string => {
-    if (!timestamp) return "TBA";
-    const date = new Date(parseInt(timestamp) * 1000);
-    return date.toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
-  };
-
-  const splitDescription = (description: string): string[] => {
-    if (!description) return ["No description available."];
-    return description
-      .split(/\n\s*\n/)
-      .filter((paragraph) => paragraph.trim().length > 0)
-      .map((paragraph) => paragraph.trim());
-  };
-
 
   return (
     <div className="container mx-auto px-4 py-12">
