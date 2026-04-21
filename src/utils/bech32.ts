@@ -1,4 +1,4 @@
-import { bech32, bech32m } from "@scure/base";
+import { bech32 } from "@scure/base";
 
 function hexToBytes(hex: string): Uint8Array {
   const bytes = new Uint8Array(hex.length / 2);
@@ -71,54 +71,35 @@ export async function getPubkey(privkeyHex: string): Promise<string> {
   return bytesToHex(s.getPublicKey(hexToBytes(privkeyHex)));
 }
 
-/** Encode a Nostr address (naddr) per NIP-19 using bech32m. */
+/** Encode a Nostr address (naddr) per NIP-19. */
 export function naddrEncode(opts: { identifier: string; pubkey: string; kind: number; relays?: string[] }): string {
   const tlv: { type: number; value: Uint8Array }[] = [];
 
-  // Type 0: d-tag value (utf-8)
+  // Type 0: identifier (d-tag value)
   tlv.push({ type: 0, value: new TextEncoder().encode(opts.identifier) });
-  // Type 2: author (pubkey hex → 32 bytes)
-  tlv.push({ type: 2, value: hexToBytes(opts.pubkey) });
-  // Type 3: relays (utf-8)
+  // Type 1: relays
   if (opts.relays) {
     for (const relay of opts.relays) {
-      tlv.push({ type: 3, value: new TextEncoder().encode(relay) });
+      tlv.push({ type: 1, value: new TextEncoder().encode(relay) });
     }
   }
-  // Type 1: kind (4-byte big-endian unsigned integer)
+  // Type 2: author (pubkey hex → 32 bytes)
+  tlv.push({ type: 2, value: hexToBytes(opts.pubkey) });
+  // Type 3: kind (4-byte big-endian)
   const kindBytes = new Uint8Array(4);
-  kindBytes[0] = (opts.kind >> 24) & 0xff;
-  kindBytes[1] = (opts.kind >> 16) & 0xff;
-  kindBytes[2] = (opts.kind >> 8) & 0xff;
-  kindBytes[3] = opts.kind & 0xff;
-  tlv.push({ type: 1, value: kindBytes });
+  new DataView(kindBytes.buffer).setUint32(0, opts.kind, false);
+  tlv.push({ type: 3, value: kindBytes });
 
-  // Encode TLV: type (1 byte) + length (varint) + value
-  const totalLen = tlv.reduce((sum, e) => sum + 1 + varintSize(e.value.length) + e.value.length, 0);
+  // Encode TLV: type (1 byte) + length (1 byte) + value
+  const totalLen = tlv.reduce((sum, e) => sum + 2 + e.value.length, 0);
   const buf = new Uint8Array(totalLen);
   let offset = 0;
   for (const e of tlv) {
     buf[offset++] = e.type;
-    offset = writeVarint(buf, offset, e.value.length);
+    buf[offset++] = e.value.length;
     buf.set(e.value, offset);
     offset += e.value.length;
   }
 
-  return bech32m.encode("naddr", bech32m.toWords(buf), false);
-}
-
-function varintSize(n: number): number {
-  let size = 0, v = n;
-  do { size++; v >>>= 7; } while (v > 0);
-  return size;
-}
-
-function writeVarint(buf: Uint8Array, offset: number, n: number): number {
-  let v = n;
-  while (v > 0x7f) {
-    buf[offset++] = (v & 0x7f) | 0x80;
-    v >>>= 7;
-  }
-  buf[offset++] = v & 0x7f;
-  return offset;
+  return bech32.encode("naddr", bech32.toWords(buf), 5000);
 }
