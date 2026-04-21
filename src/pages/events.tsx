@@ -3,40 +3,12 @@ import EventCard from "../components/EventCard";
 import { generateICalendarFile } from "../utils/icalendar";
 import { fetchMeetupEvents, getVenueAddress, MeetupGroup } from "../lib/meetup";
 import { getMeetupUrl, eventsConfig } from "../config";
+import { formatDate, formatTime, splitDescription } from "../utils/formatting";
 
 interface EventsPageProps {
   group: MeetupGroup | null;
   error?: string;
 }
-
-// Helper function to format date
-const formatDate = (dateString: string): string => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
-};
-
-// Helper function to format time
-const formatTime = (dateString: string): string => {
-  const date = new Date(dateString);
-  return date.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
-};
-
-// Helper function to split description into paragraphs
-const splitDescription = (description: string): string[] => {
-  if (!description) return ["No description available."];
-  return description
-    .split(/\n\s*\n/)
-    .filter((paragraph) => paragraph.trim().length > 0)
-    .map((paragraph) => paragraph.trim());
-};
 
 export const getStaticProps: GetStaticProps<EventsPageProps> = async () => {
   try {
