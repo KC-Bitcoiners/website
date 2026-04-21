@@ -114,10 +114,6 @@ export default function Layout({ children, className }: LayoutProps) {
   const router = useRouter();
   const currentPath = router.pathname;
 
-  // Debug logging
-  console.log('🔧 Layout - config.site.images.logo:', config.site.images.logo);
-  console.log('🔧 Layout - config.site.organization.name:', config.site.organization.name);
-
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
   };

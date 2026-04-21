@@ -89,7 +89,7 @@ export default function CalendarPage({
       ) {
         chatIframeRef.current.contentWindow?.postMessage(
           { type: "cornychat-signin", nsec: user.privateKey },
-          "*",
+          "https://cornychat.com",
         );
       }
     },
