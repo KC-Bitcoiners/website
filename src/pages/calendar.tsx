@@ -262,12 +262,14 @@ export default function CalendarPage({
         setIsLoadingNostrEvents(false);
       }
 
-      // Add nostr events to existing events
+      // Add nostr events to existing events, deduplicating by ID
       setEvents((prevEvents) => {
+        const existingIds = new Set(prevEvents.map((e) => e.id));
+        const newEvents = nostrEvents.filter((e) => !existingIds.has(e.id));
         logger.debug(
-          `➕ Adding ${nostrEvents.length} nostr events to existing ${prevEvents.length} events`,
+          `➕ Adding ${newEvents.length} new nostr events to existing ${prevEvents.length} events (${nostrEvents.length - newEvents.length} duplicates skipped)`,
         );
-        const allEvents = sortEventsByTime([...prevEvents, ...nostrEvents]);
+        const allEvents = sortEventsByTime([...prevEvents, ...newEvents]);
         logger.debug(`📅 Total events after adding nostr: ${allEvents.length}`);
         return allEvents;
       });
@@ -362,54 +364,6 @@ export default function CalendarPage({
           eventId: result.eventId || "",
           naddr: result.naddr || "",
         });
-
-        // Fetch the event from relay to ensure it's rendered
-        setTimeout(async () => {
-          logger.debug(
-            "🔄 Fetching newly published event from relay to verify it was published...",
-          );
-          try {
-            logger.debug(
-              "📡 Calling fetchNostrCalendarEvents() to get latest events from relay...",
-            );
-            const nostrCalendarEvents = await fetchNostrCalendarEvents();
-            logger.debug(
-              `📨 Received ${nostrCalendarEvents.length} events from relay`,
-            );
-
-            logger.debug("🔄 Converting nostr events to calendar format...");
-            const nostrEvents = nostrCalendarEvents.map(
-              convertNostrEventToCalendar,
-            );
-            logger.debug(
-              `✅ Converted ${nostrEvents.length} nostr events to calendar format`,
-            );
-
-            logger.debug("🔄 Updating event list with newly fetched events...");
-            setEvents((prevEvents) => {
-              const allEvents = sortEventsByTime([
-                ...prevEvents,
-                ...nostrEvents,
-              ]);
-              logger.debug(
-                `📅 Updated total events: ${allEvents.length} (was ${prevEvents.length})`,
-              );
-              return allEvents;
-            });
-
-            logger.debug(
-              "✅ Successfully fetched and integrated newly published event from relay",
-            );
-          } catch (error) {
-            logger.error(
-              "💥 Failed to refetch events after publishing:",
-              error,
-            );
-            logger.warn(
-              "⚠️ Event was published successfully, but failed to refresh from relay",
-            );
-          }
-        }, 2000); // Wait 2 seconds for relay to propagate
       } else {
         const errorMsg = result.error || "Failed to publish to nostr";
         logger.error("❌ Event publishing failed:", errorMsg);

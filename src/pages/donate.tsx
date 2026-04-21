@@ -16,7 +16,7 @@ import {
   neventEncode,
 } from "applesauce-core/helpers/pointers";
 import QRCode from "qrcode";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 export interface Zapraiser {
   goal: NostrEvent;
@@ -601,6 +601,10 @@ export default function DonatePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Use ref to access current zapraisers in interval without recreating it
+  const zapraisersRef = useRef(zapraisers);
+  zapraisersRef.current = zapraisers;
+
   // Add a global animation style
   useEffect(() => {
     const style = document.createElement("style");
@@ -625,15 +629,14 @@ export default function DonatePage() {
 
   // Auto-refresh zap receipts every 30 seconds
   useEffect(() => {
-    if (zapraisers.length === 0) return; // Don't refresh if no zapraisers
-
     const interval = setInterval(async () => {
-      logger.debug("🔄 Auto-refreshing zap receipts...");
+      const current = zapraisersRef.current;
+      if (current.length === 0) return;
+      logger.debug("Auto-refreshing zap receipts...");
 
       // Update each zapraiser with new zap receipts
       const updatedzapraisers = await Promise.all(
-        zapraisers.map(async (zapraiser: Zapraiser) => {
-          // Fetch fresh zap receipts for this zap goal
+        current.map(async (zapraiser: Zapraiser) => {
           const receipts = await fetchZapReceipts(zapraiser.goal);
           const totalZapped = receipts.reduce(
             (sum, receipt) => sum + receipt.amount,
@@ -647,12 +650,11 @@ export default function DonatePage() {
         }),
       );
 
-      // Update state with new progress
       setzapraisers(updatedzapraisers);
-    }, 30000); // 30 seconds
+    }, 30000);
 
     return () => clearInterval(interval);
-  }, [zapraisers]); // Only run interval when zapraisers are loaded
+  }, []); // Empty deps — uses ref to access current state
 
   useEffect(() => {
     async function loadzapraisers() {
