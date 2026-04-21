@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Head from "next/head";
-import { config, siteConfig, basePath } from "@/config";
+import ReactMarkdown from "react-markdown";
+import { config, siteConfig, basePath, nostrRelays } from "@/config";
+import { buildNewsletterEvent, publishNewsletter } from "@/utils/newsletterEvents";
 import {
   fetchPinboards,
   fetchFeaturedPins,
@@ -755,6 +757,7 @@ function AddPinModal({
   const [tags, setTags] = useState(editPin?.tags?.join(", ") || "");
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState("");
+  const [showPreview, setShowPreview] = useState(false);
   const [selectedType, setSelectedType] = useState<DisplayType | null>(
     editPin ? getDisplayType(editPin) : null
   );
@@ -777,8 +780,9 @@ function AddPinModal({
   };
 
   const handlePublish = async () => {
-    if (!url.trim()) { setError("URL or identifier is required"); return; }
+    if (selectedType !== "newsletter" && !url.trim()) { setError("URL or identifier is required"); return; }
     if (!title.trim()) { setError("Title is required"); return; }
+    if (selectedType === "newsletter" && !description.trim()) { setError("Newsletter content is required"); return; }
     if (!selectedType) { setError("Please select a content type"); return; }
 
     setPublishing(true);
@@ -813,6 +817,55 @@ function AddPinModal({
         resolvedBoardCoord = `30067:${pubkey}:${dTag}`;
       }
 
+      // Newsletter flow: publish kind 30023 article, then pin it
+      if (selectedType === "newsletter") {
+        const tagList = tags.split(",").map((t) => t.trim()).filter(Boolean);
+        const unsignedArticle = buildNewsletterEvent({
+          title: title.trim(),
+          content: description.trim(),
+          tags: tagList,
+        });
+        const signedArticle = await signEvent(unsignedArticle as { kind: number; content: string; tags: string[][]; created_at: number });
+        const articleOk = await publishNewsletter(signedArticle);
+        if (!articleOk) {
+          setError("Failed to publish newsletter to relays.");
+          setPublishing(false);
+          return;
+        }
+        // Pin the article to the education board
+        const articleId = (signedArticle as any).id;
+        let resolvedBoardCoord = boardCoordinate;
+        if (boardCoordinate === "auto" || !boardCoordinate) {
+          const unsignedBoard = buildPinboardEvent({
+            dTag: "education",
+            title: "Education",
+            description: "Educational resources",
+          });
+          const signedBoard = await signEvent(unsignedBoard as { kind: number; content: string; tags: string[][]; created_at: number });
+          await publishPinboard(signedBoard);
+          const dTag = (signedBoard.tags as string[][]).find((t: string[]) => t[0] === "d")?.[1] || "education";
+          resolvedBoardCoord = `30067:${pubkey}:${dTag}`;
+        }
+        const unsignedPin = buildPinEvent({
+          boardCoordinate: resolvedBoardCoord,
+          content: "",
+          title: title.trim(),
+          eventRef: articleId,
+          eventRelay: nostrRelays[0],
+          tags: tagList,
+        });
+        const signedPin = await signEvent(unsignedPin as { kind: number; content: string; tags: string[][]; created_at: number });
+        const pinOk = await publishPin(signedPin);
+        if (pinOk) {
+          onDone();
+        } else {
+          setError("Newsletter published but pin failed. It may appear later.");
+        }
+        setPublishing(false);
+        return;
+      }
+
+      // Regular pin flow
       // Use detected content kind, but override displayType to match user's selection
       let { iTag, kTag } = detectContentKind(url);
       // If the user explicitly chose a type that conflicts with detection, respect user choice
@@ -852,7 +905,7 @@ function AddPinModal({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onCancel}>
       <div
-        className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl"
+        className={`bg-white rounded-lg w-full p-6 shadow-xl ${selectedType === "newsletter" ? "max-w-2xl" : "max-w-md"}`}
         data-testid="add-pin-modal"
         onClick={(e) => e.stopPropagation()}
       >
@@ -900,9 +953,11 @@ function AddPinModal({
                 {selectedType === "movie" && "Enter an ISAN like isan:XXXX-XXXX-XXXX"}
                 {selectedType === "paper" && "Enter a DOI like doi:10.xxx or 10.xxx/yyy"}
                 {selectedType === "location" && `Enter coordinates like geo:${siteConfig.organization.coordinates.lat},${siteConfig.organization.coordinates.lon} or lat,lon`}
+                {selectedType === "newsletter" && "Write a newsletter in Markdown — it will be published as a long-form article"}
               </p>
             )}
           </div>
+          {selectedType !== "newsletter" && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">URL or Identifier *</label>
             <input
@@ -929,16 +984,43 @@ function AddPinModal({
               </p>
             )}
           </div>
+          )}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-            <textarea
-              data-testid="pin-description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Brief description of this resource"
-              rows={2}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
-            />
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {selectedType === "newsletter" ? "Content (Markdown) *" : "Description"}
+            </label>
+            {selectedType === "newsletter" && (
+              <div className="flex gap-2 mb-2">
+                <button
+                  type="button"
+                  onClick={() => setShowPreview(false)}
+                  className={`px-3 py-1 text-xs rounded ${!showPreview ? "bg-bitcoin-orange text-white" : "bg-gray-100 text-gray-600"}`}
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowPreview(true)}
+                  className={`px-3 py-1 text-xs rounded ${showPreview ? "bg-bitcoin-orange text-white" : "bg-gray-100 text-gray-600"}`}
+                >
+                  Preview
+                </button>
+              </div>
+            )}
+            {selectedType === "newsletter" && showPreview ? (
+              <div className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm min-h-[200px] max-h-[400px] overflow-y-auto prose prose-sm">
+                <ReactMarkdown>{description}</ReactMarkdown>
+              </div>
+            ) : (
+              <textarea
+                data-testid="pin-description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder={selectedType === "newsletter" ? "# My Newsletter\n\nWrite your content here using **Markdown**..." : "Brief description of this resource"}
+                rows={selectedType === "newsletter" ? 12 : 2}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent font-mono"
+              />
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Tags (comma-separated)</label>

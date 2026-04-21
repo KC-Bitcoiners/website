@@ -61,7 +61,7 @@ export type ContentType =
   | "unknown";
 
 // Display-level type for UI filtering -- derived from k tag + URL patterns
-export type DisplayType = "youtube" | "podcast" | "podcast-episode" | "link" | "book" | "movie" | "paper" | "location";
+export type DisplayType = "youtube" | "podcast" | "podcast-episode" | "link" | "book" | "movie" | "paper" | "location" | "newsletter";
 
 export function getDisplayType(pin: Pin): DisplayType {
   // 1. Check k tag for non-web types (authoritative per NIP-73)
@@ -132,10 +132,16 @@ export const DISPLAY_TYPE_CONFIG: Record<DisplayType, { icon: string; label: str
     color: "bg-green-100 text-green-700",
     activeColor: "bg-green-600 text-white",
   },
+  newsletter: {
+    icon: "📰",
+    label: "Newsletter",
+    color: "bg-orange-100 text-orange-700",
+    activeColor: "bg-orange-600 text-white",
+  },
 };
 
 // All display types in a stable order for filter bar rendering
-export const ALL_DISPLAY_TYPES: DisplayType[] = ["youtube", "podcast", "podcast-episode", "link", "book", "movie", "paper", "location"];
+export const ALL_DISPLAY_TYPES: DisplayType[] = ["youtube", "podcast", "podcast-episode", "link", "book", "movie", "paper", "location", "newsletter"];
 
 /** Result of auto-detecting content kind from a user-pasted value. */
 export interface DetectedContent {
