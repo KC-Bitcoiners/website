@@ -63,14 +63,13 @@ export async function fetchLivestreams(): Promise<Livestream[]> {
         complete: () => {
           clearTimeout(timeout);
 
-          // Deduplicate by d tag (keep most recent per pubkey)
+          // Deduplicate by d tag (keep most recent)
           const seen = new Map<string, any>();
           for (const e of rawEvents) {
             const d = getTag(e.tags, "d");
-            const key = `${e.pubkey}:${d}`;
-            const existing = seen.get(key);
+            const existing = seen.get(d);
             if (!existing || e.created_at > existing.created_at) {
-              seen.set(key, e);
+              seen.set(d, e);
             }
           }
 
