@@ -1022,19 +1022,6 @@ function AddPinModal({
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
             />
           </div>
-          {selectedType === "newsletter" && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-              <input
-                data-testid="pin-summary"
-                type="text"
-                value={summary}
-                onChange={(e) => setSummary(e.target.value)}
-                placeholder="Brief summary of the article"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
-              />
-            </div>
-          )}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Content Type *</label>
             <div className="flex flex-wrap gap-2" data-testid="type-selector">
@@ -1085,6 +1072,19 @@ function AddPinModal({
               >
                 Pin Existing (naddr)
               </button>
+            </div>
+          )}
+          {selectedType === "newsletter" && newsletterMode === "create" && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <input
+                data-testid="pin-summary"
+                type="text"
+                value={summary}
+                onChange={(e) => setSummary(e.target.value)}
+                placeholder="Brief summary of the article"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
+              />
             </div>
           )}
           {selectedType === "newsletter" && newsletterMode === "existing" && (
@@ -1150,7 +1150,7 @@ function AddPinModal({
               </div>
             )}
             {selectedType === "newsletter" && showPreview ? (
-              <div className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm min-h-[200px] max-h-[400px] overflow-y-auto prose prose-sm">
+              <div className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm min-h-[200px] max-h-[400px] overflow-y-auto prose prose-sm prose-headings:text-gray-900 prose-h1:text-2xl prose-h1:font-bold prose-h1:border-b prose-h1:border-gray-200 prose-h1:pb-1 prose-h2:text-xl prose-h2:font-semibold prose-h3:text-lg prose-h3:font-semibold prose-p:text-gray-700 prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:font-mono prose-code:text-orange-700 prose-pre:bg-gray-900 prose-pre:text-gray-100">
                 <ReactMarkdown>{description}</ReactMarkdown>
               </div>
             ) : (
