@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Head from "next/head";
 import { config, siteConfig, basePath } from "@/config";
+import { fetchLivestreams, Livestream } from "@/utils/livestreams";
+import LivestreamPlayer from "@/components/LivestreamPlayer";
 import {
   fetchPinboards,
   fetchFeaturedPins,
@@ -90,6 +92,7 @@ export default function EducationPage() {
   const [showAddPin, setShowAddPin] = useState(false);
   const [editPin, setEditPin] = useState<Pin | null>(null);
   const [sortBy, setSortBy] = useState<"date" | "title">("date");
+  const [livestreams, setLivestreams] = useState<Livestream[]>([]);
 
   const loadAll = useCallback(async () => {
     setLoadingFeatured(true);
@@ -107,6 +110,16 @@ export default function EducationPage() {
   }, []);
 
   useEffect(() => { loadAll(); }, [loadAll]);
+
+  // Fetch active livestreams and poll every 60s
+  useEffect(() => {
+    const loadStreams = () => {
+      fetchLivestreams().then(setLivestreams).catch(() => {});
+    };
+    loadStreams();
+    const interval = setInterval(loadStreams, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const loadPins = useCallback(async (board: Pinboard) => {
     setLoadingPins(true);
@@ -199,6 +212,9 @@ export default function EducationPage() {
             Curated collections of educational content, articles, links, and media bitcoin.
           </p>
         </div>
+
+        {/* Active Livestreams */}
+        <LivestreamPlayer streams={livestreams} />
 
         {/* Tab Navigation */}
         <div className="flex justify-center gap-4 mb-10">
