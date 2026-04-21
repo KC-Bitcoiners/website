@@ -1,4 +1,4 @@
-import { bech32 } from "@scure/base";
+import { bech32, bech32m } from "@scure/base";
 
 function hexToBytes(hex: string): Uint8Array {
   const bytes = new Uint8Array(hex.length / 2);
@@ -103,7 +103,7 @@ export function naddrEncode(opts: { d: string; pubkey: string; kind: number; rel
     offset += entry.value.length;
   }
 
-  return bech32.encode("naddr", bech32.toWords(buf));
+  return bech32m.encode("naddr", bech32m.toWords(buf), false);
 }
 
 function kindToVarUint(kind: number): Uint8Array {
