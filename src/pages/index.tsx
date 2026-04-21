@@ -5,9 +5,6 @@ import NewsletterForm from "@/components/NewsletterForm";
 import { config, newsletterConfig, basePath } from "@/config";
 
 export default function Home() {
-  console.log('🏠 Home page - config.images.hero:', config.site.images.hero);
-  console.log('🏠 Home page - config.site.organization.name:', config.site.organization.name);
-  
   return (
     <>
       <Head>
