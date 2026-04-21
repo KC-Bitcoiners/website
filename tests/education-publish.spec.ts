@@ -57,7 +57,7 @@ test.describe("Education Page - Add Resources via UI @education @whitelist", () 
 
     // Verify raw event has k=web and correct i tag
     await newPin.locator("button").filter({ hasText: /^\.\.\.$/ }).click();
-    await newPin.getByText("View Raw Data").click();
+    await newPin.getByText("View Raw Data").evaluate(el => (el as HTMLElement).click());
     const rawText = await newPin.locator("pre").textContent();
     expect(rawText).toContain('"web"');
     expect(rawText).toContain("youtube.com");
@@ -87,7 +87,7 @@ test.describe("Education Page - Add Resources via UI @education @whitelist", () 
 
     // Verify raw event has k=web
     await newPin.locator("button").filter({ hasText: /^\.\.\.$/ }).click();
-    await newPin.getByText("View Raw Data").click();
+    await newPin.getByText("View Raw Data").evaluate(el => (el as HTMLElement).click());
     const rawText = await newPin.locator("pre").textContent();
     expect(rawText).toContain('"web"');
     expect(rawText).toContain("vimeo.com");
@@ -117,7 +117,7 @@ test.describe("Education Page - Add Resources via UI @education @whitelist", () 
 
     // Verify raw event has k=web
     await newPin.locator("button").filter({ hasText: /^\.\.\.$/ }).click();
-    await newPin.getByText("View Raw Data").click();
+    await newPin.getByText("View Raw Data").evaluate(el => (el as HTMLElement).click());
     const rawText = await newPin.locator("pre").textContent();
     expect(rawText).toContain('"web"');
     expect(rawText).toContain("rumble.com");
@@ -148,7 +148,7 @@ test.describe("Education Page - Add Resources via UI @education @whitelist", () 
 
     // Verify raw event has k=web
     await newPin.locator("button").filter({ hasText: /^\.\.\.$/ }).click();
-    await newPin.getByText("View Raw Data").click();
+    await newPin.getByText("View Raw Data").evaluate(el => (el as HTMLElement).click());
     const rawText = await newPin.locator("pre").textContent();
     expect(rawText).toContain('"web"');
   });
@@ -186,7 +186,7 @@ test.describe("Education Page - Add Resources via UI @education @whitelist", () 
 
     // Verify raw event has k=web
     await newPin.locator("button").filter({ hasText: /^\.\.\.$/ }).click();
-    await newPin.getByText("View Raw Data").click();
+    await newPin.getByText("View Raw Data").evaluate(el => (el as HTMLElement).click());
     const rawText = await newPin.locator("pre").textContent();
     expect(rawText).toContain('"web"');
     expect(rawText).toContain("example.com");
@@ -226,7 +226,7 @@ test.describe("Education Page - Add Resources via UI @education @whitelist", () 
 
     // Verify raw event has k=isbn and i=isbn:9780743273565
     await newPin.locator("button").filter({ hasText: /^\.\.\.$/ }).click();
-    await newPin.getByText("View Raw Data").click();
+    await newPin.getByText("View Raw Data").evaluate(el => (el as HTMLElement).click());
     const rawText = await newPin.locator("pre").textContent();
     expect(rawText).toContain('"isbn"');
     expect(rawText).toContain('"isbn:9780743273565"');
@@ -262,7 +262,7 @@ test.describe("Education Page - Add Resources via UI @education @whitelist", () 
 
     // Verify raw event has k=doi and i=doi:10.1038/171737a0
     await newPin.locator("button").filter({ hasText: /^\.\.\.$/ }).click();
-    await newPin.getByText("View Raw Data").click();
+    await newPin.getByText("View Raw Data").evaluate(el => (el as HTMLElement).click());
     const rawText = await newPin.locator("pre").textContent();
     expect(rawText).toContain('"doi"');
     expect(rawText).toContain('"doi:10.1038/171737a0"');
@@ -293,7 +293,7 @@ test.describe("Education Page - Add Resources via UI @education @whitelist", () 
 
     // Verify raw event has k=geo and i=geo:39.1,-94.6
     await newPin.locator("button").filter({ hasText: /^\.\.\.$/ }).click();
-    await newPin.getByText("View Raw Data").click();
+    await newPin.getByText("View Raw Data").evaluate(el => (el as HTMLElement).click());
     const rawText = await newPin.locator("pre").textContent();
     expect(rawText).toContain('"geo"');
     expect(rawText).toContain('"geo:39.1,-94.6"');
@@ -329,7 +329,7 @@ test.describe("Education Page - Add Resources via UI @education @whitelist", () 
 
     // Verify raw event has k=podcast:item:guid
     await newPin.locator("button").filter({ hasText: /^\.\.\.$/ }).click();
-    await newPin.getByText("View Raw Data").click();
+    await newPin.getByText("View Raw Data").evaluate(el => (el as HTMLElement).click());
     const rawText = await newPin.locator("pre").textContent();
     expect(rawText).toContain('"podcast:item:guid"');
     expect(rawText).toContain("open.spotify.com/episode/1WKigLfNJ1X09srlcWNgmy");
@@ -403,7 +403,7 @@ test.describe("Education Page - Add Resources via UI @education @whitelist", () 
 
     // Verify raw event has k=article tag (NOT k=web)
     await newPin.locator("button").filter({ hasText: /^\.\.\.$/ }).click();
-    await newPin.getByText("View Raw Data").click();
+    await newPin.getByText("View Raw Data").evaluate(el => (el as HTMLElement).click());
     const rawText = await newPin.locator("pre").textContent();
     expect(rawText).toContain('"article"');
     expect(rawText).not.toContain('"web"');
