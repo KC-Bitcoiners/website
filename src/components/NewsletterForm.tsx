@@ -6,6 +6,7 @@ const FORMSTR_URL =
 export default function NewsletterForm() {
   return (
     <iframe
+      sandbox="allow-scripts allow-same-origin allow-forms"
       src={FORMSTR_URL}
       height="700px"
       width="100%"

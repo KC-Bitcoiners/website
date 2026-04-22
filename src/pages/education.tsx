@@ -643,6 +643,7 @@ function PinCard({ pin, onDelete, onEdit, onOpenArticle }: { pin: Pin; onDelete:
         <div className="w-full" style={{ aspectRatio: "16/9" }}>
           {ytId && (
             <iframe
+              sandbox="allow-scripts allow-presentation"
               src={`https://www.youtube.com/embed/${ytId}`}
               title={pin.title || "YouTube video"}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -652,6 +653,7 @@ function PinCard({ pin, onDelete, onEdit, onOpenArticle }: { pin: Pin; onDelete:
           )}
           {vimeoId && (
             <iframe
+              sandbox="allow-scripts allow-presentation"
               src={`https://player.vimeo.com/video/${vimeoId}`}
               title={pin.title || "Vimeo video"}
               allow="autoplay; fullscreen; picture-in-picture"
@@ -661,6 +663,7 @@ function PinCard({ pin, onDelete, onEdit, onOpenArticle }: { pin: Pin; onDelete:
           )}
           {rumbleId && (
             <iframe
+              sandbox="allow-scripts allow-presentation"
               src={`https://rumble.com/embed/${rumbleId}/`}
               title={pin.title || "Rumble video"}
               allowFullScreen
@@ -674,6 +677,7 @@ function PinCard({ pin, onDelete, onEdit, onOpenArticle }: { pin: Pin; onDelete:
       {dt === "podcast" && isSpotifyShow && (
         <div className="w-full">
           <iframe
+            sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
             src={pin.externalRef!.replace("open.spotify.com/show/", "open.spotify.com/embed/show/") + "?utm_source=generator&theme=0"}
             title={pin.title || "Podcast"}
             width="100%"
@@ -690,6 +694,7 @@ function PinCard({ pin, onDelete, onEdit, onOpenArticle }: { pin: Pin; onDelete:
       {dt === "podcast-episode" && spotifyEpisodeId && (
         <div className="w-full">
           <iframe
+            sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
             src={`https://open.spotify.com/embed/episode/${spotifyEpisodeId}?utm_source=generator&theme=0`}
             title={pin.title || "Podcast Episode"}
             width="100%"
