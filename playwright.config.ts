@@ -23,6 +23,7 @@ const hasExistingServer = !!process.env.E2E_BASE_URL;
 
 export default defineConfig({
   testDir: "./tests",
+  testIgnore: /.*\.test\.ts$/,
   fullyParallel: true,
   forbidOnly: isCI,
   retries: isCI ? 2 : 0,
