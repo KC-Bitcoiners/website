@@ -17,6 +17,7 @@ export default function NostrLogin({
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [newNsec, setNewNsec] = useState<string | null>(null);
+  const [showNsec, setShowNsec] = useState(false);
 
   const handleExtensionLogin = async () => {
     setIsLoggingIn(true);
@@ -87,6 +88,29 @@ export default function NostrLogin({
     );
   }
 
+  // Download the nsec as a text file
+  const handleDownloadNsec = () => {
+    if (!newNsec) return;
+    try {
+      const blob = new Blob([newNsec], { type: "text/plain; charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      // Build a safe filename from the npub (first 4 chars after the prefix)
+      const shortId = user?.npub?.slice(5, 9) || "key";
+      const filename = `nostr-${shortId}.nsec.txt`;
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch {
+      // Fallback: copy to clipboard
+      navigator.clipboard.writeText(newNsec).catch(() => {});
+    }
+  };
+
   // Show newly generated nsec with a warning to save it
   if (newNsec) {
     return (
@@ -99,26 +123,49 @@ export default function NostrLogin({
               Save Your Private Key!
             </h3>
             <p className="text-sm text-yellow-700">
-              This is your private key (nsec). You will{" "}
-              <strong>never</strong> see it again. Save it somewhere safe. Anyone
-              with this key can access your account.
+              This is your private key (nsec). Your key is{" "}
+              <strong>not stored</strong> in this browser &mdash; if you lose it,
+              you lose access to your account. Save it somewhere safe.
             </p>
           </div>
 
-          <div className="bg-white p-3 rounded border border-yellow-300">
-            <p
-              className="text-xs font-mono break-all text-gray-900 select-all"
-              data-testid="new-nsec"
+          <div className="relative bg-white p-3 rounded border border-yellow-300">
+            {showNsec ? (
+              <p
+                className="text-xs font-mono break-all text-gray-900 select-all"
+                data-testid="new-nsec"
+              >
+                {newNsec}
+              </p>
+            ) : (
+              <p
+                className="text-xs font-mono break-all text-gray-400"
+                data-testid="new-nsec-hidden"
+              >
+                {"*".repeat(30)}
+              </p>
+            )}
+            <button
+              onClick={() => setShowNsec(!showNsec)}
+              className="absolute top-2 right-2 text-xs text-gray-500 hover:text-gray-700 px-1"
+              title={showNsec ? "Hide key" : "Show key"}
             >
-              {newNsec}
-            </p>
+              {showNsec ? "Hide" : "Show"}
+            </button>
           </div>
+
+          <button
+            onClick={handleDownloadNsec}
+            className="w-full px-4 py-2 bg-yellow-500 text-white rounded-lg font-semibold hover:bg-yellow-600 transition-colors"
+          >
+            Download Key File
+          </button>
 
           <button
             onClick={() => {
               navigator.clipboard.writeText(newNsec).catch(() => {});
             }}
-            className="w-full px-4 py-2 bg-yellow-500 text-white rounded-lg font-semibold hover:bg-yellow-600 transition-colors"
+            className="w-full px-4 py-2 border border-yellow-500 text-yellow-700 rounded-lg font-semibold hover:bg-yellow-100 transition-colors"
           >
             Copy to Clipboard
           </button>
@@ -247,7 +294,8 @@ export default function NostrLogin({
         )}
 
         <div className="text-xs text-gray-500 text-center">
-          Your keys are stored locally in your browser
+          Your private key stays in memory only and is never persisted to storage.
+          Make sure to back it up before closing this tab.
         </div>
       </div>
     </div>
