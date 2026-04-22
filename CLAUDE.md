@@ -200,6 +200,89 @@ All deployments trigger on push to `master`. The site is a static export — no 
 - Manages A record for relay.kcbitcoiners.com (139.144.226.121)
 - Only triggers on changes to `terraform/` directory
 
+## Client-Side Data Flow (RxJS + Nostr)
+
+The app is deliberately **stateless outside the React UI layer**. All Nostr subscriptions, relay reads, and derived state are expressed as cold RxJS observables that React mounts and unmounts via `use$` from `applesauce-react/hooks`. Pages are independent — navigating between them never requires starting/stopping a background service or reconciling shared mutable state.
+
+### Core Rules
+
+1. **No `.subscribe()` outside React components.** Nothing — utility modules, contexts, `lib/`, hooks, anywhere — should call `.subscribe()` directly. The only legitimate way to start a subscription is `use$` inside a component. That's what ties the subscription's lifetime to the component's mount/unmount.
+2. **Build the observable where it's used.** If only one view needs a live subscription, construct it inline inside `use$` — no utility module required. Only promote an observable to a shared module (`src/utils/…`) when two or more components legitimately consume the same stream; in that case export it as a cold `Observable<T>` (conventionally `…$`-suffixed) and add `shareReplay(1)` if the upstream is expensive.
+3. **No module-level state.** Don't cache fetched events, profiles, or subscription results in module-scoped variables. The event store / relay pool already holds what needs to persist — read from it via an observable.
+4. **Derive, don't store.** Use RxJS operators (`map`, `filter`, `combineLatest`, `scan`, etc.) to transform upstream streams. Don't write derived values into a variable callers have to remember to refresh.
+5. **Never start services.** No `initX()` / `startX()` / `stopX()` helpers. If something only makes sense while a component is mounted, express it as an observable that component subscribes to via `use$`.
+
+### Why This Matters
+
+Statefulness outside the UI layer introduces hidden lifecycles — observables that start at import, leak subscriptions, or retain stale data when the user navigates away. Keeping subscription lifetime bound to component mount/unmount gives us:
+
+- A page that isn't mounted does zero work — no relay reads, no event-store queries
+- No "is this service started?" question anywhere in the app
+- Tests don't need to reset module state between runs
+- Multiple components that happen to want the same data share it via a `shareReplay(1)` observable — no hand-rolled cache
+
+### Canonical Pattern — Inline (default)
+
+Construct the observable directly inside `use$`. This is the right default: no file, no indirection, and the subscription disappears the moment the component unmounts. Example from `src/pages/education.tsx`:
+
+```tsx
+const liveStreamFilters = useMemo(
+  () => [
+    {
+      kinds: [kinds.LiveEvent],
+      authors: WHITELISTED_PUBKEYS,
+      since: unixNow() - ONE_DAY,
+    },
+    {
+      kinds: [kinds.LiveEvent],
+      "#p": WHITELISTED_PUBKEYS,
+      since: unixNow() - ONE_DAY,
+    },
+  ],
+  [],
+);
+
+// Open a live relay subscription and feed it into the event store
+use$(
+  () =>
+    pool
+      .subscription(nostrRelays, liveStreamFilters)
+      .pipe(onlyEvents(), mapEventsToStore(eventStore)),
+  [liveStreamFilters],
+);
+
+// Read a live timeline back out of the event store
+const livestreams = use$(
+  () =>
+    eventStore
+      .timeline(liveStreamFilters)
+      .pipe(castTimelineStream(Stream, eventStore)),
+  [liveStreamFilters],
+);
+```
+
+### Canonical Pattern — Shared observable (only when reused)
+
+Promote to a module-level cold observable only when multiple components need the same stream. Export it as `…$` and pipe through `shareReplay(1)` so the upstream relay query isn't duplicated per subscriber:
+
+```ts
+// src/utils/someFeed.ts
+export const someFeed$ = pool
+  .subscription(nostrRelays, filters)
+  .pipe(onlyEvents(), mapEventsToStore(eventStore), shareReplay(1));
+```
+
+```tsx
+// any component that needs it
+const feed = use$(() => someFeed$, []);
+```
+
+Don't preemptively extract. "One day another page might want this" is not a reason — extract when the second consumer actually shows up.
+
+### Actions (writes) are different
+
+One-shot writes — publishing, signing, deleting — are plain async functions and don't need observables. See `src/utils/pinboardEvents.ts`, `src/utils/newsletterEvents.ts`, `src/utils/committeeEvents.ts`. The rules above apply to **reads / live subscriptions**, not to imperative user-triggered actions.
+
 ## Key Patterns
 
 - **Nostr events are immutable**: Edits use replaceable events (kind 30000+ with d-tag)

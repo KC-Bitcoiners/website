@@ -1,9 +1,10 @@
-import React, { useEffect, useRef } from "react";
+import type { Stream } from "applesauce-common/casts";
+import { use$ } from "applesauce-react/hooks";
 import Hls from "hls.js";
-import { Livestream } from "@/utils/livestreams";
+import { useEffect, useRef } from "react";
 
 interface LivestreamPlayerProps {
-  streams: Livestream[];
+  streams: Stream[];
 }
 
 export default function LivestreamPlayer({ streams }: LivestreamPlayerProps) {
@@ -27,20 +28,22 @@ export default function LivestreamPlayer({ streams }: LivestreamPlayerProps) {
   );
 }
 
-function StreamCard({ stream }: { stream: Livestream }) {
+function StreamCard({ stream }: { stream: Stream }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
 
+  const url = stream.streamingVideos[0] ?? stream.streamingURLs[0];
+
   useEffect(() => {
     const video = videoRef.current;
-    if (!video || !stream.streamingUrl) return;
+    if (!video || !url) return;
 
     if (Hls.isSupported()) {
       const hls = new Hls({
         enableWorker: true,
         lowLatencyMode: true,
       });
-      hls.loadSource(stream.streamingUrl);
+      hls.loadSource(url);
       hls.attachMedia(video);
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         video.play().catch(() => {});
@@ -53,12 +56,15 @@ function StreamCard({ stream }: { stream: Livestream }) {
       };
     } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
       // Native HLS support (Safari)
-      video.src = stream.streamingUrl;
+      video.src = url;
       video.addEventListener("loadedmetadata", () => {
         video.play().catch(() => {});
       });
     }
-  }, [stream.streamingUrl]);
+  }, [url]);
+
+  // Get hosts display name from stream event
+  const hostDisplayName = use$(stream.host.profile$.displayName)
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
@@ -93,7 +99,7 @@ function StreamCard({ stream }: { stream: Livestream }) {
           </div>
 
           <div className="mt-4 text-xs text-gray-400">
-            Host: {stream.host.pubkey.slice(0, 12)}...
+            Host: {hostDisplayName || stream.host.pubkey.slice(0, 12) + '...'}
           </div>
         </div>
       </div>

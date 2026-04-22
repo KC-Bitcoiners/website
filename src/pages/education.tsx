@@ -1,38 +1,50 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { Stream } from "applesauce-common/casts";
+import { castTimelineStream } from "applesauce-common/observable";
+import { mapEventsToStore } from "applesauce-core";
+import { kinds, unixNow } from "applesauce-core/helpers";
+import { use$ } from "applesauce-react/hooks";
+import { onlyEvents } from "applesauce-relay/operators";
 import Head from "next/head";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
-import { config, siteConfig, basePath, nostrRelays } from "@/config";
+import EventActions from "@/components/EventActions";
+import LivestreamPlayer from "@/components/LivestreamPlayer";
+import {
+  basePath,
+  config,
+  nostrRelays,
+  siteConfig,
+  WHITELISTED_PUBKEYS,
+} from "@/config";
+import { useNostr } from "@/contexts/NostrContext";
 import { naddrEncode } from "@/utils/bech32";
+import { logger } from "@/utils/logger";
 import {
   buildNewsletterEvent,
   publishNewsletter,
 } from "@/utils/newsletterEvents";
-import { fetchLivestreams, Livestream } from "@/utils/livestreams";
-import LivestreamPlayer from "@/components/LivestreamPlayer";
 import {
-  fetchPinboards,
-  fetchFeaturedPins,
-  fetchPinsForBoard,
-  buildPinEvent,
-  buildDeleteEvent,
-  publishPin,
-  publishDelete,
-  buildPinboardEvent,
-  publishPinboard,
-  Pinboard,
-  Pin,
-  DisplayType,
-  getDisplayType,
-  DISPLAY_TYPE_CONFIG,
   ALL_DISPLAY_TYPES,
-  getPinUrl,
+  buildDeleteEvent,
+  buildPinboardEvent,
+  buildPinEvent,
   detectContentKind,
   DetectedContent,
+  DISPLAY_TYPE_CONFIG,
+  DisplayType,
+  fetchFeaturedPins,
+  fetchPinboards,
+  fetchPinsForBoard,
+  getDisplayType,
+  getPinUrl,
+  Pin,
+  Pinboard,
+  publishDelete,
+  publishPin,
+  publishPinboard,
 } from "@/utils/pinboardEvents";
-import EventActions from "@/components/EventActions";
-import { logger } from "@/utils/logger";
-import { useNostr } from "@/contexts/NostrContext";
+import { eventStore, pool } from "../lib/nostr";
 
 function getYouTubeId(url: string): string | null {
   const match = url.match(
@@ -87,6 +99,9 @@ function getPodcastIndexEpisodeUrl(externalRef: string): string | null {
   return null;
 }
 
+/** One day in seconds */
+const ONE_DAY = 24 * 60 * 60;
+
 export default function EducationPage() {
   const { user, hasExtension, signEvent } = useNostr();
   const [pinboards, setPinboards] = useState<Pinboard[]>([]);
@@ -104,7 +119,34 @@ export default function EducationPage() {
   const [editPin, setEditPin] = useState<Pin | null>(null);
   const [sortBy, setSortBy] = useState<"date" | "title">("date");
   const [selectedArticle, setSelectedArticle] = useState<Pin | null>(null);
-  const [livestreams, setLivestreams] = useState<Livestream[]>([]);
+
+  const liveStreamFilters = useMemo(() => [
+    {
+      kinds: [kinds.LiveEvent],
+      authors: WHITELISTED_PUBKEYS,
+      since: unixNow() - ONE_DAY,
+    },
+    {
+      kinds: [kinds.LiveEvent],
+      "#p": WHITELISTED_PUBKEYS,
+      since: unixNow() - ONE_DAY,
+    },
+  ], [])
+
+  // Open a live subscription for streams
+  use$(
+    () =>
+      pool
+        .subscription(nostrRelays, liveStreamFilters)
+        .pipe(onlyEvents(), mapEventsToStore(eventStore)),
+    [liveStreamFilters],
+  );
+
+  // Watch the event store for live streams and cast to Stream class
+  const livestreams = use$(() =>
+    eventStore.timeline(liveStreamFilters).pipe(castTimelineStream(Stream, eventStore)),
+    [liveStreamFilters]
+  )
 
   const loadAll = useCallback(async () => {
     setLoadingFeatured(true);
@@ -127,18 +169,6 @@ export default function EducationPage() {
   useEffect(() => {
     loadAll();
   }, [loadAll]);
-
-  // Fetch active livestreams and poll every 60s
-  useEffect(() => {
-    const loadStreams = () => {
-      fetchLivestreams()
-        .then(setLivestreams)
-        .catch(() => {});
-    };
-    loadStreams();
-    const interval = setInterval(loadStreams, 60000);
-    return () => clearInterval(interval);
-  }, []);
 
   const loadPins = useCallback(async (board: Pinboard) => {
     setLoadingPins(true);
@@ -339,7 +369,7 @@ export default function EducationPage() {
           })()}
 
         {/* Active Livestreams */}
-        <LivestreamPlayer streams={livestreams} />
+        <LivestreamPlayer streams={livestreams ?? []} />
 
         {/* Tab Navigation */}
         <div className="flex justify-center gap-4 mb-10">
