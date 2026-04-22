@@ -83,10 +83,19 @@ jobs:
           ls -lah out
           if [[ "${{ inputs.env }}" == "prod" ]]; then
             bucket=kcbitcoiners.com/
-            did="${{ secrets.CLOUDFRONT_DIST_ID_PROD }}"
+            domain=kcbitcoiners.com
           else
             bucket=dev.kcbitcoiners.com/
-            did="${{ secrets.CLOUDFRONT_DIST_ID_DEV }}"
+            domain=dev.kcbitcoiners.com
           fi
+          # Look up CloudFront distribution ID by domain alias
+          did=$(aws cloudfront list-distributions \
+            --query "DistributionList.Items[?Aliases.Items[?contains(@,'${domain}')]].Id" \
+            --output text)
+          if [[ -z "$did" ]]; then
+            echo "ERROR: No CloudFront distribution found for ${domain}"
+            exit 1
+          fi
+          echo "CloudFront distribution: ${did}"
           aws s3 sync out/ s3://${bucket} --delete
           aws cloudfront create-invalidation --distribution-id $did --paths "/*"
