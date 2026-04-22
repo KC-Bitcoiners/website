@@ -46,39 +46,59 @@ export async function fetchLivestreams(): Promise<Livestream[]> {
   return new Promise((resolve) => {
     const timeout = setTimeout(() => resolve([]), 15000);
     const rawEvents: any[] = [];
+    let pending = 2; // Two parallel queries: by #p tag and by authors
 
+    const onDone = () => {
+      clearTimeout(timeout);
+
+      // Deduplicate by d tag (keep most recent)
+      const seen = new Map<string, any>();
+      for (const e of rawEvents) {
+        const d = getTag(e.tags, "d");
+        const existing = seen.get(d);
+        if (!existing || e.created_at > existing.created_at) {
+          seen.set(d, e);
+        }
+      }
+
+      const liveStreams = Array.from(seen.values())
+        .map(parseLivestream)
+        .filter((s) => s.status === "live")
+        .sort((a, b) => b.created_at - a.created_at);
+
+      resolve(liveStreams.slice(0, 1));
+    };
+
+    const onError = () => {
+      pending--;
+      if (pending === 0) onDone();
+    };
+
+    const handler = {
+      next: (event: any) => rawEvents.push(event),
+      error: onError,
+      complete: () => {
+        pending--;
+        if (pending === 0) onDone();
+      },
+    };
+
+    // Query 1: events that tag a whitelisted pubkey (hosted by someone else)
     pool
       .request(relays, {
         kinds: [30311],
         "#p": WHITELISTED_PUBKEYS,
         limit: 50,
       })
-      .subscribe({
-        next: (event) => rawEvents.push(event),
-        error: () => {
-          clearTimeout(timeout);
-          resolve([]);
-        },
-        complete: () => {
-          clearTimeout(timeout);
+      .subscribe(handler);
 
-          // Deduplicate by d tag (keep most recent)
-          const seen = new Map<string, any>();
-          for (const e of rawEvents) {
-            const d = getTag(e.tags, "d");
-            const existing = seen.get(d);
-            if (!existing || e.created_at > existing.created_at) {
-              seen.set(d, e);
-            }
-          }
-
-          const liveStreams = Array.from(seen.values())
-            .map(parseLivestream)
-            .filter((s) => s.status === "live")
-            .sort((a, b) => b.created_at - a.created_at);
-
-          resolve(liveStreams.slice(0, 1));
-        },
-      });
+    // Query 2: events authored by whitelisted pubkeys (no p-tag needed)
+    pool
+      .request(relays, {
+        kinds: [30311],
+        authors: WHITELISTED_PUBKEYS,
+        limit: 50,
+      })
+      .subscribe(handler);
   });
 }
