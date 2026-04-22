@@ -32,12 +32,17 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Install dependencies
-        run: npm install
+        run: pnpm install --frozen-lockfile
 
       - name: Build and export Next.js application
         run: |
-          npm run build
+          pnpm run build
           node scripts/post-build.js
           ls -lah out/
 
@@ -72,15 +77,16 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: us-east-2
 
-      - name: Run AWS CLI Command (Example)
+      - name: Deploy to S3 and invalidate CloudFront
         run: |
           ls -lah
           ls -lah out
-          did="E1MUWYLHGG5S4S"
           if [[ "${{ inputs.env }}" == "prod" ]]; then
             bucket=kcbitcoiners.com/
+            did="${{ secrets.CLOUDFRONT_DIST_ID_PROD }}"
           else
             bucket=dev.kcbitcoiners.com/
+            did="${{ secrets.CLOUDFRONT_DIST_ID_DEV }}"
           fi
           aws s3 sync out/ s3://${bucket} --delete
           aws cloudfront create-invalidation --distribution-id $did --paths "/*"

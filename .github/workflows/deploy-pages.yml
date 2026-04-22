@@ -26,12 +26,17 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
       - name: Install dependencies
-        run: npm install
+        run: pnpm install --frozen-lockfile
 
       - name: Build and post-process
         run: |
-          npm run build
+          pnpm run build
           node scripts/post-build.js
         env:
           NEXT_SHARP_REQUIRE_CDN: 1
