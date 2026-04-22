@@ -107,7 +107,11 @@ export function NostrProvider({ children }: NostrProviderProps) {
       };
 
       setUser(userData);
-      localStorage.setItem("nostr_user", JSON.stringify(userData));
+      // Persist only non-sensitive fields — private key stays in memory only
+      localStorage.setItem("nostr_user", JSON.stringify({
+        pubkey: pubkeyHex,
+        npub,
+      }));
 
       // Return nsec for newly generated accounts so UI can display it
       return isGenerated ? { nsec } : undefined;
@@ -241,7 +245,9 @@ export function NostrProvider({ children }: NostrProviderProps) {
       if (metadata) {
         const updatedUser = { ...user, metadata };
         setUser(updatedUser);
-        localStorage.setItem("nostr_user", JSON.stringify(updatedUser));
+        // Strip private key before persisting to localStorage
+        const { privateKey: _, ...safeUser } = updatedUser;
+        localStorage.setItem("nostr_user", JSON.stringify(safeUser));
       }
     } catch (error) {
       console.error("Failed to refresh metadata:", error);

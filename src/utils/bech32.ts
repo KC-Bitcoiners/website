@@ -15,12 +15,11 @@ function bytesToHex(bytes: Uint8Array): string {
 }
 
 function randomBytes(n: number): Uint8Array {
-  const bytes = new Uint8Array(n);
-  if (typeof crypto !== "undefined" && crypto.getRandomValues) {
-    crypto.getRandomValues(bytes);
-  } else {
-    for (let i = 0; i < n; i++) bytes[i] = Math.floor(Math.random() * 256);
+  if (typeof crypto === "undefined" || !crypto.getRandomValues) {
+    throw new Error("crypto.getRandomValues is not available — cannot generate secure random bytes");
   }
+  const bytes = new Uint8Array(n);
+  crypto.getRandomValues(bytes);
   return bytes;
 }
 
