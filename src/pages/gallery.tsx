@@ -1,11 +1,14 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Head from "next/head";
+import { handleBrokenMedia } from "blossom-client-sdk";
 import { config, siteConfig, basePath } from "@/config";
 import {
   streamGalleryImages,
   GalleryImage,
   publishGalleryImage,
   uploadToBlossom,
+  buildGalleryBlossomURI,
+  getBlossomServers,
 } from "@/utils/galleryEvents";
 import { buildDeleteEvent, publishDelete } from "@/utils/pinboardEvents";
 import { useNostr } from "@/contexts/NostrContext";
@@ -24,6 +27,7 @@ export default function GalleryPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const { user, hasExtension, loginWithExtension, signEvent } = useNostr();
+  const mediaRootRef = useRef<HTMLDivElement>(null);
 
   // Modal accessibility: Escape key + scroll lock
   const closeImageModal = useCallback(() => setSelectedImage(null), []);
@@ -48,25 +52,57 @@ export default function GalleryPage() {
     };
   }, []);
 
-  const handleDeleteImage = async (image: GalleryImage) => {
+  // Auto-fallback for broken <img> elements via blossom-client-sdk: when an
+  // image fails to load, the SDK looks up the author's kind 10063 server list
+  // and tries each server in order. Also handles `blossom:` URI src values.
+  useEffect(() => {
+    if (!mediaRootRef.current) return;
+    return handleBrokenMedia(mediaRootRef.current, getBlossomServers);
+  }, []);
+
+  const handleDeleteImage = useCallback(async (image: GalleryImage) => {
     if (!user || user.pubkey !== image.pubkey) return;
     setImages((prev) => prev.filter((i) => i.id !== image.id));
-    if (selectedImage?.id === image.id) setSelectedImage(null);
-    const unsignedDelete = buildDeleteEvent({
-      eventId: image.id,
-      eventKind: image.kind,
-      reason: "Deleted by author",
-    });
-    const signedDelete = await signEvent(
-      unsignedDelete as {
-        kind: number;
-        content: string;
-        tags: string[][];
-        created_at: number;
-      },
-    );
+    setSelectedImage((prev) => (prev?.id === image.id ? null : prev));
+    const unsignedDelete = buildDeleteEvent({ eventId: image.id, eventKind: image.kind, reason: "Deleted by author" });
+    const signedDelete = await signEvent(unsignedDelete as { kind: number; content: string; tags: string[][]; created_at: number });
     await publishDelete(signedDelete);
-  };
+  }, [user, signEvent]);
+
+  const handleUploadSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setUploadError(null);
+    setUploading(true);
+    try {
+      if (!uploadForm.file || !uploadForm.caption) throw new Error("Please fill in all fields");
+      if (!user) throw new Error("You must be logged in to upload");
+      const descriptor = await uploadToBlossom(uploadForm.file, signEvent);
+      const blossomUri = buildGalleryBlossomURI(descriptor, uploadForm.file, user.pubkey);
+      const result = await publishGalleryImage(descriptor, uploadForm.caption, signEvent, user.pubkey, blossomUri);
+      if (!result.success) throw new Error(result.error || "Failed to upload");
+      const newImage: GalleryImage = {
+        id: result.eventId || `local-${Date.now()}`,
+        kind: 20,
+        pubkey: user.pubkey,
+        tags: [["imeta", `url ${descriptor.url} m ${descriptor.type || "image/jpeg"} alt ${uploadForm.caption}`]],
+        content: uploadForm.caption,
+        imageUrl: descriptor.url,
+        caption: uploadForm.caption,
+        created_at: Math.floor(Date.now() / 1000),
+        sha256: descriptor.sha256,
+        mimeType: descriptor.type,
+        size: descriptor.size,
+        blossomUri,
+      };
+      setImages((prev) => (prev.some((i) => i.id === newImage.id) ? prev : [newImage, ...prev]));
+      setShowUploadModal(false);
+      setUploadForm({ file: null, caption: "" });
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : "Failed to upload");
+    } finally {
+      setUploading(false);
+    }
+  }, [uploadForm, user, signEvent]);
 
   return (
     <>
@@ -79,7 +115,7 @@ export default function GalleryPage() {
         <link rel="icon" href={`${basePath}/favicon.ico`} />
       </Head>
 
-      <div className="container mx-auto px-4 py-12" data-testid="gallery-page">
+      <div className="container mx-auto px-4 py-12" data-testid="gallery-page" ref={mediaRootRef}>
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-black bitcoin-orange mb-4 font-archivo-black">
             Gallery
@@ -129,31 +165,11 @@ export default function GalleryPage() {
                 >
                   <img
                     src={image.imageUrl}
+                    data-pubkey={image.pubkey}
                     alt={image.caption || "Gallery image"}
                     className="w-full h-64 object-cover rounded-lg bg-gray-100"
                     loading="lazy"
-                    onError={(e) => {
-                      const el = e.target as HTMLImageElement;
-                      el.style.display = "none";
-                      const placeholder = el.nextElementSibling as HTMLElement;
-                      if (placeholder) placeholder.style.display = "flex";
-                    }}
                   />
-                  <div className="w-full h-64 bg-gray-100 rounded-lg items-center justify-center text-gray-400 hidden">
-                    <svg
-                      className="w-12 h-12"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1.5}
-                        d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z"
-                      />
-                    </svg>
-                  </div>
                   <div className="flex items-start justify-between gap-1">
                     <div className="flex-1 min-w-0">
                       {image.caption && (
@@ -233,6 +249,7 @@ export default function GalleryPage() {
               </button>
               <img
                 src={selectedImage.imageUrl}
+                data-pubkey={selectedImage.pubkey}
                 alt={selectedImage.caption || "Gallery image"}
                 className="max-w-full max-h-[80vh] object-contain rounded-lg shadow-2xl"
                 onError={(e) => {
@@ -332,58 +349,7 @@ export default function GalleryPage() {
                 </div>
               )}
 
-              <form
-                onSubmit={async (e) => {
-                  e.preventDefault();
-                  setUploadError(null);
-                  setUploading(true);
-                  try {
-                    if (!uploadForm.file || !uploadForm.caption)
-                      throw new Error("Please fill in all fields");
-                    const imageUrl = await uploadToBlossom(
-                      uploadForm.file,
-                      signEvent,
-                    );
-                    const result = await publishGalleryImage(
-                      imageUrl,
-                      uploadForm.caption,
-                      signEvent,
-                      user!.pubkey,
-                    );
-                    if (result.success) {
-                      const newImage: GalleryImage = {
-                        id: result.eventId || `local-${Date.now()}`,
-                        kind: 20,
-                        pubkey: user!.pubkey,
-                        tags: [
-                          [
-                            "imeta",
-                            `url ${imageUrl} m image/jpeg alt ${uploadForm.caption}`,
-                          ],
-                        ],
-                        content: uploadForm.caption,
-                        imageUrl,
-                        caption: uploadForm.caption,
-                        created_at: Math.floor(Date.now() / 1000),
-                      };
-                      setImages((prev) => {
-                        if (prev.some((i) => i.id === newImage.id)) return prev;
-                        return [newImage, ...prev];
-                      });
-                      setShowUploadModal(false);
-                      setUploadForm({ file: null, caption: "" });
-                    } else throw new Error(result.error || "Failed to upload");
-                  } catch (error) {
-                    setUploadError(
-                      error instanceof Error
-                        ? error.message
-                        : "Failed to upload",
-                    );
-                  } finally {
-                    setUploading(false);
-                  }
-                }}
-              >
+              <form onSubmit={handleUploadSubmit}>
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Image

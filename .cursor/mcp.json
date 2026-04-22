@@ -4,6 +4,9 @@
       "type": "stdio",
       "command": "npx",
       "args": ["-y", "@nostrbook/mcp@latest"]
+    },
+    "applesauce": {
+      "url": "https://mcp.applesauce.build/mcp"
     }
   }
 }
