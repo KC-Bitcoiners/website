@@ -127,8 +127,8 @@ export default function NostrLogin({
             </h3>
             <p className="text-sm text-yellow-700">
               This is your private key (nsec). Your key is{" "}
-              <strong>not stored</strong> in this browser &mdash; if you lose it,
-              you lose access to your account. Save it somewhere safe.
+              <strong>not stored</strong> in this browser &mdash; if you lose
+              it, you lose access to your account. Save it somewhere safe.
             </p>
           </div>
 
@@ -300,8 +300,8 @@ export default function NostrLogin({
         )}
 
         <div className="text-xs text-gray-500 text-center">
-          Your private key stays in memory only and is never persisted to storage.
-          Make sure to back it up before closing this tab.
+          Your private key stays in memory only and is never persisted to
+          storage. Make sure to back it up before closing this tab.
         </div>
       </div>
     </div>

@@ -129,7 +129,7 @@ export default function Layout({ children, className }: LayoutProps) {
               href="/"
               className="flex items-center gap-3 text-xl font-black bitcoin-orange uppercase tracking-wider font-archivo-black"
             >
-              {config.site.images.logo.startsWith('http') ? (
+              {config.site.images.logo.startsWith("http") ? (
                 <img
                   src={config.site.images.logo}
                   alt={config.site.organization.name}
@@ -146,7 +146,9 @@ export default function Layout({ children, className }: LayoutProps) {
                   className="h-8 w-auto"
                 />
               )}
-              <span className="hidden sm:inline">{config.site.organization.name}</span>
+              <span className="hidden sm:inline">
+                {config.site.organization.name}
+              </span>
             </Link>
 
             {/* Desktop Navigation */}
@@ -239,7 +241,10 @@ export default function Layout({ children, className }: LayoutProps) {
       <footer className="bg-black text-gray-400 py-8">
         <div className="container mx-auto px-6">
           <div className="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
-            <p>&copy; {new Date().getFullYear()} {config.site.organization.name} - All Rights Reserved.</p>
+            <p>
+              &copy; {new Date().getFullYear()} {config.site.organization.name}{" "}
+              - All Rights Reserved.
+            </p>
             <div className="flex items-center gap-4">
               <a
                 href={config.site.externalLinks.meetup.url}

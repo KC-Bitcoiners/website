@@ -6,7 +6,8 @@ import { nostrRelays, siteConfig } from "@/config";
 import { logger } from "@/utils/logger";
 
 // Default coordinates from config
-const { lat: DEFAULT_LAT, lon: DEFAULT_LON } = siteConfig.organization.coordinates;
+const { lat: DEFAULT_LAT, lon: DEFAULT_LON } =
+  siteConfig.organization.coordinates;
 
 // RochesterKC business data
 const ROCHESTERKC_DATA = {
@@ -27,8 +28,7 @@ const ROCHESTERKC_DATA = {
   email: "info@rochesterkc.com",
   twitter: "@RochesterKC",
   mastodon: "@rochesterkc@mastodon.social",
-  description:
-    `RochesterKC is a vibrant coworking space and Bitcoin community hub located in the Crossroads Arts District of ${siteConfig.organization.location}. We provide a collaborative environment for entrepreneurs, developers, and Bitcoin enthusiasts to work, network, and learn together.`,
+  description: `RochesterKC is a vibrant coworking space and Bitcoin community hub located in the Crossroads Arts District of ${siteConfig.organization.location}. We provide a collaborative environment for entrepreneurs, developers, and Bitcoin enthusiasts to work, network, and learn together.`,
   opening_hours: "Mon-Fri 9am-6pm, Sat 10am-4pm, Closed Sunday",
 };
 

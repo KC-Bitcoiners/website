@@ -11,7 +11,12 @@ interface CommitteeOpeningFormModalProps {
   onDone: () => void;
   onCancel: () => void;
   pubkey?: string;
-  signEvent?: (event: { kind: number; content: string; tags: string[][]; created_at: number }) => Promise<Record<string, unknown>>;
+  signEvent?: (event: {
+    kind: number;
+    content: string;
+    tags: string[][];
+    created_at: number;
+  }) => Promise<Record<string, unknown>>;
 }
 
 export default function CommitteeOpeningFormModal({
@@ -24,12 +29,17 @@ export default function CommitteeOpeningFormModal({
 }: CommitteeOpeningFormModalProps) {
   const isEditing = !!editOpening;
   const [title, setTitle] = useState(editOpening?.title || "");
-  const [description, setDescription] = useState(editOpening?.description || "");
+  const [description, setDescription] = useState(
+    editOpening?.description || "",
+  );
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState("");
 
   const handlePublish = async () => {
-    if (!title.trim()) { setError("Title is required"); return; }
+    if (!title.trim()) {
+      setError("Title is required");
+      return;
+    }
 
     setPublishing(true);
     setError("");
@@ -54,10 +64,20 @@ export default function CommitteeOpeningFormModal({
 
       let signedEvent;
       if (signEvent && pubkey) {
-        signedEvent = await signEvent(unsignedEvent as { kind: number; content: string; tags: string[][]; created_at: number });
+        signedEvent = await signEvent(
+          unsignedEvent as {
+            kind: number;
+            content: string;
+            tags: string[][];
+            created_at: number;
+          },
+        );
       } else if (window.nostr) {
         const pk = await window.nostr.getPublicKey();
-        signedEvent = await window.nostr.signEvent({ ...unsignedEvent, pubkey: pk });
+        signedEvent = await window.nostr.signEvent({
+          ...unsignedEvent,
+          pubkey: pk,
+        });
       }
       const success = await publishCommitteeOpening(signedEvent);
 
@@ -73,7 +93,10 @@ export default function CommitteeOpeningFormModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onCancel}>
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      onClick={onCancel}
+    >
       <div
         className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl"
         data-testid="opening-form-modal"
@@ -85,7 +108,9 @@ export default function CommitteeOpeningFormModal({
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Title *
+            </label>
             <input
               data-testid="opening-title"
               type="text"
@@ -97,7 +122,9 @@ export default function CommitteeOpeningFormModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Description
+            </label>
             <textarea
               data-testid="opening-description"
               value={description}
@@ -125,7 +152,11 @@ export default function CommitteeOpeningFormModal({
             disabled={publishing}
             className="flex-1 px-4 py-2 bg-bitcoin-orange text-white rounded-lg font-semibold hover:bg-bitcoin-orange-hover transition-colors disabled:opacity-50"
           >
-            {publishing ? "Publishing..." : isEditing ? "Update" : "Add Opening"}
+            {publishing
+              ? "Publishing..."
+              : isEditing
+                ? "Update"
+                : "Add Opening"}
           </button>
         </div>
       </div>

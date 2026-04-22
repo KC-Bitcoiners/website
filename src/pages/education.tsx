@@ -4,7 +4,10 @@ import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import { config, siteConfig, basePath, nostrRelays } from "@/config";
 import { naddrEncode } from "@/utils/bech32";
-import { buildNewsletterEvent, publishNewsletter } from "@/utils/newsletterEvents";
+import {
+  buildNewsletterEvent,
+  publishNewsletter,
+} from "@/utils/newsletterEvents";
 import { fetchLivestreams, Livestream } from "@/utils/livestreams";
 import LivestreamPlayer from "@/components/LivestreamPlayer";
 import {
@@ -33,7 +36,7 @@ import { useNostr } from "@/contexts/NostrContext";
 
 function getYouTubeId(url: string): string | null {
   const match = url.match(
-    /(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
+    /(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
   );
   return match ? match[1] : null;
 }
@@ -72,13 +75,15 @@ function getPodcastIndexShowUrl(externalRef: string): string | null {
     return `https://podcastindex.org/podcast/${encodeURIComponent(externalRef)}`;
   }
   const guid = getPodcastFeedGuid(externalRef);
-  if (guid) return `https://podcastindex.org/podcast/${encodeURIComponent(guid)}`;
+  if (guid)
+    return `https://podcastindex.org/podcast/${encodeURIComponent(guid)}`;
   return null;
 }
 
 function getPodcastIndexEpisodeUrl(externalRef: string): string | null {
   const guid = getPodcastGuid(externalRef);
-  if (guid) return `https://podcastindex.org/episode/${encodeURIComponent(guid)}`;
+  if (guid)
+    return `https://podcastindex.org/episode/${encodeURIComponent(guid)}`;
   return null;
 }
 
@@ -91,7 +96,9 @@ export default function EducationPage() {
   const [loadingFeatured, setLoadingFeatured] = useState(true);
   const [loadingBoards, setLoadingBoards] = useState(true);
   const [loadingPins, setLoadingPins] = useState(false);
-  const [displayFilter, setDisplayFilter] = useState<DisplayType | "all">("all");
+  const [displayFilter, setDisplayFilter] = useState<DisplayType | "all">(
+    "all",
+  );
   const [view, setView] = useState<"featured" | "boards">("featured");
   const [showAddPin, setShowAddPin] = useState(false);
   const [editPin, setEditPin] = useState<Pin | null>(null);
@@ -103,7 +110,10 @@ export default function EducationPage() {
     setLoadingFeatured(true);
     setLoadingBoards(true);
     try {
-      const [pins, boards] = await Promise.all([fetchFeaturedPins(), fetchPinboards()]);
+      const [pins, boards] = await Promise.all([
+        fetchFeaturedPins(),
+        fetchPinboards(),
+      ]);
       setFeaturedPins(pins.sort((a, b) => b.created_at - a.created_at));
       setPinboards(boards);
     } catch (err) {
@@ -114,12 +124,16 @@ export default function EducationPage() {
     }
   }, []);
 
-  useEffect(() => { loadAll(); }, [loadAll]);
+  useEffect(() => {
+    loadAll();
+  }, [loadAll]);
 
   // Fetch active livestreams and poll every 60s
   useEffect(() => {
     const loadStreams = () => {
-      fetchLivestreams().then(setLivestreams).catch(() => {});
+      fetchLivestreams()
+        .then(setLivestreams)
+        .catch(() => {});
     };
     loadStreams();
     const interval = setInterval(loadStreams, 60000);
@@ -137,11 +151,14 @@ export default function EducationPage() {
     setLoadingPins(false);
   }, []);
 
-  const handleBoardClick = useCallback((board: Pinboard) => {
-    setSelectedBoard(board);
-    setDisplayFilter("all");
-    loadPins(board);
-  }, [loadPins]);
+  const handleBoardClick = useCallback(
+    (board: Pinboard) => {
+      setSelectedBoard(board);
+      setDisplayFilter("all");
+      loadPins(board);
+    },
+    [loadPins],
+  );
 
   const handleBack = useCallback(() => {
     setSelectedBoard(null);
@@ -154,30 +171,44 @@ export default function EducationPage() {
     setEditPin(null);
     if (selectedBoard) loadPins(selectedBoard);
     // Re-fetch to pick up the new pin
-    fetchFeaturedPins().then((pins) => {
-      setFeaturedPins(pins.sort((a, b) => b.created_at - a.created_at));
-    }).catch(() => {});
-    fetchPinboards().then((boards) => setPinboards(boards)).catch(() => {});
+    fetchFeaturedPins()
+      .then((pins) => {
+        setFeaturedPins(pins.sort((a, b) => b.created_at - a.created_at));
+      })
+      .catch(() => {});
+    fetchPinboards()
+      .then((boards) => setPinboards(boards))
+      .catch(() => {});
   }, [selectedBoard, loadPins]);
 
-  const handleDeletePin = useCallback(async (pin: Pin) => {
-    if (!user || !pin.rawEvent) return;
-    // Only allow deleting your own pins
-    if (user.pubkey !== pin.pubkey) return;
+  const handleDeletePin = useCallback(
+    async (pin: Pin) => {
+      if (!user || !pin.rawEvent) return;
+      // Only allow deleting your own pins
+      if (user.pubkey !== pin.pubkey) return;
 
-    // Optimistically remove from local state
-    const pinId = pin.id;
-    setFeaturedPins((prev) => prev.filter((p) => p.id !== pinId));
-    setBoardPins((prev) => prev.filter((p) => p.id !== pinId));
+      // Optimistically remove from local state
+      const pinId = pin.id;
+      setFeaturedPins((prev) => prev.filter((p) => p.id !== pinId));
+      setBoardPins((prev) => prev.filter((p) => p.id !== pinId));
 
-    const unsignedDelete = buildDeleteEvent({
-      eventId: pin.id,
-      eventKind: 39067,
-      reason: "Deleted by author",
-    });
-    const signedDelete = await signEvent(unsignedDelete as { kind: number; content: string; tags: string[][]; created_at: number });
-    await publishDelete(signedDelete);
-  }, [user, signEvent]);
+      const unsignedDelete = buildDeleteEvent({
+        eventId: pin.id,
+        eventKind: 39067,
+        reason: "Deleted by author",
+      });
+      const signedDelete = await signEvent(
+        unsignedDelete as {
+          kind: number;
+          content: string;
+          tags: string[][];
+          created_at: number;
+        },
+      );
+      await publishDelete(signedDelete);
+    },
+    [user, signEvent],
+  );
 
   const handleEditPin = useCallback((pin: Pin) => {
     setEditPin(pin);
@@ -185,9 +216,10 @@ export default function EducationPage() {
   }, []);
 
   const activePins = view === "featured" ? featuredPins : boardPins;
-  const filteredPins = (displayFilter === "all"
-    ? activePins
-    : activePins.filter((p) => getDisplayType(p) === displayFilter)
+  const filteredPins = (
+    displayFilter === "all"
+      ? activePins
+      : activePins.filter((p) => getDisplayType(p) === displayFilter)
   ).sort((a, b) => {
     if (sortBy === "title") return (a.title || "").localeCompare(b.title || "");
     return b.created_at - a.created_at; // date desc (newest first)
@@ -196,14 +228,18 @@ export default function EducationPage() {
   // Get the default board coordinate for adding pins.
   // When a NIP-07 extension is present, always allow adding — the pinboard
   // will be auto-created on first publish if none exists yet.
-  const defaultBoardCoord = pinboards.length > 0 ? pinboards[0].coordinate : null;
+  const defaultBoardCoord =
+    pinboards.length > 0 ? pinboards[0].coordinate : null;
   const canAdd = !!defaultBoardCoord || !!user || hasExtension;
 
   return (
     <>
       <Head>
         <title>{config.pages.education.meta.title}</title>
-        <meta name="description" content={config.pages.education.meta.description} />
+        <meta
+          name="description"
+          content={config.pages.education.meta.description}
+        />
         <link rel="icon" href={`${basePath}/favicon.ico`} />
       </Head>
 
@@ -214,77 +250,93 @@ export default function EducationPage() {
             Education Resources
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Curated collections of educational content, articles, links, and media bitcoin.
+            Curated collections of educational content, articles, links, and
+            media bitcoin.
           </p>
         </div>
 
         {/* Article detail modal overlay */}
-        {selectedArticle && (() => {
-          // Build naddr for Yakihonne link from the article coordinate
-          let yakihonneUrl = "";
-          const coordRef = selectedArticle.coordinateRef;
-          if (coordRef) {
-            try {
-              const parts = coordRef.split(":");
-              const kind = parseInt(parts[0], 10);
-              const author = parts[1];
-              const identifier = parts[2];
-              if (identifier && author) {
-                const naddr = naddrEncode({ identifier, pubkey: author, kind, relays: nostrRelays });
-                yakihonneUrl = `https://yakihonne.com/article/${naddr}`;
+        {selectedArticle &&
+          (() => {
+            // Build naddr for Yakihonne link from the article coordinate
+            let yakihonneUrl = "";
+            const coordRef = selectedArticle.coordinateRef;
+            if (coordRef) {
+              try {
+                const parts = coordRef.split(":");
+                const kind = parseInt(parts[0], 10);
+                const author = parts[1];
+                const identifier = parts[2];
+                if (identifier && author) {
+                  const naddr = naddrEncode({
+                    identifier,
+                    pubkey: author,
+                    kind,
+                    relays: nostrRelays,
+                  });
+                  yakihonneUrl = `https://yakihonne.com/article/${naddr}`;
+                }
+              } catch (e) {
+                console.error("naddr encode error:", e);
               }
-            } catch (e) {
-              console.error("naddr encode error:", e);
             }
-          }
-          // Fallback: use eventRef (hex event ID) if naddr failed
-          if (!yakihonneUrl && selectedArticle.eventRef) {
-            yakihonneUrl = `https://yakihonne.com/article/${selectedArticle.eventRef}`;
-          }
-          return (
-            <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto" onClick={() => setSelectedArticle(null)}>
+            // Fallback: use eventRef (hex event ID) if naddr failed
+            if (!yakihonneUrl && selectedArticle.eventRef) {
+              yakihonneUrl = `https://yakihonne.com/article/${selectedArticle.eventRef}`;
+            }
+            return (
               <div
-                className="bg-white rounded-xl w-full max-w-3xl p-6 shadow-xl my-8"
-                onClick={(e) => e.stopPropagation()}
+                className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto"
+                onClick={() => setSelectedArticle(null)}
               >
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded bg-orange-100 text-orange-700">
-                      📰 Article
-                    </span>
-                    <span className="text-xs text-gray-400">
-                      {new Date(selectedArticle.created_at * 1000).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => setSelectedArticle(null)}
-                    className="text-gray-400 hover:text-gray-600 text-xl font-bold"
-                  >
-                    &times;
-                  </button>
-                </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">{selectedArticle.title}</h2>
-                {selectedArticle.content && (
-                  <div className="prose prose-sm max-w-none text-gray-700 mb-4">
-                    <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{selectedArticle.content}</ReactMarkdown>
-                  </div>
-                )}
-                <div className="pt-4 border-t border-gray-100 flex items-center gap-4">
-                  {yakihonneUrl && (
-                    <a
-                      href={yakihonneUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-bitcoin-orange hover:underline font-semibold"
+                <div
+                  className="bg-white rounded-xl w-full max-w-3xl p-6 shadow-xl my-8"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded bg-orange-100 text-orange-700">
+                        📰 Article
+                      </span>
+                      <span className="text-xs text-gray-400">
+                        {new Date(
+                          selectedArticle.created_at * 1000,
+                        ).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => setSelectedArticle(null)}
+                      className="text-gray-400 hover:text-gray-600 text-xl font-bold"
                     >
-                      Open in Yakihonne &rarr;
-                    </a>
+                      &times;
+                    </button>
+                  </div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                    {selectedArticle.title}
+                  </h2>
+                  {selectedArticle.content && (
+                    <div className="prose prose-sm max-w-none text-gray-700 mb-4">
+                      <ReactMarkdown rehypePlugins={[rehypeSanitize]}>
+                        {selectedArticle.content}
+                      </ReactMarkdown>
+                    </div>
                   )}
+                  <div className="pt-4 border-t border-gray-100 flex items-center gap-4">
+                    {yakihonneUrl && (
+                      <a
+                        href={yakihonneUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-bitcoin-orange hover:underline font-semibold"
+                      >
+                        Open in Yakihonne &rarr;
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })()}
+            );
+          })()}
 
         {/* Active Livestreams */}
         <LivestreamPlayer streams={livestreams} />
@@ -293,9 +345,14 @@ export default function EducationPage() {
         <div className="flex justify-center gap-4 mb-10">
           <button
             data-testid="tab-featured"
-            onClick={() => { setView("featured"); handleBack(); }}
+            onClick={() => {
+              setView("featured");
+              handleBack();
+            }}
             className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
-              view === "featured" ? "bg-bitcoin-orange text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              view === "featured"
+                ? "bg-bitcoin-orange text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
             Featured Resources
@@ -304,7 +361,9 @@ export default function EducationPage() {
             data-testid="tab-boards"
             onClick={() => setView("boards")}
             className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
-              view === "boards" ? "bg-bitcoin-orange text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              view === "boards"
+                ? "bg-bitcoin-orange text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
             Pinboards
@@ -333,22 +392,33 @@ export default function EducationPage() {
             )}
 
             {/* Empty state — only when loading is done and nothing arrived */}
-            {!loadingFeatured && featuredPins.length === 0 && pinboards.length === 0 && !canAdd && (
-              <EmptyState />
-            )}
+            {!loadingFeatured &&
+              featuredPins.length === 0 &&
+              pinboards.length === 0 &&
+              !canAdd && <EmptyState />}
 
             {/* No results for filter */}
-            {!loadingFeatured && featuredPins.length > 0 && filteredPins.length === 0 && (
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-10 text-center">
-                <p className="text-gray-600">No resources match this filter.</p>
-              </div>
-            )}
+            {!loadingFeatured &&
+              featuredPins.length > 0 &&
+              filteredPins.length === 0 && (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-10 text-center">
+                  <p className="text-gray-600">
+                    No resources match this filter.
+                  </p>
+                </div>
+              )}
 
             {/* Pin grid — render as pins arrive */}
             {filteredPins.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredPins.map((pin) => (
-                  <PinCard key={pin.id} pin={pin} onDelete={() => handleDeletePin(pin)} onEdit={() => handleEditPin(pin)} onOpenArticle={setSelectedArticle} />
+                  <PinCard
+                    key={pin.id}
+                    pin={pin}
+                    onDelete={() => handleDeletePin(pin)}
+                    onEdit={() => handleEditPin(pin)}
+                    onOpenArticle={setSelectedArticle}
+                  />
                 ))}
               </div>
             )}
@@ -373,8 +443,17 @@ export default function EducationPage() {
                   data-testid="back-to-boards"
                   className="mb-6 flex items-center gap-2 text-bitcoin-orange hover:underline font-semibold"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                   Back to Boards
                 </button>
@@ -383,21 +462,38 @@ export default function EducationPage() {
                   <div className="flex flex-col md:flex-row gap-6">
                     {selectedBoard.image && (
                       <div className="w-full md:w-48 h-36 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                        <img src={selectedBoard.image} alt={selectedBoard.title} className="w-full h-full object-cover" />
+                        <img
+                          src={selectedBoard.image}
+                          alt={selectedBoard.title}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
                     )}
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h2 className="text-2xl font-black bitcoin-orange font-archivo-black">{selectedBoard.title}</h2>
+                        <h2 className="text-2xl font-black bitcoin-orange font-archivo-black">
+                          {selectedBoard.title}
+                        </h2>
                         {selectedBoard.collaborative && (
-                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-medium">Collaborative</span>
+                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-medium">
+                            Collaborative
+                          </span>
                         )}
                       </div>
-                      {selectedBoard.description && <p className="text-gray-600 mb-3">{selectedBoard.description}</p>}
+                      {selectedBoard.description && (
+                        <p className="text-gray-600 mb-3">
+                          {selectedBoard.description}
+                        </p>
+                      )}
                       {selectedBoard.tags.length > 0 && (
                         <div className="flex flex-wrap gap-2">
                           {selectedBoard.tags.map((tag) => (
-                            <span key={tag} className="text-sm bg-gray-100 text-gray-600 px-3 py-1 rounded-full">#{tag}</span>
+                            <span
+                              key={tag}
+                              className="text-sm bg-gray-100 text-gray-600 px-3 py-1 rounded-full"
+                            >
+                              #{tag}
+                            </span>
                           ))}
                         </div>
                       )}
@@ -422,7 +518,13 @@ export default function EducationPage() {
                     />
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {filteredPins.map((pin) => (
-                        <PinCard key={pin.id} pin={pin} onDelete={() => handleDeletePin(pin)} onEdit={() => handleEditPin(pin)} onOpenArticle={setSelectedArticle} />
+                        <PinCard
+                          key={pin.id}
+                          pin={pin}
+                          onDelete={() => handleDeletePin(pin)}
+                          onEdit={() => handleEditPin(pin)}
+                          onOpenArticle={setSelectedArticle}
+                        />
                       ))}
                     </div>
                   </>
@@ -443,21 +545,38 @@ export default function EducationPage() {
                   >
                     {board.image && (
                       <div className="w-full h-40 overflow-hidden bg-gray-100">
-                        <img src={board.image} alt={board.title} className="w-full h-full object-cover" />
+                        <img
+                          src={board.image}
+                          alt={board.title}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
                     )}
                     <div className="p-5">
                       <div className="flex items-start justify-between gap-2 mb-2">
-                        <h3 className="text-lg font-bold text-gray-900">{board.title}</h3>
+                        <h3 className="text-lg font-bold text-gray-900">
+                          {board.title}
+                        </h3>
                         {board.collaborative && (
-                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-medium whitespace-nowrap">Collaborative</span>
+                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded font-medium whitespace-nowrap">
+                            Collaborative
+                          </span>
                         )}
                       </div>
-                      {board.description && <p className="text-sm text-gray-600 line-clamp-2 mb-3">{board.description}</p>}
+                      {board.description && (
+                        <p className="text-sm text-gray-600 line-clamp-2 mb-3">
+                          {board.description}
+                        </p>
+                      )}
                       {board.tags.length > 0 && (
                         <div className="flex flex-wrap gap-1">
                           {board.tags.slice(0, 4).map((tag) => (
-                            <span key={tag} className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">#{tag}</span>
+                            <span
+                              key={tag}
+                              className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded"
+                            >
+                              #{tag}
+                            </span>
                           ))}
                         </div>
                       )}
@@ -472,9 +591,14 @@ export default function EducationPage() {
         {/* Add Pin Modal */}
         {showAddPin && (
           <AddPinModal
-            boardCoordinate={selectedBoard?.coordinate || defaultBoardCoord || "auto"}
+            boardCoordinate={
+              selectedBoard?.coordinate || defaultBoardCoord || "auto"
+            }
             onDone={handlePinAdded}
-            onCancel={() => { setShowAddPin(false); setEditPin(null); }}
+            onCancel={() => {
+              setShowAddPin(false);
+              setEditPin(null);
+            }}
             editPin={editPin}
           />
         )}
@@ -501,7 +625,10 @@ function FilterBar({
   onAddClick: () => void;
   canAdd: boolean;
 }) {
-  const counts = { all: pins.length, ...Object.fromEntries(ALL_DISPLAY_TYPES.map((t) => [t, 0])) } as Record<DisplayType | "all", number>;
+  const counts = {
+    all: pins.length,
+    ...Object.fromEntries(ALL_DISPLAY_TYPES.map((t) => [t, 0])),
+  } as Record<DisplayType | "all", number>;
   for (const pin of pins) {
     const dt = getDisplayType(pin);
     if (counts[dt] !== undefined) counts[dt]++;
@@ -513,7 +640,9 @@ function FilterBar({
         data-testid="filter-all"
         onClick={() => setFilter("all")}
         className={`px-4 py-2 rounded-lg font-semibold transition-colors text-sm ${
-          filter === "all" ? "bg-bitcoin-orange text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+          filter === "all"
+            ? "bg-bitcoin-orange text-white"
+            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
         }`}
       >
         All ({counts.all})
@@ -535,7 +664,10 @@ function FilterBar({
       })}
 
       {/* Sort controls */}
-      <div className="flex items-center gap-1 w-full sm:w-auto sm:ml-2 mt-2 sm:mt-0" data-testid="sort-controls">
+      <div
+        className="flex items-center gap-1 w-full sm:w-auto sm:ml-2 mt-2 sm:mt-0"
+        data-testid="sort-controls"
+      >
         <span className="text-xs text-gray-500 mr-1">Sort:</span>
         {(["date", "title"] as const).map((s) => (
           <button
@@ -543,7 +675,9 @@ function FilterBar({
             data-testid={`sort-${s}`}
             onClick={() => setSortBy(s)}
             className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
-              sortBy === s ? "bg-gray-800 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              sortBy === s
+                ? "bg-gray-800 text-white"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
           >
             {s === "date" ? "Newest" : "A-Z"}
@@ -575,14 +709,20 @@ function usePodcastFeedMeta(feedUrl: string | null): PodcastFeedMeta | null {
   const [meta, setMeta] = useState<PodcastFeedMeta | null>(null);
 
   useEffect(() => {
-    if (!feedUrl || !isRssFeed(feedUrl)) { setMeta(null); return; }
-    if (feedMetaCache.has(feedUrl)) { setMeta(feedMetaCache.get(feedUrl)!); return; }
+    if (!feedUrl || !isRssFeed(feedUrl)) {
+      setMeta(null);
+      return;
+    }
+    if (feedMetaCache.has(feedUrl)) {
+      setMeta(feedMetaCache.get(feedUrl)!);
+      return;
+    }
     const controller = new AbortController();
     // Use CORS proxy since static export can't have API routes
     const proxyUrl = `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(feedUrl)}`;
     fetch(proxyUrl, { signal: controller.signal })
-      .then(r => r.text())
-      .then(xml => {
+      .then((r) => r.text())
+      .then((xml) => {
         let imageUrl: string | null = null;
         let websiteUrl: string | null = null;
         const imgMatch = xml.match(/<itunes:image[^>]*href=["']([^"']+)["']/i);
@@ -604,22 +744,44 @@ function usePodcastFeedMeta(feedUrl: string | null): PodcastFeedMeta | null {
   return meta;
 }
 
-function PinCard({ pin, onDelete, onEdit, onOpenArticle }: { pin: Pin; onDelete: () => void; onEdit: () => void; onOpenArticle?: (pin: Pin) => void }) {
+function PinCard({
+  pin,
+  onDelete,
+  onEdit,
+  onOpenArticle,
+}: {
+  pin: Pin;
+  onDelete: () => void;
+  onEdit: () => void;
+  onOpenArticle?: (pin: Pin) => void;
+}) {
   const url = getPinUrl(pin);
   const dt = getDisplayType(pin);
   const ytId = dt === "youtube" ? getYouTubeId(pin.externalRef || "") : null;
   const vimeoId = dt === "youtube" ? getVimeoId(pin.externalRef || "") : null;
   const rumbleId = dt === "youtube" ? getRumbleId(pin.externalRef || "") : null;
   const isVideo = !!(ytId || vimeoId || rumbleId);
-  const spotifyEpisodeId = dt === "podcast-episode" ? getSpotifyEpisodeId(pin.externalRef || "") : null;
-  const podcastIndexShowUrl = dt === "podcast" ? getPodcastIndexShowUrl(pin.externalRef || "") : null;
-  const podcastIndexEpisodeUrl = dt === "podcast-episode" ? getPodcastIndexEpisodeUrl(pin.externalRef || "") : null;
-  const isSpotifyShow = dt === "podcast" && pin.externalRef?.includes("open.spotify.com");
-  const feedMeta = usePodcastFeedMeta(dt === "podcast" && !isSpotifyShow ? pin.externalRef || null : null);
+  const spotifyEpisodeId =
+    dt === "podcast-episode"
+      ? getSpotifyEpisodeId(pin.externalRef || "")
+      : null;
+  const podcastIndexShowUrl =
+    dt === "podcast" ? getPodcastIndexShowUrl(pin.externalRef || "") : null;
+  const podcastIndexEpisodeUrl =
+    dt === "podcast-episode"
+      ? getPodcastIndexEpisodeUrl(pin.externalRef || "")
+      : null;
+  const isSpotifyShow =
+    dt === "podcast" && pin.externalRef?.includes("open.spotify.com");
+  const feedMeta = usePodcastFeedMeta(
+    dt === "podcast" && !isSpotifyShow ? pin.externalRef || null : null,
+  );
   const cfg = DISPLAY_TYPE_CONFIG[dt];
-  const bookIsbn = dt === "book" ? pin.externalRef?.replace(/^isbn:/i, "") : null;
+  const bookIsbn =
+    dt === "book" ? pin.externalRef?.replace(/^isbn:/i, "") : null;
   const doiId = dt === "paper" ? pin.externalRef?.replace(/^doi:/i, "") : null;
-  const geoCoords = dt === "location" ? pin.externalRef?.replace(/^geo:/i, "") : null;
+  const geoCoords =
+    dt === "location" ? pin.externalRef?.replace(/^geo:/i, "") : null;
   const displayUrl = bookIsbn
     ? `https://www.bookfinder.com/isbn/${bookIsbn}/`
     : doiId
@@ -679,7 +841,12 @@ function PinCard({ pin, onDelete, onEdit, onOpenArticle }: { pin: Pin; onDelete:
         <div className="w-full">
           <iframe
             sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
-            src={pin.externalRef!.replace("open.spotify.com/show/", "open.spotify.com/embed/show/") + "?utm_source=generator&theme=0"}
+            src={
+              pin.externalRef!.replace(
+                "open.spotify.com/show/",
+                "open.spotify.com/embed/show/",
+              ) + "?utm_source=generator&theme=0"
+            }
             title={pin.title || "Podcast"}
             width="100%"
             height="152"
@@ -709,50 +876,91 @@ function PinCard({ pin, onDelete, onEdit, onOpenArticle }: { pin: Pin; onDelete:
       )}
 
       {/* Podcast fallback card (RSS feed / GUID — no Spotify embed) */}
-      {dt === "podcast" && !isSpotifyShow && (podcastIndexShowUrl || feedMeta) && (
-        <a
-          href={feedMeta?.websiteUrl || podcastIndexShowUrl || "#"}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="w-full flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-purple-50 to-indigo-50 hover:from-purple-100 hover:to-indigo-100 transition-colors"
-        >
-          {feedMeta?.imageUrl ? (
-            <img src={feedMeta.imageUrl} alt={pin.title || "Podcast"} className="w-12 h-12 rounded-lg object-cover shrink-0" loading="lazy" />
-          ) : (
-            <svg className="w-8 h-8 text-purple-600 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 1a9 9 0 0 0-9 9v7c0 1.66 1.34 3 3 3h3v-8H5v-2c0-3.87 3.13-7 7-7s7 3.13 7 7v2h-4v8h3c1.66 0 3-1.34 3-3v-7a9 9 0 0 0-9-9z"/>
+      {dt === "podcast" &&
+        !isSpotifyShow &&
+        (podcastIndexShowUrl || feedMeta) && (
+          <a
+            href={feedMeta?.websiteUrl || podcastIndexShowUrl || "#"}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-purple-50 to-indigo-50 hover:from-purple-100 hover:to-indigo-100 transition-colors"
+          >
+            {feedMeta?.imageUrl ? (
+              <img
+                src={feedMeta.imageUrl}
+                alt={pin.title || "Podcast"}
+                className="w-12 h-12 rounded-lg object-cover shrink-0"
+                loading="lazy"
+              />
+            ) : (
+              <svg
+                className="w-8 h-8 text-purple-600 shrink-0"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path d="M12 1a9 9 0 0 0-9 9v7c0 1.66 1.34 3 3 3h3v-8H5v-2c0-3.87 3.13-7 7-7s7 3.13 7 7v2h-4v8h3c1.66 0 3-1.34 3-3v-7a9 9 0 0 0-9-9z" />
+              </svg>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">
+                {pin.title || "Podcast"}
+              </p>
+              <p className="text-xs text-gray-500">
+                {feedMeta?.websiteUrl
+                  ? new URL(feedMeta.websiteUrl).hostname
+                  : "View on Podcast Index"}
+              </p>
+            </div>
+            <svg
+              className="w-4 h-4 text-gray-400 shrink-0"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
+                clipRule="evenodd"
+              />
             </svg>
-          )}
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">{pin.title || "Podcast"}</p>
-            <p className="text-xs text-gray-500">{feedMeta?.websiteUrl ? new URL(feedMeta.websiteUrl).hostname : "View on Podcast Index"}</p>
-          </div>
-          <svg className="w-4 h-4 text-gray-400 shrink-0" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd"/>
-          </svg>
-        </a>
-      )}
+          </a>
+        )}
 
       {/* Podcast Episode fallback card (GUID-based, no Spotify) */}
-      {dt === "podcast-episode" && !spotifyEpisodeId && podcastIndexEpisodeUrl && (
-        <a
-          href={podcastIndexEpisodeUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="w-full flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-purple-50 to-indigo-50 hover:from-purple-100 hover:to-indigo-100 transition-colors"
-        >
-          <svg className="w-8 h-8 text-purple-600 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 1a9 9 0 0 0-9 9v7c0 1.66 1.34 3 3 3h3v-8H5v-2c0-3.87 3.13-7 7-7s7 3.13 7 7v2h-4v8h3c1.66 0 3-1.34 3-3v-7a9 9 0 0 0-9-9z"/>
-          </svg>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">{pin.title || "Podcast Episode"}</p>
-            <p className="text-xs text-gray-500">View on Podcast Index</p>
-          </div>
-          <svg className="w-4 h-4 text-gray-400 shrink-0" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd"/>
-          </svg>
-        </a>
-      )}
+      {dt === "podcast-episode" &&
+        !spotifyEpisodeId &&
+        podcastIndexEpisodeUrl && (
+          <a
+            href={podcastIndexEpisodeUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-purple-50 to-indigo-50 hover:from-purple-100 hover:to-indigo-100 transition-colors"
+          >
+            <svg
+              className="w-8 h-8 text-purple-600 shrink-0"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
+              <path d="M12 1a9 9 0 0 0-9 9v7c0 1.66 1.34 3 3 3h3v-8H5v-2c0-3.87 3.13-7 7-7s7 3.13 7 7v2h-4v8h3c1.66 0 3-1.34 3-3v-7a9 9 0 0 0-9-9z" />
+            </svg>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">
+                {pin.title || "Podcast Episode"}
+              </p>
+              <p className="text-xs text-gray-500">View on Podcast Index</p>
+            </div>
+            <svg
+              className="w-4 h-4 text-gray-400 shrink-0"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </a>
+        )}
 
       {/* Book cover */}
       {dt === "book" && bookIsbn && (
@@ -762,17 +970,27 @@ function PinCard({ pin, onDelete, onEdit, onOpenArticle }: { pin: Pin; onDelete:
             alt={pin.title || "Book cover"}
             className="max-h-full object-contain"
             loading="lazy"
-            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = "none";
+            }}
           />
         </div>
       )}
 
       <div className="p-4">
         <div className="flex items-center justify-between mb-3">
-          <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded ${cfg.color}`}>
+          <span
+            className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded ${cfg.color}`}
+          >
             {cfg.icon} {cfg.label}
           </span>
-          {pin.rawEvent && <EventActions event={pin.rawEvent} onDelete={onDelete} onEdit={onEdit} />}
+          {pin.rawEvent && (
+            <EventActions
+              event={pin.rawEvent}
+              onDelete={onDelete}
+              onEdit={onEdit}
+            />
+          )}
         </div>
 
         {dt === "newsletter" && onOpenArticle ? (
@@ -785,7 +1003,10 @@ function PinCard({ pin, onDelete, onEdit, onOpenArticle }: { pin: Pin; onDelete:
             </h4>
             {pin.content && (
               <p className="text-sm text-gray-600 line-clamp-3 mb-2">
-                {pin.content.replace(/[#*_`\[\]>]/g, "").replace(/\n+/g, " ").slice(0, 200)}
+                {pin.content
+                  .replace(/[#*_`\[\]>]/g, "")
+                  .replace(/\n+/g, " ")
+                  .slice(0, 200)}
               </p>
             )}
           </button>
@@ -797,7 +1018,12 @@ function PinCard({ pin, onDelete, onEdit, onOpenArticle }: { pin: Pin; onDelete:
             className="text-lg font-bold text-gray-900 mb-1 hover:text-bitcoin-orange transition-colors block"
           >
             {pin.title || "Untitled"}
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 inline ml-1 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-3.5 w-3.5 inline ml-1 text-gray-400"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
               <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
               <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
             </svg>
@@ -809,7 +1035,9 @@ function PinCard({ pin, onDelete, onEdit, onOpenArticle }: { pin: Pin; onDelete:
         )}
 
         {dt !== "newsletter" && pin.content && pin.title && (
-          <p className="text-sm text-gray-600 line-clamp-2 mb-2">{pin.content}</p>
+          <p className="text-sm text-gray-600 line-clamp-2 mb-2">
+            {pin.content}
+          </p>
         )}
 
         {pin.externalRef && dt === "link" && (
@@ -820,18 +1048,27 @@ function PinCard({ pin, onDelete, onEdit, onOpenArticle }: { pin: Pin; onDelete:
           </div>
         )}
 
-        {pin.externalRef && (dt === "book" || dt === "movie" || dt === "paper" || dt === "location") && (
-          <div className="mt-2 pt-2 border-t border-gray-100">
-            <span className="text-xs text-gray-400 truncate block font-mono">
-              {pin.externalRef}
-            </span>
-          </div>
-        )}
+        {pin.externalRef &&
+          (dt === "book" ||
+            dt === "movie" ||
+            dt === "paper" ||
+            dt === "location") && (
+            <div className="mt-2 pt-2 border-t border-gray-100">
+              <span className="text-xs text-gray-400 truncate block font-mono">
+                {pin.externalRef}
+              </span>
+            </div>
+          )}
 
         {pin.tags.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1">
             {pin.tags.slice(0, 3).map((tag) => (
-              <span key={tag} className="text-xs bg-gray-50 text-gray-500 px-1.5 py-0.5 rounded">#{tag}</span>
+              <span
+                key={tag}
+                className="text-xs bg-gray-50 text-gray-500 px-1.5 py-0.5 rounded"
+              >
+                #{tag}
+              </span>
             ))}
           </div>
         )}
@@ -865,12 +1102,14 @@ function AddPinModal({
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState("");
   const [showPreview, setShowPreview] = useState(false);
-  const [newsletterMode, setNewsletterMode] = useState<"create" | "existing">("create");
+  const [newsletterMode, setNewsletterMode] = useState<"create" | "existing">(
+    "create",
+  );
   const [selectedType, setSelectedType] = useState<DisplayType | null>(
-    editPin ? getDisplayType(editPin) : null
+    editPin ? getDisplayType(editPin) : null,
   );
   const [detected, setDetected] = useState<DetectedContent | null>(
-    editPin?.externalRef ? detectContentKind(editPin.externalRef) : null
+    editPin?.externalRef ? detectContentKind(editPin.externalRef) : null,
   );
 
   const isEditing = !!editPin;
@@ -888,11 +1127,38 @@ function AddPinModal({
   };
 
   const handlePublish = async () => {
-    if (selectedType !== "newsletter" && selectedType !== "link" && !url.trim()) { setError("URL or identifier is required"); return; }
-    if (!title.trim() && selectedType !== "newsletter") { setError("Title is required"); return; }
-    if (selectedType === "newsletter" && newsletterMode === "create" && !description.trim()) { setError("Newsletter content is required"); return; }
-    if (selectedType === "newsletter" && newsletterMode === "existing" && !url.trim()) { setError("naddr or event ID is required"); return; }
-    if (!selectedType) { setError("Please select a content type"); return; }
+    if (
+      selectedType !== "newsletter" &&
+      selectedType !== "link" &&
+      !url.trim()
+    ) {
+      setError("URL or identifier is required");
+      return;
+    }
+    if (!title.trim() && selectedType !== "newsletter") {
+      setError("Title is required");
+      return;
+    }
+    if (
+      selectedType === "newsletter" &&
+      newsletterMode === "create" &&
+      !description.trim()
+    ) {
+      setError("Newsletter content is required");
+      return;
+    }
+    if (
+      selectedType === "newsletter" &&
+      newsletterMode === "existing" &&
+      !url.trim()
+    ) {
+      setError("naddr or event ID is required");
+      return;
+    }
+    if (!selectedType) {
+      setError("Please select a content type");
+      return;
+    }
 
     setPublishing(true);
     setError("");
@@ -914,7 +1180,14 @@ function AddPinModal({
           title: "Education",
           description: "Educational resources",
         });
-        const signedBoard = await signEvent(unsignedBoard as { kind: number; content: string; tags: string[][]; created_at: number });
+        const signedBoard = await signEvent(
+          unsignedBoard as {
+            kind: number;
+            content: string;
+            tags: string[][];
+            created_at: number;
+          },
+        );
         const boardOk = await publishPinboard(signedBoard);
         if (!boardOk) {
           setError("Failed to create pinboard on relays.");
@@ -922,20 +1195,28 @@ function AddPinModal({
           return;
         }
         // Construct the coordinate from the signed event
-        const dTag = (signedBoard.tags as string[][]).find((t: string[]) => t[0] === "d")?.[1] || "education";
+        const dTag =
+          (signedBoard.tags as string[][]).find(
+            (t: string[]) => t[0] === "d",
+          )?.[1] || "education";
         resolvedBoardCoord = `30067:${pubkey}:${dTag}`;
       }
 
       // Newsletter flow
       if (selectedType === "newsletter") {
-        const tagList = tags.split(",").map((t) => t.trim()).filter(Boolean);
+        const tagList = tags
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean);
         let articleId: string;
         let articleCoordinate: string | undefined;
 
         if (newsletterMode === "create") {
           // Create new kind 30023 article
           const existingDTag = isEditing
-            ? (editPin?.rawEvent?.tags as string[][] | undefined)?.find((t) => t[0] === "d")?.[1]
+            ? (editPin?.rawEvent?.tags as string[][] | undefined)?.find(
+                (t) => t[0] === "d",
+              )?.[1]
             : undefined;
           const unsignedArticle = buildNewsletterEvent({
             title: title.trim(),
@@ -944,11 +1225,21 @@ function AddPinModal({
             tags: tagList,
             dTag: existingDTag,
           });
-          const signedArticle = await signEvent(unsignedArticle as { kind: number; content: string; tags: string[][]; created_at: number });
+          const signedArticle = await signEvent(
+            unsignedArticle as {
+              kind: number;
+              content: string;
+              tags: string[][];
+              created_at: number;
+            },
+          );
           await publishNewsletter(signedArticle);
           articleId = (signedArticle as any).id;
           // Store article coordinate for naddr link
-          const articleDTag = (signedArticle.tags as string[][]).find((t: string[]) => t[0] === "d")?.[1] || "";
+          const articleDTag =
+            (signedArticle.tags as string[][]).find(
+              (t: string[]) => t[0] === "d",
+            )?.[1] || "";
           articleCoordinate = `30023:${pubkey}:${articleDTag}`;
         } else {
           // Pin existing article — use the URL as the event reference
@@ -963,9 +1254,19 @@ function AddPinModal({
             title: "Education",
             description: "Educational resources",
           });
-          const signedBoard = await signEvent(unsignedBoard as { kind: number; content: string; tags: string[][]; created_at: number });
+          const signedBoard = await signEvent(
+            unsignedBoard as {
+              kind: number;
+              content: string;
+              tags: string[][];
+              created_at: number;
+            },
+          );
           await publishPinboard(signedBoard);
-          const dTag = (signedBoard.tags as string[][]).find((t: string[]) => t[0] === "d")?.[1] || "education";
+          const dTag =
+            (signedBoard.tags as string[][]).find(
+              (t: string[]) => t[0] === "d",
+            )?.[1] || "education";
           resolvedBoardCoord = `30067:${pubkey}:${dTag}`;
         }
         const unsignedPin = buildPinEvent({
@@ -977,9 +1278,20 @@ function AddPinModal({
           externalKind: "article",
           articleCoordinate,
           tags: tagList,
-          dTag: isEditing ? (editPin?.rawEvent?.tags as string[][] | undefined)?.find((t) => t[0] === "d")?.[1] : undefined,
+          dTag: isEditing
+            ? (editPin?.rawEvent?.tags as string[][] | undefined)?.find(
+                (t) => t[0] === "d",
+              )?.[1]
+            : undefined,
         });
-        const signedPin = await signEvent(unsignedPin as { kind: number; content: string; tags: string[][]; created_at: number });
+        const signedPin = await signEvent(
+          unsignedPin as {
+            kind: number;
+            content: string;
+            tags: string[][];
+            created_at: number;
+          },
+        );
         await publishPin(signedPin);
         onDone();
         setPublishing(false);
@@ -990,14 +1302,25 @@ function AddPinModal({
       // Use detected content kind, but override displayType to match user's selection
       let { iTag, kTag } = detectContentKind(url);
       // If the user explicitly chose a type that conflicts with detection, respect user choice
-      if (selectedType === "book") { kTag = "isbn"; }
-      else if (selectedType === "movie") { kTag = "isan"; }
-      else if (selectedType === "paper") { kTag = "doi"; }
-      else if (selectedType === "location") { kTag = "geo"; }
-      else if (selectedType === "podcast") { if (!kTag.startsWith("podcast")) kTag = "web"; }
-      else if (selectedType === "podcast-episode") { kTag = "podcast:item:guid"; }
-      else { kTag = "web"; } // youtube and link are both k=web
-      const tagList = tags.split(",").map((t) => t.trim()).filter(Boolean);
+      if (selectedType === "book") {
+        kTag = "isbn";
+      } else if (selectedType === "movie") {
+        kTag = "isan";
+      } else if (selectedType === "paper") {
+        kTag = "doi";
+      } else if (selectedType === "location") {
+        kTag = "geo";
+      } else if (selectedType === "podcast") {
+        if (!kTag.startsWith("podcast")) kTag = "web";
+      } else if (selectedType === "podcast-episode") {
+        kTag = "podcast:item:guid";
+      } else {
+        kTag = "web";
+      } // youtube and link are both k=web
+      const tagList = tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
       const unsignedEvent = buildPinEvent({
         boardCoordinate: resolvedBoardCoord,
         content: description.trim(),
@@ -1006,10 +1329,21 @@ function AddPinModal({
         externalKind: kTag,
         tags: tagList,
         // For updates: reuse the same d tag so the replaceable event is overwritten
-        dTag: isEditing ? (editPin?.rawEvent?.tags as string[][] | undefined)?.find((t) => t[0] === "d")?.[1] : undefined,
+        dTag: isEditing
+          ? (editPin?.rawEvent?.tags as string[][] | undefined)?.find(
+              (t) => t[0] === "d",
+            )?.[1]
+          : undefined,
       });
 
-      const signedEv = await signEvent(unsignedEvent as { kind: number; content: string; tags: string[][]; created_at: number });
+      const signedEv = await signEvent(
+        unsignedEvent as {
+          kind: number;
+          content: string;
+          tags: string[][];
+          created_at: number;
+        },
+      );
 
       const success = await publishPin(signedEv);
       if (success) {
@@ -1024,17 +1358,24 @@ function AddPinModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto" onClick={onCancel}>
+    <div
+      className="fixed inset-0 bg-black/50 flex items-start justify-center z-50 p-4 overflow-y-auto"
+      onClick={onCancel}
+    >
       <div
         className={`bg-white rounded-lg w-full p-6 shadow-xl my-8 ${selectedType === "newsletter" ? "max-w-2xl" : "max-w-md"}`}
         data-testid="add-pin-modal"
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="text-xl font-bold text-gray-900 mb-4">{isEditing ? "Edit Resource" : "Add Resource"}</h3>
+        <h3 className="text-xl font-bold text-gray-900 mb-4">
+          {isEditing ? "Edit Resource" : "Add Resource"}
+        </h3>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Title *
+            </label>
             <input
               data-testid="pin-title"
               type="text"
@@ -1045,7 +1386,9 @@ function AddPinModal({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Content Type *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Content Type *
+            </label>
             <div className="flex flex-wrap gap-2" data-testid="type-selector">
               {ALL_DISPLAY_TYPES.map((dt) => {
                 const cfg = DISPLAY_TYPE_CONFIG[dt];
@@ -1056,7 +1399,9 @@ function AddPinModal({
                     data-testid={`type-${dt}`}
                     onClick={() => setSelectedType(dt)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                      selectedType === dt ? cfg.activeColor : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      selectedType === dt
+                        ? cfg.activeColor
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                     }`}
                   >
                     {cfg.icon} {cfg.label}
@@ -1066,15 +1411,23 @@ function AddPinModal({
             </div>
             {selectedType && (
               <p className="text-xs text-gray-500 mt-1">
-                {selectedType === "youtube" && "Paste a video URL (YouTube, Vimeo, or Rumble)"}
-                {selectedType === "podcast" && "Paste an RSS feed URL (e.g. example.com/feed.xml) or a Spotify show URL"}
-                {selectedType === "podcast-episode" && "Paste a Spotify episode URL or an RSS feed URL"}
+                {selectedType === "youtube" &&
+                  "Paste a video URL (YouTube, Vimeo, or Rumble)"}
+                {selectedType === "podcast" &&
+                  "Paste an RSS feed URL (e.g. example.com/feed.xml) or a Spotify show URL"}
+                {selectedType === "podcast-episode" &&
+                  "Paste a Spotify episode URL or an RSS feed URL"}
                 {selectedType === "link" && "Paste any web URL"}
-                {selectedType === "book" && "Enter an ISBN like isbn:978... or a bare ISBN number"}
-                {selectedType === "movie" && "Enter an ISAN like isan:XXXX-XXXX-XXXX"}
-                {selectedType === "paper" && "Enter a DOI like doi:10.xxx or 10.xxx/yyy"}
-                {selectedType === "location" && `Enter coordinates like geo:${siteConfig.organization.coordinates.lat},${siteConfig.organization.coordinates.lon} or lat,lon`}
-                {selectedType === "newsletter" && "Write an article or pin an existing long-form article"}
+                {selectedType === "book" &&
+                  "Enter an ISBN like isbn:978... or a bare ISBN number"}
+                {selectedType === "movie" &&
+                  "Enter an ISAN like isan:XXXX-XXXX-XXXX"}
+                {selectedType === "paper" &&
+                  "Enter a DOI like doi:10.xxx or 10.xxx/yyy"}
+                {selectedType === "location" &&
+                  `Enter coordinates like geo:${siteConfig.organization.coordinates.lat},${siteConfig.organization.coordinates.lon} or lat,lon`}
+                {selectedType === "newsletter" &&
+                  "Write an article or pin an existing long-form article"}
               </p>
             )}
           </div>
@@ -1098,7 +1451,9 @@ function AddPinModal({
           )}
           {selectedType === "newsletter" && newsletterMode === "create" && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Description
+              </label>
               <input
                 data-testid="pin-summary"
                 type="text"
@@ -1110,48 +1465,67 @@ function AddPinModal({
             </div>
           )}
           {selectedType === "newsletter" && newsletterMode === "existing" && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Article naddr or event ID *</label>
-            <input
-              type="text"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="naddr1... or hex event ID"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
-            />
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Article naddr or event ID *
+              </label>
+              <input
+                type="text"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="naddr1... or hex event ID"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
+              />
+            </div>
           )}
           {selectedType !== "newsletter" && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">URL or Identifier *</label>
-            <input
-              data-testid="pin-url"
-              type="text"
-              value={url}
-              onChange={(e) => handleUrlChange(e.target.value)}
-              placeholder={
-                selectedType === "youtube" ? "https://youtube.com/watch?v=... or https://vimeo.com/..."
-                : selectedType === "podcast" ? "https://example.com/feed.xml or https://open.spotify.com/show/..."
-                : selectedType === "podcast-episode" ? "https://open.spotify.com/episode/... or RSS feed URL"
-                : selectedType === "link" ? "https://example.com/article"
-                : selectedType === "book" ? "isbn:9780743273565 or bare ISBN"
-                : selectedType === "movie" ? "isan:XXXX-XXXX-XXXX-XXXX"
-                : selectedType === "paper" ? "doi:10.1000/xyz123 or 10.xxxx/yyyy"
-                : selectedType === "location" ? `geo:${siteConfig.organization.coordinates.lat},${siteConfig.organization.coordinates.lon} or ${siteConfig.organization.coordinates.lat},${siteConfig.organization.coordinates.lon}`
-                : "Select a content type first"
-              }
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
-            />
-            {detected && (
-              <p className="text-xs text-gray-500 mt-1" data-testid="detected-type">
-                Detected: {DISPLAY_TYPE_CONFIG[detected.displayType]?.icon} {DISPLAY_TYPE_CONFIG[detected.displayType]?.label || detected.kTag}
-              </p>
-            )}
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                URL or Identifier *
+              </label>
+              <input
+                data-testid="pin-url"
+                type="text"
+                value={url}
+                onChange={(e) => handleUrlChange(e.target.value)}
+                placeholder={
+                  selectedType === "youtube"
+                    ? "https://youtube.com/watch?v=... or https://vimeo.com/..."
+                    : selectedType === "podcast"
+                      ? "https://example.com/feed.xml or https://open.spotify.com/show/..."
+                      : selectedType === "podcast-episode"
+                        ? "https://open.spotify.com/episode/... or RSS feed URL"
+                        : selectedType === "link"
+                          ? "https://example.com/article"
+                          : selectedType === "book"
+                            ? "isbn:9780743273565 or bare ISBN"
+                            : selectedType === "movie"
+                              ? "isan:XXXX-XXXX-XXXX-XXXX"
+                              : selectedType === "paper"
+                                ? "doi:10.1000/xyz123 or 10.xxxx/yyyy"
+                                : selectedType === "location"
+                                  ? `geo:${siteConfig.organization.coordinates.lat},${siteConfig.organization.coordinates.lon} or ${siteConfig.organization.coordinates.lat},${siteConfig.organization.coordinates.lon}`
+                                  : "Select a content type first"
+                }
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
+              />
+              {detected && (
+                <p
+                  className="text-xs text-gray-500 mt-1"
+                  data-testid="detected-type"
+                >
+                  Detected: {DISPLAY_TYPE_CONFIG[detected.displayType]?.icon}{" "}
+                  {DISPLAY_TYPE_CONFIG[detected.displayType]?.label ||
+                    detected.kTag}
+                </p>
+              )}
+            </div>
           )}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              {selectedType === "newsletter" && newsletterMode === "create" ? "Content (Markdown) *" : "Description"}
+              {selectedType === "newsletter" && newsletterMode === "create"
+                ? "Content (Markdown) *"
+                : "Description"}
             </label>
             {selectedType === "newsletter" && newsletterMode === "create" && (
               <div className="flex gap-2 mb-2">
@@ -1173,21 +1547,33 @@ function AddPinModal({
             )}
             {selectedType === "newsletter" && showPreview ? (
               <div className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm min-h-[200px] max-h-[400px] overflow-y-auto prose prose-sm prose-headings:text-gray-900 prose-h1:text-2xl prose-h1:font-bold prose-h1:border-b prose-h1:border-gray-200 prose-h1:pb-1 prose-h2:text-xl prose-h2:font-semibold prose-h3:text-lg prose-h3:font-semibold prose-p:text-gray-700 prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:font-mono prose-code:text-orange-700 prose-pre:bg-gray-900 prose-pre:text-gray-100">
-                <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{description}</ReactMarkdown>
+                <ReactMarkdown rehypePlugins={[rehypeSanitize]}>
+                  {description}
+                </ReactMarkdown>
               </div>
             ) : (
               <textarea
                 data-testid="pin-description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder={selectedType === "newsletter" && newsletterMode === "create" ? "# My Newsletter\n\nWrite your content here using **Markdown**..." : "Brief description of this resource"}
-                rows={selectedType === "newsletter" && newsletterMode === "create" ? 12 : 2}
+                placeholder={
+                  selectedType === "newsletter" && newsletterMode === "create"
+                    ? "# My Newsletter\n\nWrite your content here using **Markdown**..."
+                    : "Brief description of this resource"
+                }
+                rows={
+                  selectedType === "newsletter" && newsletterMode === "create"
+                    ? 12
+                    : 2
+                }
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent font-mono"
               />
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tags (comma-separated)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Tags (comma-separated)
+            </label>
             <input
               data-testid="pin-tags"
               type="text"
@@ -1238,7 +1624,10 @@ function EmptyState() {
     <div className="bg-gray-50 border border-gray-200 rounded-lg p-12 text-center">
       <span className="text-6xl block mb-4">📌</span>
       <h3 className="text-xl font-bold text-gray-800 mb-2">No Pinboards Yet</h3>
-      <p className="text-gray-600">Pinboards are curated collections of educational content. Check back soon for new resources!</p>
+      <p className="text-gray-600">
+        Pinboards are curated collections of educational content. Check back
+        soon for new resources!
+      </p>
     </div>
   );
 }

@@ -20,7 +20,12 @@ import {
 } from "../utils/nostrEvents";
 import { PlusIcon } from "../components/Icons";
 import { GetStaticProps, InferGetStaticPropsType } from "next";
-import { WHITELISTED_NPUBS, WHITELISTED_PUBKEYS, basePath, CLIENT_TAG } from "@/config";
+import {
+  WHITELISTED_NPUBS,
+  WHITELISTED_PUBKEYS,
+  basePath,
+  CLIENT_TAG,
+} from "@/config";
 import { config } from "@/config";
 import { useNostr } from "../contexts/NostrContext";
 import { useRef, useCallback } from "react";
@@ -106,11 +111,25 @@ export default function CalendarPage({
     if (!user || !event.rawEvent || user.pubkey !== event.pubkey) return;
     setEvents((prev) => prev.filter((e) => e.id !== event.id));
     const kind = (event.rawEvent as { kind?: number }).kind ?? 31923;
-    const unsignedDelete = { kind: 5, content: "Deleted by author", tags: [[...CLIENT_TAG], ["e", event.id], ["k", String(kind)]], created_at: Math.floor(Date.now() / 1000) };
-    const signedDelete = await signEvent(unsignedDelete as { kind: number; content: string; tags: string[][]; created_at: number });
+    const unsignedDelete = {
+      kind: 5,
+      content: "Deleted by author",
+      tags: [[...CLIENT_TAG], ["e", event.id], ["k", String(kind)]],
+      created_at: Math.floor(Date.now() / 1000),
+    };
+    const signedDelete = await signEvent(
+      unsignedDelete as {
+        kind: number;
+        content: string;
+        tags: string[][];
+        created_at: number;
+      },
+    );
     const { pool } = await import("@/lib/nostr");
     const { nostrRelays } = await import("@/config");
-    try { await pool.publish(nostrRelays, signedDelete as any); } catch {}
+    try {
+      await pool.publish(nostrRelays, signedDelete as any);
+    } catch {}
   };
 
   // Load events from localStorage, meetup data, and nostr
@@ -505,7 +524,9 @@ export default function CalendarPage({
     <div className="container mx-auto px-4 py-12">
       <div className="relative">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold font-archivo-black">Calendar</h1>
+          <h1 className="text-2xl md:text-3xl font-bold font-archivo-black">
+            Calendar
+          </h1>
           <a
             href={config.site.externalLinks.meetup.url}
             target="_blank"
@@ -518,15 +539,21 @@ export default function CalendarPage({
         {/* Mobile Stats Row */}
         <div className="flex md:hidden gap-3 mb-6">
           <div className="flex-1 bg-white border border-gray-200 rounded-lg p-2 text-center shadow-sm">
-            <div className="text-lg font-bold text-bitcoin-orange">{events.length}</div>
+            <div className="text-lg font-bold text-bitcoin-orange">
+              {events.length}
+            </div>
             <div className="text-xs text-gray-600">Total</div>
           </div>
           <div className="flex-1 bg-white border border-gray-200 rounded-lg p-2 text-center shadow-sm">
-            <div className="text-lg font-bold text-green-600">{upcomingEvents.length}</div>
+            <div className="text-lg font-bold text-green-600">
+              {upcomingEvents.length}
+            </div>
             <div className="text-xs text-gray-600">Upcoming</div>
           </div>
           <div className="flex-1 bg-white border border-gray-200 rounded-lg p-2 text-center shadow-sm">
-            <div className="text-lg font-bold text-gray-600">{pastEvents.length}</div>
+            <div className="text-lg font-bold text-gray-600">
+              {pastEvents.length}
+            </div>
             <div className="text-xs text-gray-600">Past</div>
           </div>
         </div>
@@ -664,7 +691,10 @@ export default function CalendarPage({
                 {events.length === 0 && isLoadingNostrEvents && (
                   <div className="space-y-4">
                     {[1, 2, 3].map((i) => (
-                      <div key={i} className="animate-pulse bg-white border border-gray-200 rounded-lg p-6">
+                      <div
+                        key={i}
+                        className="animate-pulse bg-white border border-gray-200 rounded-lg p-6"
+                      >
                         <div className="h-4 bg-gray-200 rounded w-1/4 mb-3" />
                         <div className="h-6 bg-gray-200 rounded w-3/4 mb-2" />
                         <div className="h-4 bg-gray-200 rounded w-1/2 mb-4" />
@@ -693,7 +723,11 @@ export default function CalendarPage({
                           )}
                           link={event.references?.[0]}
                           rawEvent={event.rawEvent}
-                          onDelete={user && user.pubkey === event.pubkey ? () => handleDeleteEvent(event) : undefined}
+                          onDelete={
+                            user && user.pubkey === event.pubkey
+                              ? () => handleDeleteEvent(event)
+                              : undefined
+                          }
                         />
                       ))}
                     </div>
@@ -722,7 +756,11 @@ export default function CalendarPage({
                           )}
                           link={event.references?.[0]}
                           rawEvent={event.rawEvent}
-                          onDelete={user && user.pubkey === event.pubkey ? () => handleDeleteEvent(event) : undefined}
+                          onDelete={
+                            user && user.pubkey === event.pubkey
+                              ? () => handleDeleteEvent(event)
+                              : undefined
+                          }
                         />
                       ))}
                     </div>
@@ -941,8 +979,18 @@ export default function CalendarPage({
             className="w-full flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition-colors"
           >
             <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-bitcoin-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+              <svg
+                className="w-5 h-5 text-bitcoin-orange"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+                />
               </svg>
               <span className="font-semibold text-gray-800">Live Chat</span>
               <span className="text-xs text-gray-500 hidden sm:inline">
@@ -955,7 +1003,12 @@ export default function CalendarPage({
               stroke="currentColor"
               viewBox="0 0 24 24"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
             </svg>
           </button>
           {chatOpen && (

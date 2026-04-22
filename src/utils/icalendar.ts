@@ -25,7 +25,7 @@ const escapeICalText = (text: string): string => {
 
 // Helper function to generate UID for events
 const generateUID = (eventId: string): string => {
-  return `${eventId}@${icalConfig?.domain || 'kansas-city-bitcoin-meetup.com'}`;
+  return `${eventId}@${icalConfig?.domain || "kansas-city-bitcoin-meetup.com"}`;
 };
 
 // Helper function to clean HTML from description
@@ -50,12 +50,12 @@ export function generateICalendar(group: MeetupGroup): string {
   let icalContent = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    `PRODID:${icalConfig?.prodId || '//Kansas City Bitcoiners//Events//EN'}`,
+    `PRODID:${icalConfig?.prodId || "//Kansas City Bitcoiners//Events//EN"}`,
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     `X-WR-CALNAME:${escapeICalText(group.name)}`,
     `X-WR-CALDESC:${escapeICalText(group.description || icalConfig?.defaultDescription || "Bitcoin meetups and events")}`,
-    `X-WR-TIMEZONE:${icalConfig?.timezone || 'America/Chicago'}`,
+    `X-WR-TIMEZONE:${icalConfig?.timezone || "America/Chicago"}`,
   ];
 
   events.forEach((event) => {

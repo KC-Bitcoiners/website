@@ -23,16 +23,12 @@ describe("googleMapsSearchUrl", () => {
 
   it("handles a simple single-word query", () => {
     const url = googleMapsSearchUrl("Denver");
-    expect(url).toBe(
-      "https://www.google.com/maps/search/?api=1&query=Denver",
-    );
+    expect(url).toBe("https://www.google.com/maps/search/?api=1&query=Denver");
   });
 
   it("handles an empty query", () => {
     const url = googleMapsSearchUrl("");
-    expect(url).toBe(
-      "https://www.google.com/maps/search/?api=1&query=",
-    );
+    expect(url).toBe("https://www.google.com/maps/search/?api=1&query=");
   });
 
   it("handles unicode characters", () => {
@@ -127,7 +123,9 @@ describe("getDisplayLocationLines", () => {
 
   it("trims whitespace from location values", () => {
     expect(
-      getDisplayLocationLines(makeEvent("  Venue A  ", ["  Venue A  ", "Venue B"])),
+      getDisplayLocationLines(
+        makeEvent("  Venue A  ", ["  Venue A  ", "Venue B"]),
+      ),
     ).toEqual(["Venue A", "Venue B"]);
   });
 
@@ -245,12 +243,8 @@ describe("getUpcomingEvents & getPastEvents", () => {
   });
 
   it("works with date-based events (kind 31922)", () => {
-    const pastDate = new Date(now - 86400000 * 7)
-      .toISOString()
-      .split("T")[0];
-    const futureDate = new Date(now + 86400000 * 7)
-      .toISOString()
-      .split("T")[0];
+    const pastDate = new Date(now - 86400000 * 7).toISOString().split("T")[0];
+    const futureDate = new Date(now + 86400000 * 7).toISOString().split("T")[0];
 
     const pastDateEvent = {
       kind: 31922,

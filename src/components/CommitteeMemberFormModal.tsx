@@ -11,7 +11,12 @@ interface CommitteeMemberFormModalProps {
   onDone: () => void;
   onCancel: () => void;
   pubkey?: string;
-  signEvent?: (event: { kind: number; content: string; tags: string[][]; created_at: number }) => Promise<Record<string, unknown>>;
+  signEvent?: (event: {
+    kind: number;
+    content: string;
+    tags: string[][];
+    created_at: number;
+  }) => Promise<Record<string, unknown>>;
 }
 
 export default function CommitteeMemberFormModal({
@@ -31,7 +36,10 @@ export default function CommitteeMemberFormModal({
   const [error, setError] = useState("");
 
   const handlePublish = async () => {
-    if (!name.trim()) { setError("Name is required"); return; }
+    if (!name.trim()) {
+      setError("Name is required");
+      return;
+    }
 
     setPublishing(true);
     setError("");
@@ -46,7 +54,10 @@ export default function CommitteeMemberFormModal({
       // Generate dTag: slug from name + random suffix (or reuse for edits)
       const dTag = isEditing
         ? editMember!.dTag
-        : `${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 30)}-${Date.now().toString(36)}`;
+        : `${name
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .slice(0, 30)}-${Date.now().toString(36)}`;
 
       const unsignedEvent = buildCommitteeMemberEvent({
         committeeCoordinate,
@@ -59,10 +70,20 @@ export default function CommitteeMemberFormModal({
 
       let signedEvent;
       if (signEvent && pubkey) {
-        signedEvent = await signEvent(unsignedEvent as { kind: number; content: string; tags: string[][]; created_at: number });
+        signedEvent = await signEvent(
+          unsignedEvent as {
+            kind: number;
+            content: string;
+            tags: string[][];
+            created_at: number;
+          },
+        );
       } else if (window.nostr) {
         const pk = await window.nostr.getPublicKey();
-        signedEvent = await window.nostr.signEvent({ ...unsignedEvent, pubkey: pk });
+        signedEvent = await window.nostr.signEvent({
+          ...unsignedEvent,
+          pubkey: pk,
+        });
       }
       const success = await publishCommitteeMember(signedEvent);
 
@@ -78,7 +99,10 @@ export default function CommitteeMemberFormModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onCancel}>
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      onClick={onCancel}
+    >
       <div
         className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl"
         data-testid="member-form-modal"
@@ -90,7 +114,9 @@ export default function CommitteeMemberFormModal({
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Name *
+            </label>
             <input
               data-testid="member-name"
               type="text"
@@ -102,7 +128,9 @@ export default function CommitteeMemberFormModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Role
+            </label>
             <input
               data-testid="member-role"
               type="text"
@@ -125,7 +153,9 @@ export default function CommitteeMemberFormModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email
+            </label>
             <input
               data-testid="member-email"
               type="email"
@@ -137,7 +167,9 @@ export default function CommitteeMemberFormModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Phone
+            </label>
             <input
               data-testid="member-phone"
               type="tel"

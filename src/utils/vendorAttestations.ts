@@ -3,7 +3,11 @@ import { nostrRelays, WHITELISTED_PUBKEYS } from "@/config";
 
 // In test mode, use the dynamically injected whitelist
 function getWhitelistedAuthors(): string[] {
-  if (process.env.NODE_ENV !== "production" && typeof window !== "undefined" && (window as any).__TEST_WHITELIST) {
+  if (
+    process.env.NODE_ENV !== "production" &&
+    typeof window !== "undefined" &&
+    (window as any).__TEST_WHITELIST
+  ) {
     return (window as any).__TEST_WHITELIST;
   }
   return WHITELISTED_PUBKEYS;

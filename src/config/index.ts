@@ -1,7 +1,7 @@
-import configData from '../../config.json';
+import configData from "../../config.json";
 
 // Build-time basePath for GitHub Pages subpath hosting (inlined by Next.js)
-export const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+export const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
 
 // Type definitions for the configuration
 export interface SiteConfig {
@@ -15,12 +15,15 @@ export interface SiteConfig {
       lon: number;
     };
   };
-  externalLinks: Record<string, {
-    url: string;
-    icon?: string;
-    ariaLabel?: string;
-    urlname?: string;
-  }>;
+  externalLinks: Record<
+    string,
+    {
+      url: string;
+      icon?: string;
+      ariaLabel?: string;
+      urlname?: string;
+    }
+  >;
   images: {
     logo: string;
     logoFallback: string;
@@ -103,13 +106,10 @@ export const {
   title: siteTitle,
   description: siteDescription,
   organization,
-  externalLinks
+  externalLinks,
 } = siteConfig;
 
-export const {
-  relays: nostrRelays,
-  whitelistedNpubs
-} = nostrConfig;
+export const { relays: nostrRelays, whitelistedNpubs } = nostrConfig;
 
 // Helper functions
 export const getExternalLink = (name: string) => externalLinks[name];
@@ -177,7 +177,11 @@ export function isWhitelisted(pubkey: string): boolean {
     hex = pubkey;
   }
   // In test mode, use the dynamically injected whitelist
-  if (process.env.NODE_ENV !== "production" && typeof window !== "undefined" && (window as any).__TEST_WHITELIST) {
+  if (
+    process.env.NODE_ENV !== "production" &&
+    typeof window !== "undefined" &&
+    (window as any).__TEST_WHITELIST
+  ) {
     return (window as any).__TEST_WHITELIST.includes(hex);
   }
   return WHITELISTED_PUBKEYS.includes(hex);

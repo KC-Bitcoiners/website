@@ -156,7 +156,7 @@ export default function ShopPage() {
 
         // Use whitelist filter to only get events from whitelisted users
         const whitelistFilter = getWhitelistFilter();
-        
+
         // Modify the whitelist filter for vendor events (kind 30333 instead of calendar kinds)
         const filter = {
           ...whitelistFilter,
@@ -261,7 +261,10 @@ export default function ShopPage() {
 
             vendors.push(vendor);
           } catch (parseError) {
-            logger.warn(`Failed to parse vendor event: ${event.id}`, parseError);
+            logger.warn(
+              `Failed to parse vendor event: ${event.id}`,
+              parseError,
+            );
           }
         }
 
@@ -467,13 +470,22 @@ export default function ShopPage() {
       };
 
       // Sign the event using the user's signing method
-      const signedEvent = await signEvent(deleteEventTemplate as { kind: number; content: string; tags: string[][]; created_at: number });
+      const signedEvent = await signEvent(
+        deleteEventTemplate as {
+          kind: number;
+          content: string;
+          tags: string[][];
+          created_at: number;
+        },
+      );
 
       // Add the ID to the signed event
       const signedRecord = signedEvent as Record<string, unknown>;
       const deleteEvent = {
         ...signedEvent,
-        id: (signedRecord.id as string) || getEventHash(signedEvent as NostrEvent),
+        id:
+          (signedRecord.id as string) ||
+          getEventHash(signedEvent as NostrEvent),
       } as NostrEvent;
 
       // Publish the delete event to relays
@@ -701,11 +713,12 @@ export default function ShopPage() {
           <section className="mb-16">
             <div className="bg-white rounded-lg shadow-md p-6">
               {/* Leaflet Map */}
-              <div
-                className="rounded-lg overflow-hidden h-64 sm:h-80 md:h-[500px]"
-              >
+              <div className="rounded-lg overflow-hidden h-64 sm:h-80 md:h-[500px]">
                 <MapContainer
-                  center={[config.site.organization.coordinates.lat, config.site.organization.coordinates.lon]}
+                  center={[
+                    config.site.organization.coordinates.lat,
+                    config.site.organization.coordinates.lon,
+                  ]}
                   zoom={12}
                   style={{ height: "100%", width: "100%" }}
                   bounds={
@@ -895,16 +908,28 @@ export default function ShopPage() {
                   {"npub" in vendor && (vendor as NostrVendor).rawEvent && (
                     <EventActions
                       event={(vendor as NostrVendor).rawEvent!}
-                      onEdit={user && vendor.npub === user.pubkey ? () => {
-                        setEditVendor(vendor as NostrVendor);
-                        setIsEdit(true);
-                        setShowVendorForm(true);
-                      } : undefined}
-                      onDelete={user && vendor.npub === user.pubkey ? () => {
-                        if (window.confirm(`Are you sure you want to delete "${vendor.name}"? This action cannot be undone.`)) {
-                          handleDeleteVendor(vendor as NostrVendor);
-                        }
-                      } : undefined}
+                      onEdit={
+                        user && vendor.npub === user.pubkey
+                          ? () => {
+                              setEditVendor(vendor as NostrVendor);
+                              setIsEdit(true);
+                              setShowVendorForm(true);
+                            }
+                          : undefined
+                      }
+                      onDelete={
+                        user && vendor.npub === user.pubkey
+                          ? () => {
+                              if (
+                                window.confirm(
+                                  `Are you sure you want to delete "${vendor.name}"? This action cannot be undone.`,
+                                )
+                              ) {
+                                handleDeleteVendor(vendor as NostrVendor);
+                              }
+                            }
+                          : undefined
+                      }
                     />
                   )}
                 </div>
@@ -1155,7 +1180,9 @@ export default function ShopPage() {
                 🚀 Add Your First Vendor
               </h3>
               <p className="text-gray-600 mb-4">
-                Help grow the Bitcoin ecosystem in {siteConfig.organization.location} by submitting local businesses that accept Bitcoin payments.
+                Help grow the Bitcoin ecosystem in{" "}
+                {siteConfig.organization.location} by submitting local
+                businesses that accept Bitcoin payments.
               </p>
               <button
                 onClick={() => setShowVendorForm(true)}

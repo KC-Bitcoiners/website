@@ -35,7 +35,12 @@ interface NostrContextType {
   isLoading: boolean;
   hasExtension: boolean;
   refreshMetadata: () => Promise<void>;
-  signEvent: (event: { kind: number; content: string; tags: string[][]; created_at: number }) => Promise<Record<string, unknown>>;
+  signEvent: (event: {
+    kind: number;
+    content: string;
+    tags: string[][];
+    created_at: number;
+  }) => Promise<Record<string, unknown>>;
 }
 
 const NostrContext = createContext<NostrContextType | undefined>(undefined);
@@ -108,10 +113,13 @@ export function NostrProvider({ children }: NostrProviderProps) {
 
       setUser(userData);
       // Persist only non-sensitive fields — private key stays in memory only
-      localStorage.setItem("nostr_user", JSON.stringify({
-        pubkey: pubkeyHex,
-        npub,
-      }));
+      localStorage.setItem(
+        "nostr_user",
+        JSON.stringify({
+          pubkey: pubkeyHex,
+          npub,
+        }),
+      );
 
       // Return nsec for newly generated accounts so UI can display it
       return isGenerated ? { nsec } : undefined;
@@ -254,23 +262,43 @@ export function NostrProvider({ children }: NostrProviderProps) {
     }
   };
 
-  const signEvent = async (event: { kind: number; content: string; tags: string[][]; created_at: number }): Promise<Record<string, unknown>> => {
+  const signEvent = async (event: {
+    kind: number;
+    content: string;
+    tags: string[][];
+    created_at: number;
+  }): Promise<Record<string, unknown>> => {
     // If user logged in with nsec/private key, sign locally
     if (user?.privateKey) {
       const privkeyHex = nsecDecode(user.privateKey);
       const pubkey = await getPubkey(privkeyHex);
       const fullEvent = { ...event, pubkey };
       // Serialize and hash
-      const serialized = JSON.stringify([0, fullEvent.pubkey, fullEvent.created_at, fullEvent.kind, fullEvent.tags, fullEvent.content]);
+      const serialized = JSON.stringify([
+        0,
+        fullEvent.pubkey,
+        fullEvent.created_at,
+        fullEvent.kind,
+        fullEvent.tags,
+        fullEvent.content,
+      ]);
       const msgBytes = new TextEncoder().encode(serialized);
       const hashBytes = await crypto.subtle.digest("SHA-256", msgBytes);
-      const id = Array.from(new Uint8Array(hashBytes)).map(b => b.toString(16).padStart(2, "0")).join("");
+      const id = Array.from(new Uint8Array(hashBytes))
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
       // Sign with schnorr
-      const s = await import("@noble/curves/secp256k1.js").then(m => m.schnorr);
+      const s = await import("@noble/curves/secp256k1.js").then(
+        (m) => m.schnorr,
+      );
       const idBytes = new Uint8Array(hashBytes);
-      const privBytes = new Uint8Array(privkeyHex.match(/.{1,2}/g)!.map(b => parseInt(b, 16)));
+      const privBytes = new Uint8Array(
+        privkeyHex.match(/.{1,2}/g)!.map((b) => parseInt(b, 16)),
+      );
       const sig = s.sign(idBytes, privBytes);
-      const sigHex = Array.from(sig).map(b => b.toString(16).padStart(2, "0")).join("");
+      const sigHex = Array.from(sig)
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
       return { ...fullEvent, id, sig: sigHex };
     }
     // Fallback to extension
@@ -278,7 +306,9 @@ export function NostrProvider({ children }: NostrProviderProps) {
       const pk = await window.nostr.getPublicKey();
       return window.nostr.signEvent({ ...event, pubkey: pk });
     }
-    throw new Error("No signing method available. Login with nsec or install a Nostr extension.");
+    throw new Error(
+      "No signing method available. Login with nsec or install a Nostr extension.",
+    );
   };
 
   const logout = () => {

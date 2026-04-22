@@ -18,5 +18,10 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules", "playwright.config.ts", "vitest.config.ts", "tests"]
+  "exclude": [
+    "node_modules",
+    "playwright.config.ts",
+    "vitest.config.ts",
+    "tests"
+  ]
 }

@@ -18,24 +18,39 @@ interface EventActionsProps {
   onEdit?: () => void;
 }
 
-export default function EventActions({ event, extraActions, className, onDelete, onEdit }: EventActionsProps) {
+export default function EventActions({
+  event,
+  extraActions,
+  className,
+  onDelete,
+  onEdit,
+}: EventActionsProps) {
   const [open, setOpen] = useState(false);
   const [showRaw, setShowRaw] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
-  const [position, setPosition] = useState<{ top: number; right: number } | null>(null);
+  const [position, setPosition] = useState<{
+    top: number;
+    right: number;
+  } | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const updatePosition = useCallback(() => {
     if (triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
-      setPosition({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+      setPosition({
+        top: rect.bottom + 4,
+        right: window.innerWidth - rect.right,
+      });
     }
   }, []);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
         setShowRaw(false);
       }
@@ -58,9 +73,7 @@ export default function EventActions({ event, extraActions, className, onDelete,
   };
 
   const handleShare = async () => {
-    const text = eventId
-      ? `nostr:${eventId}`
-      : JSON.stringify(event);
+    const text = eventId ? `nostr:${eventId}` : JSON.stringify(event);
     await copyToClipboard(text, "Share link");
     setOpen(false);
   };
@@ -118,7 +131,10 @@ export default function EventActions({ event, extraActions, className, onDelete,
           {
             label: "Edit",
             icon: "✏️",
-            onClick: () => { onEdit(); setOpen(false); },
+            onClick: () => {
+              onEdit();
+              setOpen(false);
+            },
           },
         ]
       : []),
@@ -127,7 +143,10 @@ export default function EventActions({ event, extraActions, className, onDelete,
           {
             label: "Delete",
             icon: "🗑️",
-            onClick: () => { onDelete(); setOpen(false); },
+            onClick: () => {
+              onDelete();
+              setOpen(false);
+            },
           },
         ]
       : []),
@@ -158,7 +177,9 @@ export default function EventActions({ event, extraActions, className, onDelete,
               onClick={action.onClick}
               className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-bitcoin-orange transition-colors flex items-center gap-2"
             >
-              {action.icon && <span className="w-5 text-center">{action.icon}</span>}
+              {action.icon && (
+                <span className="w-5 text-center">{action.icon}</span>
+              )}
               {action.label}
             </button>
           ))}

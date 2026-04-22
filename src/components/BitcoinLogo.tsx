@@ -13,8 +13,10 @@ export default function BitcoinLogo({
   className = "",
   useFallback = false,
 }: BitcoinLogoProps) {
-  const rawSrc = useFallback ? config.site.images.logoFallback : config.site.images.logo;
-  const logoSrc = rawSrc.startsWith('http') ? rawSrc : `${basePath}${rawSrc}`;
+  const rawSrc = useFallback
+    ? config.site.images.logoFallback
+    : config.site.images.logo;
+  const logoSrc = rawSrc.startsWith("http") ? rawSrc : `${basePath}${rawSrc}`;
 
   return (
     <div

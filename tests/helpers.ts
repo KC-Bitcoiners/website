@@ -23,9 +23,24 @@ let _hexUtils: any;
 
 async function loadCrypto() {
   if (_schnorr) return;
-  _schnorr = require(path.join(ROOT, "node_modules/.pnpm/@noble+secp256k1@1.7.2/node_modules/@noble/secp256k1")).schnorr;
-  _sha256 = require(path.join(ROOT, "node_modules/.pnpm/@noble+hashes@1.3.2/node_modules/@noble/hashes/sha256")).sha256;
-  _hexUtils = require(path.join(ROOT, "node_modules/.pnpm/@noble+hashes@1.3.2/node_modules/@noble/hashes/utils"));
+  _schnorr = require(
+    path.join(
+      ROOT,
+      "node_modules/.pnpm/@noble+secp256k1@1.7.2/node_modules/@noble/secp256k1",
+    ),
+  ).schnorr;
+  _sha256 = require(
+    path.join(
+      ROOT,
+      "node_modules/.pnpm/@noble+hashes@1.3.2/node_modules/@noble/hashes/sha256",
+    ),
+  ).sha256;
+  _hexUtils = require(
+    path.join(
+      ROOT,
+      "node_modules/.pnpm/@noble+hashes@1.3.2/node_modules/@noble/hashes/utils",
+    ),
+  );
 }
 
 function serializeEvent(evt: {
@@ -71,26 +86,32 @@ export async function injectNostrExtension(page: Page) {
 
   await page.exposeFunction("__nostrSign", (evt: any) => signEvent(evt));
 
-  await page.addInitScript(({ pubkey, npubStr }: { pubkey: string; npubStr: string }) => {
-    (window as any).nostr = {
-      async getPublicKey() {
-        return pubkey;
-      },
-      async signEvent(event: any) {
-        return (window as any).__nostrSign({
-          kind: event.kind,
-          content: event.content,
-          tags: event.tags,
-          created_at: event.created_at,
-          pubkey: event.pubkey,
-        });
-      },
-    };
-    // Override the whitelist so the app only shows content from the test key
-    (window as any).__TEST_WHITELIST = [pubkey];
-    // Pre-populate localStorage so NostrContext auto-restores the user
-    localStorage.setItem("nostr_user", JSON.stringify({ pubkey, npub: npubStr }));
-  }, { pubkey: pubkeyHex, npubStr: npub });
+  await page.addInitScript(
+    ({ pubkey, npubStr }: { pubkey: string; npubStr: string }) => {
+      (window as any).nostr = {
+        async getPublicKey() {
+          return pubkey;
+        },
+        async signEvent(event: any) {
+          return (window as any).__nostrSign({
+            kind: event.kind,
+            content: event.content,
+            tags: event.tags,
+            created_at: event.created_at,
+            pubkey: event.pubkey,
+          });
+        },
+      };
+      // Override the whitelist so the app only shows content from the test key
+      (window as any).__TEST_WHITELIST = [pubkey];
+      // Pre-populate localStorage so NostrContext auto-restores the user
+      localStorage.setItem(
+        "nostr_user",
+        JSON.stringify({ pubkey, npub: npubStr }),
+      );
+    },
+    { pubkey: pubkeyHex, npubStr: npub },
+  );
 }
 
 /**

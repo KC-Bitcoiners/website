@@ -9,10 +9,7 @@ export default function Home() {
     <>
       <Head>
         <title>{config.pages.home.meta.title}</title>
-        <meta
-          name="description"
-          content={config.pages.home.meta.description}
-        />
+        <meta name="description" content={config.pages.home.meta.description} />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href={`${basePath}/favicon.ico`} />
       </Head>
@@ -43,9 +40,11 @@ export default function Home() {
               </p>
 
               <ul className="list-disc list-inside space-y-1 ml-4 text-gray-700 leading-relaxed">
-                {config.pages.home.hero.topics.list.map((topic: string, index: number) => (
-                  <li key={index}>{topic}</li>
-                ))}
+                {config.pages.home.hero.topics.list.map(
+                  (topic: string, index: number) => (
+                    <li key={index}>{topic}</li>
+                  ),
+                )}
               </ul>
             </div>
           </div>
@@ -59,21 +58,26 @@ export default function Home() {
             Ready to Join Community?
           </h2>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            {config.pages.home.callToAction.buttons.map((button: { text: string; url: string; style: string }, index: number) => (
-              <a
-                key={index}
-                href={button.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`px-8 py-3 rounded-lg font-semibold transition-colors ${
-                  button.style === 'primary'
-                    ? 'bg-white bitcoin-orange hover:bg-gray-100'
-                    : 'bg-transparent border-2 border-white text-white hover:bg-white hover:bitcoin-orange hover:text-gray-700'
-                }`}
-              >
-                {button.text}
-              </a>
-            ))}
+            {config.pages.home.callToAction.buttons.map(
+              (
+                button: { text: string; url: string; style: string },
+                index: number,
+              ) => (
+                <a
+                  key={index}
+                  href={button.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`px-8 py-3 rounded-lg font-semibold transition-colors ${
+                    button.style === "primary"
+                      ? "bg-white bitcoin-orange hover:bg-gray-100"
+                      : "bg-transparent border-2 border-white text-white hover:bg-white hover:bitcoin-orange hover:text-gray-700"
+                  }`}
+                >
+                  {button.text}
+                </a>
+              ),
+            )}
           </div>
         </div>
       </section>
@@ -85,9 +89,7 @@ export default function Home() {
             <h2 className="text-3xl font-bold mb-4 font-archivo-black bitcoin-orange">
               {newsletterConfig.heading}
             </h2>
-            <p className="text-gray-600">
-              {newsletterConfig.description}
-            </p>
+            <p className="text-gray-600">{newsletterConfig.description}</p>
           </div>
           <NewsletterForm />
         </div>

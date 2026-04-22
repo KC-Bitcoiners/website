@@ -1,17 +1,19 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
+  <head>
     <meta charset="utf-8" />
     <title>Redirecting...</title>
     <script>
-        // Redirect all 404s to index.html while preserving the URL
-        // This allows Next.js client-side routing to handle the path
-        if (window.location.pathname !== '/') {
-            window.location.replace('/' + window.location.search + window.location.hash);
-        }
+      // Redirect all 404s to index.html while preserving the URL
+      // This allows Next.js client-side routing to handle the path
+      if (window.location.pathname !== "/") {
+        window.location.replace(
+          "/" + window.location.search + window.location.hash,
+        );
+      }
     </script>
-</head>
-<body>
+  </head>
+  <body>
     <p>Redirecting...</p>
-</body>
+  </body>
 </html>

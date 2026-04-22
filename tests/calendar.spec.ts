@@ -14,18 +14,26 @@ test.describe("Calendar Page @calendar", () => {
 
   test("shows month view by default", async ({ page }) => {
     // The month view should be active
-    await expect(page.getByRole("button", { name: "Month" })).toHaveClass(/bg-bitcoin-orange/);
+    await expect(page.getByRole("button", { name: "Month" })).toHaveClass(
+      /bg-bitcoin-orange/,
+    );
   });
 
   test("can switch view modes", async ({ page }) => {
     await page.getByRole("button", { name: "Week", exact: true }).click();
-    await expect(page.getByRole("button", { name: "Week", exact: true })).toHaveClass(/bg-bitcoin-orange/);
+    await expect(
+      page.getByRole("button", { name: "Week", exact: true }),
+    ).toHaveClass(/bg-bitcoin-orange/);
 
     await page.getByRole("button", { name: "Day", exact: true }).click();
-    await expect(page.getByRole("button", { name: "Day", exact: true })).toHaveClass(/bg-bitcoin-orange/);
+    await expect(
+      page.getByRole("button", { name: "Day", exact: true }),
+    ).toHaveClass(/bg-bitcoin-orange/);
 
     await page.getByRole("button", { name: "List", exact: true }).click();
-    await expect(page.getByRole("button", { name: "List", exact: true })).toHaveClass(/bg-bitcoin-orange/);
+    await expect(
+      page.getByRole("button", { name: "List", exact: true }),
+    ).toHaveClass(/bg-bitcoin-orange/);
   });
 });
 
@@ -36,11 +44,18 @@ test.describe("Calendar Event Creation (Authenticated) @calendar @whitelist", ()
     await page.waitForTimeout(2000);
 
     // Login via the "Connect Nostr" button in the header
-    await page.getByRole("button", { name: /connect nostr/i }).first().click();
+    await page
+      .getByRole("button", { name: /connect nostr/i })
+      .first()
+      .click();
     // The login modal opens with NostrLogin component
-    await expect(page.getByRole("heading", { name: /connect to nostr/i })).toBeVisible({ timeout: 5000 });
+    await expect(
+      page.getByRole("heading", { name: /connect to nostr/i }),
+    ).toBeVisible({ timeout: 5000 });
     // Click "Connect with Nostr Extension" in the login modal
-    await page.getByRole("button", { name: /connect with nostr extension/i }).click();
+    await page
+      .getByRole("button", { name: /connect with nostr extension/i })
+      .click();
     // Wait for login to complete and modal to close
     await page.waitForTimeout(2000);
   });
@@ -91,9 +106,9 @@ test.describe("Calendar Event Creation (Authenticated) @calendar @whitelist", ()
 
     await page.locator("#title").fill("Monthly Meetup");
     await page.locator("#summary").fill("Regular monthly meetup");
-    await page.locator("#description").fill(
-      "Join us for our monthly Bitcoin meetup."
-    );
+    await page
+      .locator("#description")
+      .fill("Join us for our monthly Bitcoin meetup.");
 
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -111,7 +126,9 @@ test.describe("Calendar Event Creation (Authenticated) @calendar @whitelist", ()
     await page.waitForTimeout(5000);
 
     // Page should still be responsive
-    await expect(page.getByTestId("create-event-btn")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId("create-event-btn")).toBeVisible({
+      timeout: 10000,
+    });
   });
 
   test("can submit an all-day event form", async ({ page }) => {
@@ -133,7 +150,9 @@ test.describe("Calendar Event Creation (Authenticated) @calendar @whitelist", ()
     await page.getByTestId("publish-event-btn").click();
     await page.waitForTimeout(5000);
 
-    await expect(page.getByTestId("create-event-btn")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId("create-event-btn")).toBeVisible({
+      timeout: 10000,
+    });
   });
 
   test("form validation shows alert for empty title", async ({ page }) => {
@@ -159,11 +178,15 @@ test.describe("Calendar Event Creation (Authenticated) @calendar @whitelist", ()
     await page.locator("#startTime").fill("10:00");
 
     // Add location
-    const locationInput = modal.locator('input[placeholder="Add location or URL"]');
+    const locationInput = modal.locator(
+      'input[placeholder="Add location or URL"]',
+    );
     await locationInput.fill("Kansas City Convention Center");
     await locationInput.locator("..").locator("button").click();
 
-    await expect(modal.getByText("Kansas City Convention Center")).toBeVisible();
+    await expect(
+      modal.getByText("Kansas City Convention Center"),
+    ).toBeVisible();
   });
 
   test("can add a hashtag", async ({ page }) => {

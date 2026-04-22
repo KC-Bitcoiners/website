@@ -6,9 +6,14 @@ import { injectNostrExtension } from "./helpers";
  * Retries with reloads to handle relay propagation delays.
  * Uses heading-based locators to avoid data-testid timing issues.
  */
-async function waitForCommitteeToAppear(page: Page, uniqueTitle: string, maxAttempts = 3) {
+async function waitForCommitteeToAppear(
+  page: Page,
+  uniqueTitle: string,
+  maxAttempts = 3,
+) {
   const getCardLocator = () =>
-    page.getByRole('heading', { name: uniqueTitle, level: 3 })
+    page
+      .getByRole("heading", { name: uniqueTitle, level: 3 })
       .locator('xpath=ancestor::div[contains(@class,"cursor-pointer")][1]');
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -18,7 +23,9 @@ async function waitForCommitteeToAppear(page: Page, uniqueTitle: string, maxAtte
     }
 
     try {
-      await expect(page.getByRole('heading', { name: uniqueTitle, level: 3 })).toBeVisible({ timeout: 25000 });
+      await expect(
+        page.getByRole("heading", { name: uniqueTitle, level: 3 }),
+      ).toBeVisible({ timeout: 25000 });
       return getCardLocator();
     } catch {
       // Committee not found yet, retry
@@ -27,7 +34,9 @@ async function waitForCommitteeToAppear(page: Page, uniqueTitle: string, maxAtte
 
   // Final attempt with reload and longer timeout
   await page.reload();
-  await expect(page.getByRole('heading', { name: uniqueTitle, level: 3 })).toBeVisible({ timeout: 30000 });
+  await expect(
+    page.getByRole("heading", { name: uniqueTitle, level: 3 }),
+  ).toBeVisible({ timeout: 30000 });
   return getCardLocator();
 }
 
@@ -36,7 +45,9 @@ test.describe("Committees Page @committees", () => {
     await injectNostrExtension(page);
     await page.goto("/committees");
     // Wait for loading to finish
-    await expect(page.getByTestId("committees-loading")).not.toBeVisible({ timeout: 20000 }).catch(() => {});
+    await expect(page.getByTestId("committees-loading"))
+      .not.toBeVisible({ timeout: 20000 })
+      .catch(() => {});
   });
 
   test("committees page loads with correct title", async ({ page }) => {
@@ -44,27 +55,49 @@ test.describe("Committees Page @committees", () => {
   });
 
   test("displays page header", async ({ page }) => {
-    await expect(page.getByRole("heading", { name: "Committees", exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Committees", exact: true }),
+    ).toBeVisible();
   });
 
   test("shows statistics cards", async ({ page }) => {
     // Wait for loading to finish
-    await expect(page.getByTestId("committees-loading")).not.toBeVisible({ timeout: 20000 }).catch(() => {});
+    await expect(page.getByTestId("committees-loading"))
+      .not.toBeVisible({ timeout: 20000 })
+      .catch(() => {});
     await expect(page.getByText("Active Committees")).toBeVisible();
     await expect(page.getByText("Open Positions")).toBeVisible();
-    await expect(page.locator(".text-gray-600").filter({ hasText: /^Members$/ }).first()).toBeVisible();
+    await expect(
+      page
+        .locator(".text-gray-600")
+        .filter({ hasText: /^Members$/ })
+        .first(),
+    ).toBeVisible();
   });
 
   test("shows Apply button", async ({ page }) => {
-    await expect(page.getByRole("button", { name: /Apply to Join/i })).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /Apply to Join/i }),
+    ).toBeVisible();
   });
 
-  test("shows loading spinner then empty or populated state", async ({ page }) => {
+  test("shows loading spinner then empty or populated state", async ({
+    page,
+  }) => {
     // Wait for loading to finish (spinner disappears)
-    await expect(page.getByTestId("committees-loading")).not.toBeVisible({ timeout: 20000 }).catch(() => {});
+    await expect(page.getByTestId("committees-loading"))
+      .not.toBeVisible({ timeout: 20000 })
+      .catch(() => {});
     // Either committees appear or the empty state shows
-    const hasCards = await page.locator('[data-testid^="committee-card-"]').first().isVisible().catch(() => false);
-    const hasEmpty = await page.getByTestId("committees-empty").isVisible().catch(() => false);
+    const hasCards = await page
+      .locator('[data-testid^="committee-card-"]')
+      .first()
+      .isVisible()
+      .catch(() => false);
+    const hasEmpty = await page
+      .getByTestId("committees-empty")
+      .isVisible()
+      .catch(() => false);
     expect(hasCards || hasEmpty).toBeTruthy();
   });
 });
@@ -76,7 +109,12 @@ test.describe("Committees Page - CRUD @committees @whitelist", () => {
     await injectNostrExtension(page);
     await page.goto("/committees");
     // Wait for loading to finish
-    await page.locator('[data-testid="add-committee-btn"], [data-testid="committees-empty"]').first().waitFor({ timeout: 15000 });
+    await page
+      .locator(
+        '[data-testid="add-committee-btn"], [data-testid="committees-empty"]',
+      )
+      .first()
+      .waitFor({ timeout: 15000 });
   });
 
   test("create a committee and verify it appears", async ({ page }) => {
@@ -87,13 +125,17 @@ test.describe("Committees Page - CRUD @committees @whitelist", () => {
 
     await page.getByTestId("committee-title").fill(uniqueTitle);
     // Slug auto-generates from title
-    await page.getByTestId("committee-description").fill("A test committee created via Playwright");
+    await page
+      .getByTestId("committee-description")
+      .fill("A test committee created via Playwright");
     await page.getByTestId("committee-schedule").fill("First Tuesday at 7 PM");
     await page.getByTestId("committee-openings").fill("5");
     await page.getByTestId("committee-tags").fill("test, e2e");
 
     await page.getByTestId("committee-publish").click();
-    await expect(page.getByTestId("committee-form-modal")).not.toBeVisible({ timeout: 20000 });
+    await expect(page.getByTestId("committee-form-modal")).not.toBeVisible({
+      timeout: 20000,
+    });
 
     // Wait for relay propagation and verify
     const card = await waitForCommitteeToAppear(page, uniqueTitle);
@@ -109,7 +151,9 @@ test.describe("Committees Page - CRUD @committees @whitelist", () => {
     await page.getByTestId("add-committee-btn").click({ force: true });
     await page.getByTestId("committee-title").fill(uniqueTitle);
     await page.getByTestId("committee-publish").click();
-    await expect(page.getByTestId("committee-form-modal")).not.toBeVisible({ timeout: 20000 });
+    await expect(page.getByTestId("committee-form-modal")).not.toBeVisible({
+      timeout: 20000,
+    });
 
     const card = await waitForCommitteeToAppear(page, uniqueTitle);
     await expect(card).toContainText("0 Members");
@@ -122,14 +166,20 @@ test.describe("Committees Page - CRUD @committees @whitelist", () => {
     await page.getByTestId("add-committee-btn").click({ force: true });
     await page.getByTestId("committee-title").fill(uniqueTitle);
     await page.getByTestId("committee-publish").click();
-    await expect(page.getByTestId("committee-form-modal")).not.toBeVisible({ timeout: 20000 });
+    await expect(page.getByTestId("committee-form-modal")).not.toBeVisible({
+      timeout: 20000,
+    });
 
     const card = await waitForCommitteeToAppear(page, uniqueTitle);
     // Click on the card to open detail modal
-    await card.evaluate((el: HTMLElement) => { el.click(); });
+    await card.evaluate((el: HTMLElement) => {
+      el.click();
+    });
 
     // Wait for detail modal (committee name in h2)
-    await expect(page.getByRole("heading", { name: uniqueTitle, exact: true, level: 2 })).toBeVisible({ timeout: 10000 });
+    await expect(
+      page.getByRole("heading", { name: uniqueTitle, exact: true, level: 2 }),
+    ).toBeVisible({ timeout: 10000 });
 
     // Verify "No members yet" shows for empty committee
     await expect(page.getByText("No members yet")).toBeVisible();
@@ -143,23 +193,33 @@ test.describe("Committees Page - CRUD @committees @whitelist", () => {
     await page.getByTestId("member-email").fill("chair@test.com");
 
     await page.getByTestId("member-publish").click();
-    await expect(page.getByTestId("member-form-modal")).not.toBeVisible({ timeout: 20000 });
+    await expect(page.getByTestId("member-form-modal")).not.toBeVisible({
+      timeout: 20000,
+    });
   });
 
-  test("add members with different roles via detail modal", async ({ page }) => {
+  test("add members with different roles via detail modal", async ({
+    page,
+  }) => {
     const uniqueTitle = `Roles Test ${Date.now()}`;
 
     // Create committee
     await page.getByTestId("add-committee-btn").click({ force: true });
     await page.getByTestId("committee-title").fill(uniqueTitle);
     await page.getByTestId("committee-publish").click();
-    await expect(page.getByTestId("committee-form-modal")).not.toBeVisible({ timeout: 20000 });
+    await expect(page.getByTestId("committee-form-modal")).not.toBeVisible({
+      timeout: 20000,
+    });
 
     const card = await waitForCommitteeToAppear(page, uniqueTitle);
 
     // Open detail
-    await card.evaluate((el: HTMLElement) => { el.click(); });
-    await expect(page.getByRole("heading", { name: uniqueTitle, exact: true, level: 2 })).toBeVisible({ timeout: 10000 });
+    await card.evaluate((el: HTMLElement) => {
+      el.click();
+    });
+    await expect(
+      page.getByRole("heading", { name: uniqueTitle, exact: true, level: 2 }),
+    ).toBeVisible({ timeout: 10000 });
 
     // Add chair - verify role input is free-form text
     await page.getByTestId("add-member-btn").click({ force: true });
@@ -169,30 +229,42 @@ test.describe("Committees Page - CRUD @committees @whitelist", () => {
     await page.getByTestId("member-name").fill("Alice Chair");
     await page.getByTestId("member-role").fill("Chair");
     await page.getByTestId("member-publish").click();
-    await expect(page.getByTestId("member-form-modal")).not.toBeVisible({ timeout: 20000 });
+    await expect(page.getByTestId("member-form-modal")).not.toBeVisible({
+      timeout: 20000,
+    });
 
     // Add vice-chair
     await page.getByTestId("add-member-btn").click({ force: true });
     await page.getByTestId("member-name").fill("Bob Vice");
     await page.getByTestId("member-role").fill("Vice Chair");
     await page.getByTestId("member-publish").click();
-    await expect(page.getByTestId("member-form-modal")).not.toBeVisible({ timeout: 20000 });
+    await expect(page.getByTestId("member-form-modal")).not.toBeVisible({
+      timeout: 20000,
+    });
 
     // Add regular member with custom role
     await page.getByTestId("add-member-btn").click({ force: true });
     await page.getByTestId("member-name").fill("Carol Member");
     await page.getByTestId("member-role").fill("Secretary");
     await page.getByTestId("member-publish").click();
-    await expect(page.getByTestId("member-form-modal")).not.toBeVisible({ timeout: 20000 });
+    await expect(page.getByTestId("member-form-modal")).not.toBeVisible({
+      timeout: 20000,
+    });
   });
 
-  test("application form opens with dynamic committee list", async ({ page }) => {
+  test("application form opens with dynamic committee list", async ({
+    page,
+  }) => {
     // Wait for page to settle
     await page.waitForTimeout(3000);
 
     // Open application form
-    await page.getByRole("button", { name: /Apply to Join/i }).click({ force: true });
-    await expect(page.getByRole("heading", { name: "Apply to Join a Committee" })).toBeVisible();
+    await page
+      .getByRole("button", { name: /Apply to Join/i })
+      .click({ force: true });
+    await expect(
+      page.getByRole("heading", { name: "Apply to Join a Committee" }),
+    ).toBeVisible();
 
     // Verify the form has the expected fields
     await expect(page.getByLabel(/Full Name/)).toBeVisible();
@@ -203,16 +275,22 @@ test.describe("Committees Page - CRUD @committees @whitelist", () => {
     await page.locator('button:has-text("×")').first().click();
   });
 
-  test("EventActions shows on committee cards for whitelisted users", async ({ page }) => {
+  test("EventActions shows on committee cards for whitelisted users", async ({
+    page,
+  }) => {
     // Create a committee so there's something to show
     const uniqueTitle = `Actions Test ${Date.now()}`;
     await page.getByTestId("add-committee-btn").click({ force: true });
     await page.getByTestId("committee-title").fill(uniqueTitle);
     await page.getByTestId("committee-publish").click();
-    await expect(page.getByTestId("committee-form-modal")).not.toBeVisible({ timeout: 20000 });
+    await expect(page.getByTestId("committee-form-modal")).not.toBeVisible({
+      timeout: 20000,
+    });
 
     const card = await waitForCommitteeToAppear(page, uniqueTitle);
     // EventActions "..." button should be visible since we're whitelisted
-    await expect(card.locator("button").filter({ hasText: "..." })).toBeVisible();
+    await expect(
+      card.locator("button").filter({ hasText: "..." }),
+    ).toBeVisible();
   });
 });

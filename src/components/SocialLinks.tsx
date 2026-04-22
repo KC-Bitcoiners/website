@@ -1,7 +1,7 @@
-import React from 'react';
-import { socialLinks, SocialLink } from '@/config';
-import { GitHubIcon } from './Icons';
-import { logger } from '@/utils/logger';
+import React from "react";
+import { socialLinks, SocialLink } from "@/config";
+import { GitHubIcon } from "./Icons";
+import { logger } from "@/utils/logger";
 
 // Icon mapping - dynamically import icons based on the icon name
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -16,9 +16,9 @@ interface SocialLinkProps {
   className?: string;
 }
 
-function SocialLinkItem({ link, className = '' }: SocialLinkProps) {
+function SocialLinkItem({ link, className = "" }: SocialLinkProps) {
   const IconComponent = iconMap[link.icon];
-  
+
   if (!IconComponent) {
     logger.warn(`Icon "${link.icon}" not found in iconMap`);
     return null;
@@ -48,7 +48,10 @@ interface SocialLinksProps {
   linkClassName?: string;
 }
 
-export default function SocialLinks({ className = '', linkClassName = '' }: SocialLinksProps) {
+export default function SocialLinks({
+  className = "",
+  linkClassName = "",
+}: SocialLinksProps) {
   if (socialLinks.length === 0) {
     return null;
   }
@@ -56,11 +59,7 @@ export default function SocialLinks({ className = '', linkClassName = '' }: Soci
   return (
     <div className={`flex items-center space-x-4 ${className}`}>
       {socialLinks.map((link) => (
-        <SocialLinkItem
-          key={link.name}
-          link={link}
-          className={linkClassName}
-        />
+        <SocialLinkItem key={link.name} link={link} className={linkClassName} />
       ))}
     </div>
   );

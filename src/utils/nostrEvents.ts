@@ -1,4 +1,11 @@
-import { getWhitelistFilter, WHITELISTED_NPUBS, WHITELISTED_PUBKEYS, nostrRelays, CLIENT_TAG, LOCATION_TAG } from "@/config";
+import {
+  getWhitelistFilter,
+  WHITELISTED_NPUBS,
+  WHITELISTED_PUBKEYS,
+  nostrRelays,
+  CLIENT_TAG,
+  LOCATION_TAG,
+} from "@/config";
 import { pool } from "@/lib/nostr";
 import { logger } from "@/utils/logger";
 import {
@@ -316,9 +323,7 @@ export async function publishNostrEvent(
 
     if (window.nostr && pubkey) {
       // Use Nostr extension for signing
-      logger.debug(
-        `Using Nostr extension for signing with pubkey: ${pubkey}`,
-      );
+      logger.debug(`Using Nostr extension for signing with pubkey: ${pubkey}`);
       const eventForExtension = {
         ...event,
         pubkey: pubkey,

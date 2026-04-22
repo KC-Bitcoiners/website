@@ -50,7 +50,7 @@ export function buildNewsletterEvent(opts: {
 }
 
 export async function publishNewsletter(
-  signedEvent: Record<string, unknown>
+  signedEvent: Record<string, unknown>,
 ): Promise<boolean> {
   try {
     const responses = await pool.publish(nostrRelays, signedEvent as any);

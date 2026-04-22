@@ -57,13 +57,13 @@ test.describe("Login Functionality @login", () => {
 
     await expect(page.getByText("Connect with Nostr")).toBeVisible();
     await expect(
-      page.getByText("Sign in to access nostr features")
+      page.getByText("Sign in to access nostr features"),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: /create new account/i })
+      page.getByRole("button", { name: /create new account/i }),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: /use existing key/i })
+      page.getByRole("button", { name: /use existing key/i }),
     ).toBeVisible();
   });
 
@@ -97,7 +97,7 @@ test.describe("Login Functionality @login", () => {
 
     // "Connect Nostr" button should no longer be visible
     await expect(
-      page.getByRole("button", { name: /connect nostr/i })
+      page.getByRole("button", { name: /connect nostr/i }),
     ).not.toBeVisible();
   });
 
@@ -109,11 +109,9 @@ test.describe("Login Functionality @login", () => {
     // Should show textarea for key input
     await expect(page.getByLabel(/private key or nsec/i)).toBeVisible();
     await expect(
-      page.getByRole("button", { name: /^sign in$/i })
+      page.getByRole("button", { name: /^sign in$/i }),
     ).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: /cancel/i })
-    ).toBeVisible();
+    await expect(page.getByRole("button", { name: /cancel/i })).toBeVisible();
   });
 
   test("Use Existing Key form can be cancelled", async ({ page }) => {
@@ -126,7 +124,7 @@ test.describe("Login Functionality @login", () => {
 
     // Should return to main login view
     await expect(
-      page.getByRole("button", { name: /create new account/i })
+      page.getByRole("button", { name: /create new account/i }),
     ).toBeVisible();
     await expect(page.getByLabel(/private key or nsec/i)).not.toBeVisible();
   });
@@ -139,7 +137,7 @@ test.describe("Login Functionality @login", () => {
     await page.getByRole("button", { name: /^sign in$/i }).click();
 
     await expect(
-      page.getByText("Please enter a private key or nsec")
+      page.getByText("Please enter a private key or nsec"),
     ).toBeVisible();
   });
 
@@ -151,16 +149,14 @@ test.describe("Login Functionality @login", () => {
     await page.getByLabel(/private key or nsec/i).fill("invalid-key");
     await page.getByRole("button", { name: /^sign in$/i }).click();
 
-    await expect(
-      page.getByText(/invalid|error|failed/i)
-    ).toBeVisible();
+    await expect(page.getByText(/invalid|error|failed/i)).toBeVisible();
   });
 
   test("keys stored locally disclaimer is shown", async ({ page }) => {
     await page.getByRole("button", { name: /connect nostr/i }).click();
 
     await expect(
-      page.getByText("Your keys are stored locally in your browser")
+      page.getByText("Your keys are stored locally in your browser"),
     ).toBeVisible();
   });
 });

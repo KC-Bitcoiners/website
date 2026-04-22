@@ -69,7 +69,13 @@ h6 {
 }
 
 /* Smooth transitions for interactive elements */
-a, button, input, textarea, select, summary, details {
+a,
+button,
+input,
+textarea,
+select,
+summary,
+details {
   transition-property:
     color, background-color, border-color, text-decoration-color, fill, stroke;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);

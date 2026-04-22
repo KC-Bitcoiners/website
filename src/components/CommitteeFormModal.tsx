@@ -10,7 +10,12 @@ interface CommitteeFormModalProps {
   onDone: () => void;
   onCancel: () => void;
   pubkey?: string;
-  signEvent?: (event: { kind: number; content: string; tags: string[][]; created_at: number }) => Promise<Record<string, unknown>>;
+  signEvent?: (event: {
+    kind: number;
+    content: string;
+    tags: string[][];
+    created_at: number;
+  }) => Promise<Record<string, unknown>>;
 }
 
 export default function CommitteeFormModal({
@@ -23,11 +28,17 @@ export default function CommitteeFormModal({
   const isEditing = !!editCommittee;
   const [title, setTitle] = useState(editCommittee?.title || "");
   const [dTag, setDTag] = useState(editCommittee?.dTag || "");
-  const [description, setDescription] = useState(editCommittee?.description || "");
-  const [meetingSchedule, setMeetingSchedule] = useState(editCommittee?.meetingSchedule || "");
+  const [description, setDescription] = useState(
+    editCommittee?.description || "",
+  );
+  const [meetingSchedule, setMeetingSchedule] = useState(
+    editCommittee?.meetingSchedule || "",
+  );
   const [openings, setOpenings] = useState(editCommittee?.openings || 0);
   const [image, setImage] = useState(editCommittee?.image || "");
-  const [topicTags, setTopicTags] = useState(editCommittee?.tags?.join(", ") || "");
+  const [topicTags, setTopicTags] = useState(
+    editCommittee?.tags?.join(", ") || "",
+  );
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState("");
 
@@ -35,13 +46,25 @@ export default function CommitteeFormModal({
     setTitle(val);
     // Auto-generate slug from title if not editing
     if (!isEditing && !dTag) {
-      setDTag(val.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 64));
+      setDTag(
+        val
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/(^-|-$)/g, "")
+          .slice(0, 64),
+      );
     }
   };
 
   const handlePublish = async () => {
-    if (!title.trim()) { setError("Title is required"); return; }
-    if (!dTag.trim()) { setError("Slug is required"); return; }
+    if (!title.trim()) {
+      setError("Title is required");
+      return;
+    }
+    if (!dTag.trim()) {
+      setError("Slug is required");
+      return;
+    }
 
     setPublishing(true);
     setError("");
@@ -53,7 +76,10 @@ export default function CommitteeFormModal({
         return;
       }
 
-      const tagList = topicTags.split(",").map((t) => t.trim()).filter(Boolean);
+      const tagList = topicTags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
 
       const unsignedEvent = buildCommitteeEvent({
         dTag: dTag.trim(),
@@ -67,10 +93,20 @@ export default function CommitteeFormModal({
 
       let signedEvent;
       if (signEvent && pubkey) {
-        signedEvent = await signEvent(unsignedEvent as { kind: number; content: string; tags: string[][]; created_at: number });
+        signedEvent = await signEvent(
+          unsignedEvent as {
+            kind: number;
+            content: string;
+            tags: string[][];
+            created_at: number;
+          },
+        );
       } else if (window.nostr) {
         const pk = await window.nostr.getPublicKey();
-        signedEvent = await window.nostr.signEvent({ ...unsignedEvent, pubkey: pk });
+        signedEvent = await window.nostr.signEvent({
+          ...unsignedEvent,
+          pubkey: pk,
+        });
       }
       const success = await publishCommittee(signedEvent);
 
@@ -86,7 +122,10 @@ export default function CommitteeFormModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onCancel}>
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      onClick={onCancel}
+    >
       <div
         className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl"
         data-testid="committee-form-modal"
@@ -98,7 +137,9 @@ export default function CommitteeFormModal({
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Title *
+            </label>
             <input
               data-testid="committee-title"
               type="text"
@@ -110,21 +151,29 @@ export default function CommitteeFormModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Slug *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Slug *
+            </label>
             <input
               data-testid="committee-slug"
               type="text"
               value={dTag}
-              onChange={(e) => setDTag(e.target.value.replace(/[^a-z0-9-]/g, ""))}
+              onChange={(e) =>
+                setDTag(e.target.value.replace(/[^a-z0-9-]/g, ""))
+              }
               placeholder="e.g. events"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent font-mono"
               disabled={isEditing}
             />
-            <p className="text-xs text-gray-500 mt-1">Used as a unique identifier (lowercase, dashes only)</p>
+            <p className="text-xs text-gray-500 mt-1">
+              Used as a unique identifier (lowercase, dashes only)
+            </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Description
+            </label>
             <textarea
               data-testid="committee-description"
               value={description}
@@ -136,7 +185,9 @@ export default function CommitteeFormModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Meeting Schedule</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Meeting Schedule
+            </label>
             <input
               data-testid="committee-schedule"
               type="text"
@@ -148,7 +199,9 @@ export default function CommitteeFormModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Open Positions</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Open Positions
+            </label>
             <input
               data-testid="committee-openings"
               type="number"
@@ -160,7 +213,9 @@ export default function CommitteeFormModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Image URL
+            </label>
             <input
               data-testid="committee-image"
               type="text"
@@ -172,7 +227,9 @@ export default function CommitteeFormModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tags (comma-separated)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Tags (comma-separated)
+            </label>
             <input
               data-testid="committee-tags"
               type="text"

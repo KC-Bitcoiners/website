@@ -12,7 +12,9 @@ test.describe("@gallery static", () => {
   });
 
   test("shows gallery header", async ({ page }) => {
-    await expect(page.getByRole("heading", { name: "Gallery", exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Gallery", exact: true }),
+    ).toBeVisible();
   });
 
   test("shows Add Photo button", async ({ page }) => {
@@ -34,19 +36,33 @@ test.describe("@gallery static", () => {
   test("upload modal closes on backdrop click", async ({ page }) => {
     await page.getByTestId("add-photo-btn").click();
     await expect(page.getByTestId("upload-modal")).toBeVisible();
-    await page.locator('[data-testid="upload-modal"]').click({ position: { x: 5, y: 5 } });
+    await page
+      .locator('[data-testid="upload-modal"]')
+      .click({ position: { x: 5, y: 5 } });
     await expect(page.getByTestId("upload-modal")).not.toBeVisible();
   });
 
-  test("shows login prompt in upload modal when not logged in", async ({ page }) => {
+  test("shows login prompt in upload modal when not logged in", async ({
+    page,
+  }) => {
     await page.getByTestId("add-photo-btn").click();
     await expect(page.getByText(/login with nostr/i)).toBeVisible();
   });
 
   test("shows loading or empty state", async ({ page }) => {
-    const hasLoading = await page.getByTestId("gallery-loading").isVisible().catch(() => false);
-    const hasEmpty = await page.getByTestId("gallery-empty").isVisible().catch(() => false);
-    const hasImages = await page.locator('[data-testid^="gallery-image-"]').first().isVisible().catch(() => false);
+    const hasLoading = await page
+      .getByTestId("gallery-loading")
+      .isVisible()
+      .catch(() => false);
+    const hasEmpty = await page
+      .getByTestId("gallery-empty")
+      .isVisible()
+      .catch(() => false);
+    const hasImages = await page
+      .locator('[data-testid^="gallery-image-"]')
+      .first()
+      .isVisible()
+      .catch(() => false);
     expect(hasLoading || hasEmpty || hasImages).toBe(true);
   });
 });
@@ -59,7 +75,9 @@ test.describe("@gallery @whitelist logged in", () => {
 
     // Login via the upload modal
     await page.getByTestId("add-photo-btn").click();
-    await page.getByRole("button", { name: /login with nostr extension/i }).click();
+    await page
+      .getByRole("button", { name: /login with nostr extension/i })
+      .click();
     await page.waitForTimeout(1000);
   });
 
@@ -73,13 +91,25 @@ test.describe("@gallery @whitelist logged in", () => {
     await expect(page.getByTestId("upload-submit")).toBeDisabled();
   });
 
-  test("shows loading or empty or images state when logged in", async ({ page }) => {
+  test("shows loading or empty or images state when logged in", async ({
+    page,
+  }) => {
     await page.getByTestId("upload-cancel").click();
     await page.waitForTimeout(2000);
 
-    const hasLoading = await page.getByTestId("gallery-loading").isVisible().catch(() => false);
-    const hasEmpty = await page.getByTestId("gallery-empty").isVisible().catch(() => false);
-    const hasImages = await page.locator('[data-testid^="gallery-image-"]').first().isVisible().catch(() => false);
+    const hasLoading = await page
+      .getByTestId("gallery-loading")
+      .isVisible()
+      .catch(() => false);
+    const hasEmpty = await page
+      .getByTestId("gallery-empty")
+      .isVisible()
+      .catch(() => false);
+    const hasImages = await page
+      .locator('[data-testid^="gallery-image-"]')
+      .first()
+      .isVisible()
+      .catch(() => false);
     expect(hasLoading || hasEmpty || hasImages).toBe(true);
   });
 });

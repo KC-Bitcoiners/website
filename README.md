@@ -118,6 +118,7 @@ The site is a static export — no server-side code. Every push to `master` trig
 ### Production — kcbitcoiners.com
 
 S3 + CloudFront via GitHub Actions (`staticS3.yml`):
+
 - Static files synced to S3 bucket
 - CloudFront cache invalidation
 - Also publishes to Nostr/Blossom decentralized CDN
@@ -138,14 +139,14 @@ Terraform + Dreamhost provider (`dns.yml`) manages the `relay.kcbitcoiners.com` 
 
 The app uses Nostr relays as its database. All user-generated content (events, resources, gallery photos, committee data) is stored as Nostr events:
 
-| Kind | Purpose | NIP |
-|------|---------|-----|
-| 0 | User profiles | NIP-01 |
-| 30023 | Long-form articles | NIP-23 |
-| 30067 | Pinboards (resource collections) | Community |
-| 39067 | Pins (resource links) | Community |
-| 31923 | Calendar events | NIP-52 |
-| 39068-39071 | Committee structures | Community |
+| Kind        | Purpose                          | NIP       |
+| ----------- | -------------------------------- | --------- |
+| 0           | User profiles                    | NIP-01    |
+| 30023       | Long-form articles               | NIP-23    |
+| 30067       | Pinboards (resource collections) | Community |
+| 39067       | Pins (resource links)            | Community |
+| 31923       | Calendar events                  | NIP-52    |
+| 39068-39071 | Committee structures             | Community |
 
 Users authenticate via a NIP-07 compatible browser extension (e.g., [nos2x](https://github.com/fiatjaf/nos2x), [Alby](https://getalby.com)). Publishing is restricted to whitelisted pubkeys defined in `config.json`.
 

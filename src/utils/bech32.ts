@@ -16,7 +16,9 @@ function bytesToHex(bytes: Uint8Array): string {
 
 function randomBytes(n: number): Uint8Array {
   if (typeof crypto === "undefined" || !crypto.getRandomValues) {
-    throw new Error("crypto.getRandomValues is not available — cannot generate secure random bytes");
+    throw new Error(
+      "crypto.getRandomValues is not available — cannot generate secure random bytes",
+    );
   }
   const bytes = new Uint8Array(n);
   crypto.getRandomValues(bytes);
@@ -54,7 +56,10 @@ export function nsecDecode(nsec: string): string {
 }
 
 /** Generate a new Nostr key pair. Returns hex privkey and hex pubkey. */
-export async function generateKeyPair(): Promise<{ privkeyHex: string; pubkeyHex: string }> {
+export async function generateKeyPair(): Promise<{
+  privkeyHex: string;
+  pubkeyHex: string;
+}> {
   const privkey = randomBytes(32);
   const s = await getSchnorr();
   const pubkey = s.getPublicKey(privkey);
@@ -71,7 +76,12 @@ export async function getPubkey(privkeyHex: string): Promise<string> {
 }
 
 /** Encode a Nostr address (naddr) per NIP-19. */
-export function naddrEncode(opts: { identifier: string; pubkey: string; kind: number; relays?: string[] }): string {
+export function naddrEncode(opts: {
+  identifier: string;
+  pubkey: string;
+  kind: number;
+  relays?: string[];
+}): string {
   const tlv: { type: number; value: Uint8Array }[] = [];
 
   // Type 0: identifier (d-tag value)

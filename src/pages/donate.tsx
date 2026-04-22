@@ -182,7 +182,7 @@ const NoteQRCode = ({
         <div className="p-2 bg-white border border-gray-200 rounded-lg">
           <img
             src={qrCodeUrl}
-            alt={`QR code to zap: ${goal.content?.slice(0, 50) || 'fundraising goal'}`}
+            alt={`QR code to zap: ${goal.content?.slice(0, 50) || "fundraising goal"}`}
             className="w-32 h-32"
           />
         </div>
@@ -231,7 +231,7 @@ const NoteIdQRCode = ({
         <div className="p-2 bg-white border border-gray-200 rounded-lg">
           <img
             src={qrCodeUrl}
-            alt={`QR code for note: ${goal.content?.slice(0, 50) || 'nostr event'}`}
+            alt={`QR code for note: ${goal.content?.slice(0, 50) || "nostr event"}`}
             className="w-32 h-32"
           />
         </div>
@@ -563,7 +563,12 @@ async function fetchUserMetadata(pubkey: string) {
   };
 
   try {
-    const eventsPromise = new Promise<{ name?: string; display_name?: string; picture?: string; about?: string }>((resolve, reject) => {
+    const eventsPromise = new Promise<{
+      name?: string;
+      display_name?: string;
+      picture?: string;
+      about?: string;
+    }>((resolve, reject) => {
       const timeout = setTimeout(() => {
         reject(new Error("Metadata timeout"));
       }, 5000);
