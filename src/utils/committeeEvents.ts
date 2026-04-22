@@ -159,7 +159,7 @@ export { buildDeleteEvent, publishDelete };
 // (window.__TEST_WHITELIST) are included alongside the config pubkeys.
 function getAuthorPubkeys(): string[] {
   const base = WHITELISTED_PUBKEYS;
-  if (typeof window !== "undefined" && (window as any).__TEST_WHITELIST) {
+  if (process.env.NODE_ENV !== "production" && typeof window !== "undefined" && (window as any).__TEST_WHITELIST) {
     const extra = (window as any).__TEST_WHITELIST as string[];
     const merged = new Set([...base, ...extra]);
     return Array.from(merged);

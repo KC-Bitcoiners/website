@@ -177,7 +177,7 @@ export function isWhitelisted(pubkey: string): boolean {
     hex = pubkey;
   }
   // In test mode, use the dynamically injected whitelist
-  if (typeof window !== "undefined" && (window as any).__TEST_WHITELIST) {
+  if (process.env.NODE_ENV !== "production" && typeof window !== "undefined" && (window as any).__TEST_WHITELIST) {
     return (window as any).__TEST_WHITELIST.includes(hex);
   }
   return WHITELISTED_PUBKEYS.includes(hex);

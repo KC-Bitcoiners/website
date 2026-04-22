@@ -19,6 +19,7 @@ import CommitteeMemberFormModal from "@/components/CommitteeMemberFormModal";
 import CommitteeOpeningFormModal from "@/components/CommitteeOpeningFormModal";
 import EventActions from "@/components/EventActions";
 import ReactMarkdown from "react-markdown";
+import rehypeSanitize from "rehype-sanitize";
 import { logger } from "@/utils/logger";
 
 // UI-facing committee shape (matches the existing rendering code)
@@ -653,7 +654,7 @@ export default function CommitteesPage() {
                             <div className="text-sm text-gray-600 mt-1">
                               {expandedOpenings.has(opening.id) ? (
                                 <div className="prose prose-sm max-w-none">
-                                  <ReactMarkdown>{opening.description}</ReactMarkdown>
+                                  <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{opening.description}</ReactMarkdown>
                                   <button
                                     onClick={() => setExpandedOpenings((prev) => { const s = new Set(prev); s.delete(opening.id); return s; })}
                                     className="text-bitcoin-orange hover:underline text-xs font-medium mt-1"
@@ -666,7 +667,7 @@ export default function CommitteesPage() {
                                   onClick={() => setExpandedOpenings((prev) => new Set(prev).add(opening.id))}
                                   className="line-clamp-2 cursor-pointer"
                                 >
-                                  <ReactMarkdown>{opening.description}</ReactMarkdown>
+                                  <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{opening.description}</ReactMarkdown>
                                   <span className="text-bitcoin-orange hover:underline text-xs font-medium">Show more</span>
                                 </div>
                               )}

@@ -63,7 +63,7 @@ export async function uploadToBlossom(file: File, signer: SignerFn): Promise<str
  */
 export function streamGalleryImages(onImage: (image: GalleryImage) => void): { cancel: () => void } {
   // In test mode, use the dynamically injected whitelist
-  const testWhitelist = typeof window !== "undefined" && (window as any).__TEST_WHITELIST;
+  const testWhitelist = process.env.NODE_ENV !== "production" && typeof window !== "undefined" && (window as any).__TEST_WHITELIST;
   const authors = testWhitelist || WHITELISTED_PUBKEYS;
   const authorSet = new Set(authors);
   const seenIds = new Set<string>();
@@ -142,7 +142,7 @@ export async function publishGalleryImage(
   if (!caption.trim()) throw new Error("Caption is required.");
   if (!WHITELISTED_PUBKEYS.includes(pubkey)) {
     // In test mode, allow test-generated keys
-    const testWhitelist = typeof window !== "undefined" && (window as any).__TEST_WHITELIST;
+    const testWhitelist = process.env.NODE_ENV !== "production" && typeof window !== "undefined" && (window as any).__TEST_WHITELIST;
     if (!testWhitelist || !testWhitelist.includes(pubkey)) {
       return { success: false, error: "Not authorized to upload gallery images." };
     }
