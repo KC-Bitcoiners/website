@@ -42,9 +42,12 @@ export default function NostrLogin({
     try {
       const result = await login(); // Generate new key pair
       if (result?.nsec) {
+        // Show the nsec download/save prompt — don't close the modal yet
         setNewNsec(result.nsec);
+      } else {
+        // No key to save (shouldn't happen for generated keys), close normally
+        onLoginSuccess?.();
       }
-      onLoginSuccess?.();
     } catch (err) {
       setError("Failed to create account. Please try again.");
     } finally {
@@ -171,7 +174,10 @@ export default function NostrLogin({
           </button>
 
           <button
-            onClick={() => setNewNsec(null)}
+            onClick={() => {
+              setNewNsec(null);
+              onLoginSuccess?.();
+            }}
             className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
           >
             I&apos;ve Saved My Key
