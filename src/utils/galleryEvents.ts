@@ -1,5 +1,5 @@
-import { Actions, createUploadAuth, buildBlossomURI, getServersFromServerListEvent, USER_BLOSSOM_SERVER_LIST_KIND } from "blossom-client-sdk";
-import type { BlobDescriptor, ServerType, SignedEvent, Signer } from "blossom-client-sdk";
+import { buildBlossomURI, getServersFromServerListEvent, USER_BLOSSOM_SERVER_LIST_KIND } from "blossom-client-sdk";
+import type { BlobDescriptor } from "blossom-client-sdk";
 import { pool } from "@/lib/nostr";
 import {
   WHITELISTED_PUBKEYS,
@@ -50,22 +50,57 @@ function extFromFile(file: File): string {
   return "bin";
 }
 
-function adaptSigner(signer: SignerFn): Signer {
-  return async (draft) => (await signer(draft)) as unknown as SignedEvent;
-}
-
-/** Upload a file to the configured Blossom server using blossom-client-sdk v5. */
+/**
+ * Upload a file to the configured Blossom server.
+ * Uses manual HTTP + BUD-06 auth with `u` and `method` tags because
+ * blossom.f7z.io doesn't accept the SDK v5's `server`-tag auth format.
+ */
 export async function uploadToBlossom(file: File, signer: SignerFn): Promise<BlobDescriptor> {
   const server = blossomConfig?.server || "https://blossom.primal.net";
-  const sdkSigner = adaptSigner(signer);
 
-  return Actions.uploadBlob(server, file, {
-    onAuth: async (srv: ServerType, sha256: string) =>
-      createUploadAuth(sdkSigner, sha256, {
-        servers: typeof srv === "string" ? srv : srv.toString(),
-        message: `Upload ${file.name}`,
-      }),
+  // Compute SHA-256 of the file
+  const fileBuffer = await file.arrayBuffer();
+  const hashBuffer = await crypto.subtle.digest("SHA-256", fileBuffer);
+  const sha256 = Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+
+  // Build BUD-06 auth event with `u` and `method` tags (required by blossom.f7z.io)
+  const authEvent = {
+    kind: 24242,
+    created_at: Math.floor(Date.now() / 1000),
+    tags: [
+      ["u", server],
+      ["method", "PUT"],
+      ["x", sha256],
+      ["t", "upload"],
+      ["expiration", String(Math.floor(Date.now() / 1000) + 300)],
+    ],
+    content: `Upload ${file.name}`,
+  };
+  const signedAuth = await signer(authEvent);
+  const authBase64 = btoa(JSON.stringify(signedAuth));
+
+  const uploadUrl = `${server}/upload?sha256=${sha256}`;
+  const response = await fetch(uploadUrl, {
+    method: "PUT",
+    headers: {
+      Authorization: `Nostr ${authBase64}`,
+      "Content-Type": file.type || "application/octet-stream",
+    },
+    body: file,
   });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    throw new Error(`Upload failed (${response.status}): ${text}`);
+  }
+  const result = await response.json();
+  // Blossom returns { url, sha256, size, type, uploaded }
+  if (!result.sha256) {
+    throw new Error("Unexpected upload response");
+  }
+  return result as BlobDescriptor;
 }
 
 /** Build a BUD-10 blossom: URI from an upload result and author. */
