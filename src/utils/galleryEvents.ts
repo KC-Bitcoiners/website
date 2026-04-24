@@ -79,7 +79,11 @@ export async function uploadToBlossom(file: File, signer: SignerFn): Promise<Blo
     content: `Upload ${file.name}`,
   };
   const signedAuth = await signer(authEvent);
-  const authBase64 = btoa(JSON.stringify(signedAuth));
+  // URL-safe base64 — blossom servers expect this encoding per BUD-06
+  const authBase64 = btoa(JSON.stringify(signedAuth))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
 
   const uploadUrl = `${server}/upload?sha256=${sha256}`;
   const response = await fetch(uploadUrl, {
