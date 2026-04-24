@@ -24,6 +24,8 @@ interface EventActionsProps {
   extraActions?: EventAction[];
   /** Optional class for the trigger button */
   className?: string;
+  /** Hide the zap total badge (useful when rendering your own zap display) */
+  hideZapBadge?: boolean;
   /** Callback when user requests delete. If not provided, delete option is hidden. */
   onDelete?: () => void;
   /** Callback when user requests edit. If not provided, edit option is hidden. */
@@ -38,6 +40,7 @@ export default function EventActions({
   event,
   extraActions,
   className,
+  hideZapBadge,
   onDelete,
   onEdit,
   signEvent,
@@ -275,7 +278,7 @@ export default function EventActions({
       </button>
 
       {/* Zap total badge */}
-      {zapTotal !== null && (
+      {zapTotal !== null && !hideZapBadge && (
         <div className={`text-xs text-bitcoin-orange font-semibold flex items-center gap-0.5 justify-center ${className || ""}`}>
           <span>&#x26A1;</span>
           <span>{zapTotal >= 1000000 ? `${(zapTotal / 1000000).toFixed(1)}M` : zapTotal >= 1000 ? `${(zapTotal / 1000).toFixed(1)}k` : zapTotal}</span>

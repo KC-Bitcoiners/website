@@ -396,7 +396,7 @@ export default function CalendarView({
                             <ZapBadge eventId={event.id.replace("nostr-", "")} pubkey={event.pubkey} />
                             {event.rawEvent && (
                               <div className="opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                                <EventActions event={event.rawEvent} signEvent={signEvent} pubkey={pubkey} className="!text-white/80 hover:!text-white !p-0.5 !min-w-[18px] !min-h-[18px] !text-[10px]" />
+                                <EventActions event={event.rawEvent} signEvent={signEvent} pubkey={pubkey} hideZapBadge className="!text-white/80 hover:!text-white !p-0.5 !min-w-[18px] !min-h-[18px] !text-[10px]" />
                               </div>
                             )}
                           </div>
@@ -624,7 +624,7 @@ export default function CalendarView({
                               <ZapBadge eventId={event.id.replace("nostr-", "")} pubkey={event.pubkey} />
                               {event.rawEvent && (
                                 <div className="opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                                  <EventActions event={event.rawEvent} signEvent={signEvent} pubkey={pubkey} className="!text-white/80 hover:!text-white !p-0.5 !min-w-[18px] !min-h-[18px] !text-[10px]" />
+                                  <EventActions event={event.rawEvent} signEvent={signEvent} pubkey={pubkey} hideZapBadge className="!text-white/80 hover:!text-white !p-0.5 !min-w-[18px] !min-h-[18px] !text-[10px]" />
                                 </div>
                               )}
                             </div>
