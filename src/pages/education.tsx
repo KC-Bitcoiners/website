@@ -133,15 +133,11 @@ export default function EducationPage() {
     prevPinIdsRef.current = ids;
 
     let cancelled = false;
-    const totals: Record<string, number> = {};
-    Promise.all(
-      pins.map((p) =>
-        fetchZapTotal(p.id, p.pubkey).then((t) => {
-          if (t > 0) totals[p.id] = t;
-        }),
-      ),
-    ).then(() => {
-      if (!cancelled) setZapTotals(totals);
+    pins.forEach((p) => {
+      fetchZapTotal(p.id, p.pubkey).then((t) => {
+        if (cancelled || t === 0) return;
+        setZapTotals((prev) => ({ ...prev, [p.id]: t }));
+      });
     });
     return () => { cancelled = true; };
   }, [view, featuredPins, boardPins]);

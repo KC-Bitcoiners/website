@@ -105,12 +105,12 @@ export default function ShopPage() {
   useEffect(() => {
     if (nostrVendors.length === 0) return;
     let cancelled = false;
-    const totals: Record<string, number> = {};
-    Promise.all(
-      nostrVendors.map((v) =>
-        fetchZapTotal(v.id, v.rawEvent?.pubkey as string | undefined).then((t) => { if (t > 0) totals[v.id] = t; }),
-      ),
-    ).then(() => { if (!cancelled) setVendorZapTotals(totals); });
+    nostrVendors.forEach((v) => {
+      fetchZapTotal(v.id, v.rawEvent?.pubkey as string | undefined).then((t) => {
+        if (cancelled || t === 0) return;
+        setVendorZapTotals((prev) => ({ ...prev, [v.id]: t }));
+      });
+    });
     return () => { cancelled = true; };
   }, [nostrVendors]);
 

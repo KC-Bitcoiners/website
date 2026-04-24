@@ -60,12 +60,12 @@ export default function GalleryPage() {
   useEffect(() => {
     if (images.length === 0) return;
     let cancelled = false;
-    const totals: Record<string, number> = {};
-    Promise.all(
-      images.map((img) =>
-        fetchZapTotal(img.id, img.pubkey).then((t) => { if (t > 0) totals[img.id] = t; }),
-      ),
-    ).then(() => { if (!cancelled) setZapTotals(totals); });
+    images.forEach((img) => {
+      fetchZapTotal(img.id, img.pubkey).then((t) => {
+        if (cancelled || t === 0) return;
+        setZapTotals((prev) => ({ ...prev, [img.id]: t }));
+      });
+    });
     return () => { cancelled = true; };
   }, [images]);
 

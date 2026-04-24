@@ -90,14 +90,14 @@ export default function CalendarPage({
     const nostrEvents = events.filter((e) => e.id?.startsWith("nostr-") && e.rawEvent);
     if (nostrEvents.length === 0) return;
     let cancelled = false;
-    const totals: Record<string, number> = {};
-    Promise.all(
-      nostrEvents.map((e) => {
-        const rawId = e.id.replace("nostr-", "");
-        const pubkey = (e.rawEvent as any)?.pubkey as string | undefined;
-        return fetchZapTotal(rawId, pubkey).then((t) => { if (t > 0) totals[rawId] = t; });
-      }),
-    ).then(() => { if (!cancelled) setZapTotals(totals); });
+    nostrEvents.forEach((e) => {
+      const rawId = e.id.replace("nostr-", "");
+      const pubkey = (e.rawEvent as any)?.pubkey as string | undefined;
+      fetchZapTotal(rawId, pubkey).then((t) => {
+        if (cancelled || t === 0) return;
+        setZapTotals((prev) => ({ ...prev, [rawId]: t }));
+      });
+    });
     return () => { cancelled = true; };
   }, [events]);
 
