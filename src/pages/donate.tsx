@@ -1,5 +1,6 @@
 import { nostrRelays, WHITELISTED_PUBKEYS, basePath } from "@/config";
 import EventActions from "@/components/EventActions";
+import { useNostr } from "@/contexts/NostrContext";
 import { pool } from "@/lib/nostr";
 import {
   getZapGoalAmount,
@@ -244,9 +245,13 @@ const NoteIdQRCode = ({
 const ZapraiserCard = ({
   zapraiser,
   index,
+  signEvent,
+  pubkey,
 }: {
   zapraiser: Zapraiser;
   index: number;
+  signEvent?: (event: { kind: number; content: string; tags: string[][]; created_at: number }) => Promise<Record<string, unknown>>;
+  pubkey?: string | null;
 }) => {
   const goalAmount = getZapGoalAmount(zapraiser.goal) || 0;
   const percentage =
@@ -320,7 +325,7 @@ const ZapraiserCard = ({
           </div>
 
           {/* Event actions */}
-          <EventActions event={zapraiser.goal as Record<string, unknown>} />
+          <EventActions event={zapraiser.goal as Record<string, unknown>} signEvent={signEvent} pubkey={pubkey} />
         </div>
       </div>
 
@@ -602,6 +607,7 @@ async function fetchUserMetadata(pubkey: string) {
 }
 
 export default function DonatePage() {
+  const { user, signEvent } = useNostr();
   const [zapraisers, setzapraisers] = useState<Zapraiser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -761,6 +767,8 @@ export default function DonatePage() {
                 key={zapraiser.goal.id}
                 zapraiser={zapraiser}
                 index={index}
+                signEvent={signEvent}
+                pubkey={user?.pubkey}
               />
             ))}
           </div>

@@ -1,10 +1,19 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
+import ZapModal from "./ZapModal";
+import { fetchZapTotal } from "@/utils/zaps";
 
 export interface EventAction {
   label: string;
   icon?: string;
   onClick: () => void;
 }
+
+type SignerFn = (event: {
+  kind: number;
+  content: string;
+  tags: string[][];
+  created_at: number;
+}) => Promise<Record<string, unknown>>;
 
 interface EventActionsProps {
   event: Record<string, unknown>;
@@ -16,6 +25,10 @@ interface EventActionsProps {
   onDelete?: () => void;
   /** Callback when user requests edit. If not provided, edit option is hidden. */
   onEdit?: () => void;
+  /** Signer function for zap support. If not provided, zap option is hidden. */
+  signEvent?: SignerFn;
+  /** Current user's pubkey for zap support. */
+  pubkey?: string | null;
 }
 
 export default function EventActions({
@@ -24,14 +37,29 @@ export default function EventActions({
   className,
   onDelete,
   onEdit,
+  signEvent,
+  pubkey,
 }: EventActionsProps) {
   const [open, setOpen] = useState(false);
   const [showRaw, setShowRaw] = useState(false);
+  const [showZap, setShowZap] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
+  const [zapTotal, setZapTotal] = useState<number | null>(null);
   const [position, setPosition] = useState<{
     top: number;
     right: number;
   } | null>(null);
+
+  // Fetch zap total for this event
+  useEffect(() => {
+    const id = event.id as string | undefined;
+    if (!id) return;
+    let cancelled = false;
+    fetchZapTotal(id).then((total) => {
+      if (!cancelled && total > 0) setZapTotal(total);
+    });
+    return () => { cancelled = true; };
+  }, [event.id]);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -102,6 +130,19 @@ export default function EventActions({
   };
 
   const actions: EventAction[] = [
+    // Zap action — show whenever event has an author pubkey
+    ...(event.pubkey
+      ? [
+          {
+            label: "Zap",
+            icon: "\u26A1",
+            onClick: () => {
+              setOpen(false);
+              setShowZap(true);
+            },
+          },
+        ]
+      : []),
     {
       label: copied === "Share link" ? "Copied!" : "Share",
       icon: "🔗",
@@ -165,6 +206,14 @@ export default function EventActions({
         ...
       </button>
 
+      {/* Zap total badge */}
+      {zapTotal !== null && (
+        <div className={`text-xs text-bitcoin-orange font-semibold flex items-center gap-0.5 justify-center ${className || ""}`}>
+          <span>&#x26A1;</span>
+          <span>{zapTotal >= 1000000 ? `${(zapTotal / 1000000).toFixed(1)}M` : zapTotal >= 1000 ? `${(zapTotal / 1000).toFixed(1)}k` : zapTotal}</span>
+        </div>
+      )}
+
       {/* Dropdown — fixed positioning to escape overflow clipping */}
       {open && position && (
         <div
@@ -207,6 +256,17 @@ export default function EventActions({
             {JSON.stringify(event, null, 2)}
           </pre>
         </div>
+      )}
+
+      {/* Zap modal */}
+      {showZap && (
+        <ZapModal
+          event={event}
+          isOpen={showZap}
+          onClose={() => setShowZap(false)}
+          signEvent={signEvent}
+          pubkey={pubkey ?? null}
+        />
       )}
     </div>
   );

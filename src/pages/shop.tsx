@@ -908,6 +908,8 @@ export default function ShopPage() {
                   {"npub" in vendor && (vendor as NostrVendor).rawEvent && (
                     <EventActions
                       event={(vendor as NostrVendor).rawEvent!}
+                      signEvent={signEvent}
+                      pubkey={user?.pubkey}
                       onEdit={
                         user && vendor.npub === user.pubkey
                           ? () => {

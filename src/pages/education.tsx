@@ -448,6 +448,8 @@ export default function EducationPage() {
                     onDelete={() => handleDeletePin(pin)}
                     onEdit={() => handleEditPin(pin)}
                     onOpenArticle={setSelectedArticle}
+                    signEvent={signEvent}
+                    pubkey={user?.pubkey}
                   />
                 ))}
               </div>
@@ -554,6 +556,8 @@ export default function EducationPage() {
                           onDelete={() => handleDeletePin(pin)}
                           onEdit={() => handleEditPin(pin)}
                           onOpenArticle={setSelectedArticle}
+                          signEvent={signEvent}
+                          pubkey={user?.pubkey}
                         />
                       ))}
                     </div>
@@ -779,11 +783,15 @@ function PinCard({
   onDelete,
   onEdit,
   onOpenArticle,
+  signEvent,
+  pubkey,
 }: {
   pin: Pin;
   onDelete: () => void;
   onEdit: () => void;
   onOpenArticle?: (pin: Pin) => void;
+  signEvent?: (event: { kind: number; content: string; tags: string[][]; created_at: number }) => Promise<Record<string, unknown>>;
+  pubkey?: string | null;
 }) {
   const url = getPinUrl(pin);
   const dt = getDisplayType(pin);
@@ -1017,6 +1025,8 @@ function PinCard({
           {pin.rawEvent && (
             <EventActions
               event={pin.rawEvent}
+              signEvent={signEvent}
+              pubkey={pubkey}
               onDelete={onDelete}
               onEdit={onEdit}
             />
