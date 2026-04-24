@@ -206,7 +206,7 @@ export async function fetchZapInvoice(
     signEvent: SignerFn;
     content?: string;
   },
-): Promise<{ invoice: string } | { error: string }> {
+): Promise<{ invoice: string; signedRequest?: Record<string, unknown> } | { error: string }> {
   const { recipientPubkey, eventId, millisats, signEvent, content } = params;
 
   // Step 1: Get lightning address from profile
@@ -252,7 +252,7 @@ export async function fetchZapInvoice(
     if (!res.ok) return { error: `Lightning server error (${res.status}).` };
     const data = await res.json();
     if (!data.pr) return { error: "Invalid response from Lightning server." };
-    return { invoice: data.pr as string };
+    return { invoice: data.pr as string, signedRequest: signed };
   } catch {
     return { error: "Could not fetch payment invoice." };
   }
@@ -261,4 +261,85 @@ export async function fetchZapInvoice(
 /** Clear the LNURL cache (useful for testing). */
 export function clearLNURLCache(): void {
   lnurlCache.clear();
+}
+
+// ── Zap Totals ─────────────────────────────────────────────────────────
+
+/**
+ * Extract zap amount in sats from a kind 9735 zap receipt event.
+ * Tries the bolt11 invoice first, falls back to description tag.
+ */
+function extractZapAmount(event: any): number {
+  // Try bolt11 tag — parse millisats from the invoice
+  const bolt11Tag = event.tags?.find((t: string[]) => t[0] === "bolt11");
+  if (bolt11Tag?.[1]) {
+    // Try parsing amount= from invoice
+    const msatMatch = bolt11Tag[1].match(/amount=(\d+)/);
+    if (msatMatch) return Math.floor(parseInt(msatMatch[1]) / 1000);
+
+    // Fallback: amount from invoice prefix (e.g. "lnbc1u" = 100k msats)
+    try {
+      const invoice = bolt11Tag[1];
+      if (invoice.includes("lnbc")) {
+        const m = invoice.match(/(\d+)([munp])/);
+        if (m) {
+          const amt = parseInt(m[1]);
+          switch (m[2]) {
+            case "p": return Math.floor(amt * 1000);
+            case "n": return Math.floor(amt / 10);
+            case "u": return Math.floor(amt * 100);
+            case "m": return Math.floor(amt * 100000);
+          }
+        }
+      }
+    } catch { /* ignore */ }
+  }
+
+  // Try amount tag
+  const amountTag = event.tags?.find((t: string[]) => t[0] === "amount");
+  if (amountTag?.[1]) {
+    const msats = parseInt(amountTag[1]);
+    if (!isNaN(msats)) return Math.floor(msats / 1000);
+  }
+
+  return 0;
+}
+
+/**
+ * Fetch the total zap amount (in sats) received by a specific event.
+ * Queries relays for kind 9735 zap receipts referencing the event ID.
+ * Deduplicates across relays by event ID.
+ */
+export function fetchZapTotal(eventId: string): Promise<number> {
+  return new Promise((resolve) => {
+    let settled = false;
+    let total = 0;
+    const seen = new Set<string>();
+
+    const sub = pool
+      .request(nostrRelays, {
+        kinds: [9735],
+        "#e": [eventId],
+        limit: 500,
+      })
+      .subscribe({
+        next: (event: any) => {
+          if (seen.has(event.id)) return;
+          seen.add(event.id);
+          total += extractZapAmount(event);
+        },
+        error: () => {
+          if (!settled) { settled = true; resolve(total); }
+        },
+        complete: () => {
+          if (!settled) { settled = true; resolve(total); }
+        },
+      });
+
+    // Timeout after 5s — return whatever we collected
+    setTimeout(() => {
+      if (!settled) { settled = true; resolve(total); }
+      sub.unsubscribe();
+    }, 5000);
+  });
 }

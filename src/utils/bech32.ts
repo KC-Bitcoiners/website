@@ -112,3 +112,45 @@ export function naddrEncode(opts: {
 
   return bech32.encode("naddr", bech32.toWords(buf), 5000);
 }
+
+/** Encode a nostr event (nevent) per NIP-19. */
+export function neventEncode(opts: {
+  id: string;
+  relays?: string[];
+  author?: string;
+  kind?: number;
+}): string {
+  const tlv: { type: number; value: Uint8Array }[] = [];
+
+  // Type 0: event id (32 bytes)
+  tlv.push({ type: 0, value: hexToBytes(opts.id) });
+  // Type 1: relays
+  if (opts.relays) {
+    for (const relay of opts.relays) {
+      tlv.push({ type: 1, value: new TextEncoder().encode(relay) });
+    }
+  }
+  // Type 2: author (pubkey hex → 32 bytes)
+  if (opts.author) {
+    tlv.push({ type: 2, value: hexToBytes(opts.author) });
+  }
+  // Type 3: kind (4-byte big-endian)
+  if (opts.kind !== undefined) {
+    const kindBytes = new Uint8Array(4);
+    new DataView(kindBytes.buffer).setUint32(0, opts.kind, false);
+    tlv.push({ type: 3, value: kindBytes });
+  }
+
+  // Encode TLV
+  const totalLen = tlv.reduce((sum, e) => sum + 2 + e.value.length, 0);
+  const buf = new Uint8Array(totalLen);
+  let offset = 0;
+  for (const e of tlv) {
+    buf[offset++] = e.type;
+    buf[offset++] = e.value.length;
+    buf.set(e.value, offset);
+    offset += e.value.length;
+  }
+
+  return bech32.encode("nevent", bech32.toWords(buf), 5000);
+}

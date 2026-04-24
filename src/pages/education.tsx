@@ -5,7 +5,7 @@ import { kinds, unixNow } from "applesauce-core/helpers";
 import { use$ } from "applesauce-react/hooks";
 import { onlyEvents } from "applesauce-relay/operators";
 import Head from "next/head";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import EventActions from "@/components/EventActions";
@@ -44,6 +44,7 @@ import {
   publishPin,
   publishPinboard,
 } from "@/utils/pinboardEvents";
+import { fetchZapTotal } from "@/utils/zaps";
 import { eventStore, pool } from "../lib/nostr";
 
 function getYouTubeId(url: string): string | null {
@@ -117,8 +118,33 @@ export default function EducationPage() {
   const [view, setView] = useState<"featured" | "boards">("featured");
   const [showAddPin, setShowAddPin] = useState(false);
   const [editPin, setEditPin] = useState<Pin | null>(null);
-  const [sortBy, setSortBy] = useState<"date" | "title">("date");
+  const [sortBy, setSortBy] = useState<"date" | "title" | "zaps">("date");
   const [selectedArticle, setSelectedArticle] = useState<Pin | null>(null);
+
+  // Zap totals for sorting — fetched once for visible pins
+  const [zapTotals, setZapTotals] = useState<Record<string, number>>({});
+  const prevPinIdsRef = useRef<string>("");
+
+  useEffect(() => {
+    // Build a stable key from current pin IDs to avoid re-fetching on every render
+    const pins = view === "featured" ? featuredPins : boardPins;
+    const ids = pins.map((p) => p.id).sort().join(",");
+    if (ids === prevPinIdsRef.current) return;
+    prevPinIdsRef.current = ids;
+
+    let cancelled = false;
+    const totals: Record<string, number> = {};
+    Promise.all(
+      pins.map((p) =>
+        fetchZapTotal(p.id).then((t) => {
+          if (t > 0) totals[p.id] = t;
+        }),
+      ),
+    ).then(() => {
+      if (!cancelled) setZapTotals(totals);
+    });
+    return () => { cancelled = true; };
+  }, [view, featuredPins, boardPins]);
 
   const liveStreamFilters = useMemo(() => [
     {
@@ -251,6 +277,7 @@ export default function EducationPage() {
       ? activePins
       : activePins.filter((p) => getDisplayType(p) === displayFilter)
   ).sort((a, b) => {
+    if (sortBy === "zaps") return (zapTotals[b.id] || 0) - (zapTotals[a.id] || 0);
     if (sortBy === "title") return (a.title || "").localeCompare(b.title || "");
     return b.created_at - a.created_at; // date desc (newest first)
   });
@@ -654,8 +681,8 @@ function FilterBar({
   pins: Pin[];
   filter: DisplayType | "all";
   setFilter: (f: DisplayType | "all") => void;
-  sortBy: "date" | "title";
-  setSortBy: (s: "date" | "title") => void;
+  sortBy: "date" | "title" | "zaps";
+  setSortBy: (s: "date" | "title" | "zaps") => void;
   onAddClick: () => void;
   canAdd: boolean;
 }) {
@@ -703,7 +730,7 @@ function FilterBar({
         data-testid="sort-controls"
       >
         <span className="text-xs text-gray-500 mr-1">Sort:</span>
-        {(["date", "title"] as const).map((s) => (
+        {(["date", "title", "zaps"] as const).map((s) => (
           <button
             key={s}
             data-testid={`sort-${s}`}
@@ -714,7 +741,7 @@ function FilterBar({
                 : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
           >
-            {s === "date" ? "Newest" : "A-Z"}
+            {s === "date" ? "Newest" : s === "title" ? "A-Z" : "\u26A1 Zaps"}
           </button>
         ))}
       </div>
@@ -739,6 +766,80 @@ interface PodcastFeedMeta {
 
 const feedMetaCache = new Map<string, PodcastFeedMeta>();
 
+// CORS proxy list — tried in order after direct fetch fails
+const CORS_PROXIES = [
+  (url: string) => `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(url)}`,
+  (url: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+];
+
+/**
+ * Try to fetch RSS feed content. Attempts direct fetch first (some servers
+ * allow CORS), then falls back to CORS proxies. Returns raw XML text or null.
+ */
+async function fetchFeedXml(feedUrl: string, signal?: AbortSignal): Promise<string | null> {
+  // Try direct fetch first — many podcast hosts set Access-Control-Allow-Origin
+  try {
+    const res = await fetch(feedUrl, { signal, mode: "cors" });
+    if (res.ok) {
+      const text = await res.text();
+      if (text.length > 100 && (text.includes("<rss") || text.includes("<feed"))) {
+        return text;
+      }
+    }
+  } catch {
+    // Direct fetch blocked by CORS — fall through to proxies
+  }
+
+  // Fall back to CORS proxies
+  for (const proxyFn of CORS_PROXIES) {
+    try {
+      const res = await fetch(proxyFn(feedUrl), { signal });
+      if (!res.ok) continue;
+      const text = await res.text();
+      if (text.length > 100 && (text.includes("<rss") || text.includes("<feed"))) {
+        return text;
+      }
+    } catch {
+      continue;
+    }
+  }
+  return null;
+}
+
+/**
+ * Heuristic: derive a website URL from a feed URL when the feed can't be fetched.
+ * e.g. "https://feed.homegrownhits.xyz/feed.xml" → "https://homegrownhits.xyz"
+ */
+function deriveWebsiteFromFeedUrl(feedUrl: string): string | null {
+  try {
+    const url = new URL(feedUrl);
+    const host = url.hostname;
+    // Strip common feed prefixes: "feed.", "rss.", "podcast.", "feeds."
+    const stripped = host.replace(/^(feed|feeds|rss|podcast|cdn)\./, "");
+    // Don't return anything if it still looks like a CDN or generic domain
+    if (stripped.includes(".xyz") || stripped.includes(".com") || stripped.includes(".io")) {
+      return `https://${stripped}`;
+    }
+    return `https://${stripped}`;
+  } catch {
+    return null;
+  }
+}
+
+function parseFeedMeta(xml: string): PodcastFeedMeta {
+  let imageUrl: string | null = null;
+  let websiteUrl: string | null = null;
+  const imgMatch = xml.match(/<itunes:image[^>]*href=["']([^"']+)["']/i);
+  if (imgMatch) imageUrl = imgMatch[1];
+  if (!imageUrl) {
+    const imgTagMatch = xml.match(/<image>[\s\S]*?<url>([^<]+)<\/url>/i);
+    if (imgTagMatch) imageUrl = imgTagMatch[1].trim();
+  }
+  const linkMatch = xml.match(/<channel[\s\S]*?<link>([^<]+)<\/link>/i);
+  if (linkMatch) websiteUrl = linkMatch[1].trim();
+  return { imageUrl, websiteUrl };
+}
+
 function usePodcastFeedMeta(feedUrl: string | null): PodcastFeedMeta | null {
   const [meta, setMeta] = useState<PodcastFeedMeta | null>(null);
 
@@ -752,24 +853,21 @@ function usePodcastFeedMeta(feedUrl: string | null): PodcastFeedMeta | null {
       return;
     }
     const controller = new AbortController();
-    // Use CORS proxy since static export can't have API routes
-    const proxyUrl = `https://api.codetabs.com/v1/proxy/?quest=${encodeURIComponent(feedUrl)}`;
-    fetch(proxyUrl, { signal: controller.signal })
-      .then((r) => r.text())
+    fetchFeedXml(feedUrl, controller.signal)
       .then((xml) => {
-        let imageUrl: string | null = null;
-        let websiteUrl: string | null = null;
-        const imgMatch = xml.match(/<itunes:image[^>]*href=["']([^"']+)["']/i);
-        if (imgMatch) imageUrl = imgMatch[1];
-        if (!imageUrl) {
-          const imgTagMatch = xml.match(/<image>[\s\S]*?<url>([^<]+)<\/url>/i);
-          if (imgTagMatch) imageUrl = imgTagMatch[1].trim();
+        if (xml) {
+          const result = parseFeedMeta(xml);
+          feedMetaCache.set(feedUrl, result);
+          setMeta(result);
+        } else {
+          // Feed couldn't be fetched — try deriving website URL from feed URL
+          const fallbackUrl = deriveWebsiteFromFeedUrl(feedUrl);
+          if (fallbackUrl) {
+            const fallback: PodcastFeedMeta = { imageUrl: null, websiteUrl: fallbackUrl };
+            feedMetaCache.set(feedUrl, fallback);
+            setMeta(fallback);
+          }
         }
-        const linkMatch = xml.match(/<channel[\s\S]*?<link>([^<]+)<\/link>/i);
-        if (linkMatch) websiteUrl = linkMatch[1].trim();
-        const result: PodcastFeedMeta = { imageUrl, websiteUrl };
-        feedMetaCache.set(feedUrl, result);
-        setMeta(result);
       })
       .catch(() => {});
     return () => controller.abort();

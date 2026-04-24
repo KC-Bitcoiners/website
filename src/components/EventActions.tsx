@@ -1,5 +1,9 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import ZapModal from "./ZapModal";
+import { pool } from "@/lib/nostr";
+import { nostrRelays, CLIENT_TAG, LOCATION_TAG } from "@/config";
+import { fetchZapTotal } from "@/utils/zaps";
+import { neventEncode } from "@/utils/bech32";
 
 export interface EventAction {
   label: string;
@@ -24,7 +28,7 @@ interface EventActionsProps {
   onDelete?: () => void;
   /** Callback when user requests edit. If not provided, edit option is hidden. */
   onEdit?: () => void;
-  /** Signer function for zap support. If not provided, zap option is hidden. */
+  /** Signer function for zap/repost support. If not provided, those options are hidden. */
   signEvent?: SignerFn;
   /** Current user's pubkey for zap support. */
   pubkey?: string | null;
@@ -43,12 +47,30 @@ export default function EventActions({
   const [showRaw, setShowRaw] = useState(false);
   const [showZap, setShowZap] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
+  const [repostStatus, setRepostStatus] = useState<"idle" | "loading" | "done">("idle");
+  const [repostResult, setRepostResult] = useState<{
+    nevent: string;
+    relays: string[];
+  } | null>(null);
+  const [zapTotal, setZapTotal] = useState<number | null>(null);
+  const [zapRefreshKey, setZapRefreshKey] = useState(0);
   const [position, setPosition] = useState<{
     top: number;
     right: number;
   } | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Fetch zap total for this event — re-fetches when zapRefreshKey changes
+  useEffect(() => {
+    const id = event.id as string | undefined;
+    if (!id) return;
+    let cancelled = false;
+    fetchZapTotal(id).then((total) => {
+      if (!cancelled && total > 0) setZapTotal(total);
+    });
+    return () => { cancelled = true; };
+  }, [event.id, zapRefreshKey]);
 
   const updatePosition = useCallback(() => {
     if (triggerRef.current) {
@@ -111,14 +133,61 @@ export default function EventActions({
     setOpen(false);
   };
 
+  // NIP-18 repost handler — publishes a kind 16 (generic repost) event
+  const handleRepost = async () => {
+    if (!signEvent || !eventId || !event.pubkey) return;
+    setRepostStatus("loading");
+
+    try {
+      const relayHint = nostrRelays[0] || "wss://relay.damus.io";
+      const tags: string[][] = [
+        ["e", eventId, relayHint],
+        ["p", event.pubkey as string],
+      ];
+      if (eventKind) tags.push(["k", String(eventKind)]);
+      tags.push([...CLIENT_TAG], [...LOCATION_TAG]);
+
+      const unsigned = {
+        kind: 16,
+        content: "",
+        tags,
+        created_at: Math.floor(Date.now() / 1000),
+      };
+
+      const signed = await signEvent(unsigned);
+      await pool.publish(nostrRelays, signed as any);
+
+      // Build nevent link for the reposted event
+      const nevent = neventEncode({
+        id: eventId,
+        relays: [relayHint],
+        author: event.pubkey as string,
+        kind: eventKind,
+      });
+
+      setRepostStatus("done");
+      setRepostResult({ nevent, relays: nostrRelays });
+      setOpen(false);
+    } catch {
+      setRepostStatus("idle");
+      setOpen(false);
+    }
+  };
+
   const toggleMenu = () => {
     updatePosition();
     setOpen(!open);
   };
 
+  // Close repost popup
+  const closeRepostResult = () => {
+    setRepostResult(null);
+    setRepostStatus("idle");
+  };
+
   const actions: EventAction[] = [
-    // Zap action — only when signer is provided
-    ...(signEvent && event.pubkey
+    // Zap action — show whenever the event has an author pubkey
+    ...(event.pubkey
       ? [
           {
             label: "Zap",
@@ -130,9 +199,19 @@ export default function EventActions({
           },
         ]
       : []),
+    // NIP-18 repost — only when signer and event id exist
+    ...(signEvent && eventId
+      ? [
+          {
+            label: repostStatus === "done" ? "Reposted!" : "Repost",
+            icon: "\u21BB",
+            onClick: handleRepost,
+          },
+        ]
+      : []),
     {
       label: copied === "Share link" ? "Copied!" : "Share",
-      icon: "🔗",
+      icon: "\u{1F517}",
       onClick: handleShare,
     },
     {
@@ -144,21 +223,22 @@ export default function EventActions({
       ? [
           {
             label: copied === "Event ID" ? "Copied!" : "Copy Event ID",
-            icon: "📋",
+            icon: "\u{1F4CB}",
             onClick: handleCopyId,
           },
         ]
       : []),
     {
       label: copied === "Raw JSON" ? "Copied!" : "Copy Raw JSON",
-      icon: "📄",
+      icon: "\u{1F4C4}",
       onClick: handleCopyRaw,
     },
-    ...(onEdit
+    // Only show edit/delete when the current user owns this event
+    ...(onEdit && pubkey && event.pubkey === pubkey
       ? [
           {
             label: "Edit",
-            icon: "✏️",
+            icon: "\u270F\uFE0F",
             onClick: () => {
               onEdit();
               setOpen(false);
@@ -166,11 +246,11 @@ export default function EventActions({
           },
         ]
       : []),
-    ...(onDelete
+    ...(onDelete && pubkey && event.pubkey === pubkey
       ? [
           {
             label: "Delete",
-            icon: "🗑️",
+            icon: "\u{1F5D1}\uFE0F",
             onClick: () => {
               onDelete();
               setOpen(false);
@@ -192,6 +272,14 @@ export default function EventActions({
       >
         ...
       </button>
+
+      {/* Zap total badge */}
+      {zapTotal !== null && (
+        <div className={`text-xs text-bitcoin-orange font-semibold flex items-center gap-0.5 justify-center ${className || ""}`}>
+          <span>&#x26A1;</span>
+          <span>{zapTotal >= 1000000 ? `${(zapTotal / 1000000).toFixed(1)}M` : zapTotal >= 1000 ? `${(zapTotal / 1000).toFixed(1)}k` : zapTotal}</span>
+        </div>
+      )}
 
       {/* Dropdown — fixed positioning to escape overflow clipping */}
       {open && position && (
@@ -237,14 +325,70 @@ export default function EventActions({
         </div>
       )}
 
+      {/* Repost success popup — shows relays and nevent link */}
+      {repostResult && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          onClick={closeRepostResult}
+        >
+          <div
+            className="bg-white rounded-lg shadow-2xl max-w-md w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-gray-900">Reposted!</h3>
+              <button
+                onClick={closeRepostResult}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* nevent link */}
+            <div className="mb-4">
+              <p className="text-sm text-gray-500 mb-1">Event link</p>
+              <a
+                href={`https://njump.me/${repostResult.nevent}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-bitcoin-orange hover:underline break-all"
+              >
+                {repostResult.nevent}
+              </a>
+            </div>
+
+            {/* Relays published to */}
+            <div>
+              <p className="text-sm text-gray-500 mb-1">Published to relays:</p>
+              <ul className="text-xs text-gray-600 space-y-0.5">
+                {repostResult.relays.map((r) => (
+                  <li key={r} className="font-mono">{r}</li>
+                ))}
+              </ul>
+            </div>
+
+            <button
+              onClick={closeRepostResult}
+              className="mt-4 w-full py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Zap modal */}
-      {showZap && signEvent && (
+      {showZap && (
         <ZapModal
           event={event}
           isOpen={showZap}
           onClose={() => setShowZap(false)}
           signEvent={signEvent}
           pubkey={pubkey ?? null}
+          onZapConfirmed={() => setZapRefreshKey((k) => k + 1)}
         />
       )}
     </div>
