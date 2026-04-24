@@ -14,6 +14,12 @@ declare global {
         decrypt?(pubkey: string, ciphertext: string): Promise<string>;
       };
     };
+    // WebLN provider (Alby, Mutiny, etc.) for NIP-57 zaps
+    webln?: {
+      enabled: boolean;
+      enable(): Promise<void>;
+      sendPayment(paymentRequest: string): Promise<{ preimage: string }>;
+    };
   }
 }
 

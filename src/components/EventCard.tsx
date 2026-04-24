@@ -16,6 +16,8 @@ interface EventCardProps {
   className?: string; // Allow custom background color
   rawEvent?: Record<string, unknown>;
   onDelete?: () => void;
+  signEvent?: (event: { kind: number; content: string; tags: string[][]; created_at: number }) => Promise<Record<string, unknown>>;
+  pubkey?: string | null;
 }
 
 export default function EventCard({
@@ -30,6 +32,8 @@ export default function EventCard({
   className,
   rawEvent,
   onDelete,
+  signEvent,
+  pubkey,
 }: EventCardProps) {
   return (
     <div
@@ -59,7 +63,7 @@ export default function EventCard({
             <h3 className="text-2xl sm:text-3xl font-bold bitcoin-orange font-archivo-black">
               {date}
             </h3>
-            {rawEvent && <EventActions event={rawEvent} onDelete={onDelete} />}
+            {rawEvent && <EventActions event={rawEvent} signEvent={signEvent} pubkey={pubkey} onDelete={onDelete} />}
           </div>
         </div>
 

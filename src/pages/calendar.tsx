@@ -723,6 +723,8 @@ export default function CalendarPage({
                           )}
                           link={event.references?.[0]}
                           rawEvent={event.rawEvent}
+                          signEvent={signEvent}
+                          pubkey={user?.pubkey}
                           onDelete={
                             user && user.pubkey === event.pubkey
                               ? () => handleDeleteEvent(event)
@@ -756,6 +758,8 @@ export default function CalendarPage({
                           )}
                           link={event.references?.[0]}
                           rawEvent={event.rawEvent}
+                          signEvent={signEvent}
+                          pubkey={user?.pubkey}
                           onDelete={
                             user && user.pubkey === event.pubkey
                               ? () => handleDeleteEvent(event)

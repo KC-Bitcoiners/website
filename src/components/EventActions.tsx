@@ -1,10 +1,18 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
+import ZapModal from "./ZapModal";
 
 export interface EventAction {
   label: string;
   icon?: string;
   onClick: () => void;
 }
+
+type SignerFn = (event: {
+  kind: number;
+  content: string;
+  tags: string[][];
+  created_at: number;
+}) => Promise<Record<string, unknown>>;
 
 interface EventActionsProps {
   event: Record<string, unknown>;
@@ -16,6 +24,10 @@ interface EventActionsProps {
   onDelete?: () => void;
   /** Callback when user requests edit. If not provided, edit option is hidden. */
   onEdit?: () => void;
+  /** Signer function for zap support. If not provided, zap option is hidden. */
+  signEvent?: SignerFn;
+  /** Current user's pubkey for zap support. */
+  pubkey?: string | null;
 }
 
 export default function EventActions({
@@ -24,9 +36,12 @@ export default function EventActions({
   className,
   onDelete,
   onEdit,
+  signEvent,
+  pubkey,
 }: EventActionsProps) {
   const [open, setOpen] = useState(false);
   const [showRaw, setShowRaw] = useState(false);
+  const [showZap, setShowZap] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [position, setPosition] = useState<{
     top: number;
@@ -102,6 +117,19 @@ export default function EventActions({
   };
 
   const actions: EventAction[] = [
+    // Zap action — only when signer is provided
+    ...(signEvent && event.pubkey
+      ? [
+          {
+            label: "Zap",
+            icon: "\u26A1",
+            onClick: () => {
+              setOpen(false);
+              setShowZap(true);
+            },
+          },
+        ]
+      : []),
     {
       label: copied === "Share link" ? "Copied!" : "Share",
       icon: "🔗",
@@ -207,6 +235,17 @@ export default function EventActions({
             {JSON.stringify(event, null, 2)}
           </pre>
         </div>
+      )}
+
+      {/* Zap modal */}
+      {showZap && signEvent && (
+        <ZapModal
+          event={event}
+          isOpen={showZap}
+          onClose={() => setShowZap(false)}
+          signEvent={signEvent}
+          pubkey={pubkey ?? null}
+        />
       )}
     </div>
   );

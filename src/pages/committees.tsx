@@ -458,6 +458,8 @@ export default function CommitteesPage() {
                       <div onClick={(e) => e.stopPropagation()}>
                         <EventActions
                           event={committee.rawCommittee.rawEvent}
+                          signEvent={signEvent}
+                          pubkey={user?.pubkey}
                           onEdit={() =>
                             handleEditCommittee(committee.rawCommittee)
                           }
@@ -617,6 +619,8 @@ export default function CommitteesPage() {
                               {isAdmin && chairMember?.rawEvent && (
                                 <EventActions
                                   event={chairMember.rawEvent}
+                                  signEvent={signEvent}
+                                  pubkey={user?.pubkey}
                                   onEdit={() => handleEditMember(chairMember)}
                                   onDelete={() =>
                                     handleDeleteMember(chairMember)
@@ -690,6 +694,8 @@ export default function CommitteesPage() {
                               {isAdmin && vcMember?.rawEvent && (
                                 <EventActions
                                   event={vcMember.rawEvent}
+                                  signEvent={signEvent}
+                                  pubkey={user?.pubkey}
                                   onEdit={() => handleEditMember(vcMember)}
                                   onDelete={() => handleDeleteMember(vcMember)}
                                 />
@@ -785,6 +791,8 @@ export default function CommitteesPage() {
                             {isAdmin && rawMember?.rawEvent && (
                               <EventActions
                                 event={rawMember.rawEvent}
+                                signEvent={signEvent}
+                                pubkey={user?.pubkey}
                                 onEdit={() => handleEditMember(rawMember)}
                                 onDelete={() => handleDeleteMember(rawMember)}
                               />
@@ -896,6 +904,8 @@ export default function CommitteesPage() {
                         {isAdmin && opening.rawEvent && (
                           <EventActions
                             event={opening.rawEvent}
+                            signEvent={signEvent}
+                            pubkey={user?.pubkey}
                             onEdit={() => handleEditOpening(opening)}
                             onDelete={() => handleDeleteOpening(opening)}
                           />

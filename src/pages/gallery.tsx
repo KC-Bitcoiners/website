@@ -178,6 +178,8 @@ export default function GalleryPage() {
                     <div onClick={(e) => e.stopPropagation()}>
                       <EventActions
                         event={image as unknown as Record<string, unknown>}
+                        signEvent={signEvent}
+                        pubkey={user?.pubkey}
                         onDelete={
                           user && user.pubkey === image.pubkey
                             ? () => handleDeleteImage(image)
