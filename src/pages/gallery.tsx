@@ -76,9 +76,23 @@ export default function GalleryPage() {
     try {
       if (!uploadForm.file || !uploadForm.caption) throw new Error("Please fill in all fields");
       if (!user) throw new Error("You must be logged in to upload");
+      console.log("[gallery:upload] Starting upload", {
+        file: uploadForm.file.name,
+        size: uploadForm.file.size,
+        type: uploadForm.file.type,
+        pubkey: user.pubkey,
+        npub: user.npub,
+      });
+      console.time("[gallery:upload] uploadToBlossom");
       const descriptor = await uploadToBlossom(uploadForm.file, signEvent);
+      console.timeEnd("[gallery:upload] uploadToBlossom");
+      console.log("[gallery:upload] Blossom upload succeeded:", descriptor);
       const blossomUri = buildGalleryBlossomURI(descriptor, uploadForm.file, user.pubkey);
+      console.log("[gallery:upload] BUD-10 URI:", blossomUri);
+      console.time("[gallery:upload] publishGalleryImage");
       const result = await publishGalleryImage(descriptor, uploadForm.caption, signEvent, user.pubkey, blossomUri);
+      console.timeEnd("[gallery:upload] publishGalleryImage");
+      console.log("[gallery:upload] Publish result:", result);
       if (!result.success) throw new Error(result.error || "Failed to upload");
       const newImage: GalleryImage = {
         id: result.eventId || `local-${Date.now()}`,

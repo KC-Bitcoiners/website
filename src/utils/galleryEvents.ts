@@ -57,6 +57,7 @@ function extFromFile(file: File): string {
  */
 export async function uploadToBlossom(file: File, signer: SignerFn): Promise<BlobDescriptor> {
   const server = blossomConfig?.server || "https://blossom.primal.net";
+  console.log("[blossom] Server:", server, "Config:", blossomConfig);
 
   // Compute SHA-256 of the file
   const fileBuffer = await file.arrayBuffer();
@@ -64,6 +65,7 @@ export async function uploadToBlossom(file: File, signer: SignerFn): Promise<Blo
   const sha256 = Array.from(new Uint8Array(hashBuffer))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
+  console.log("[blossom] File SHA-256:", sha256);
 
   // Build BUD-06 auth event with `u` and `method` tags (required by blossom.f7z.io)
   const authEvent = {
@@ -78,10 +80,21 @@ export async function uploadToBlossom(file: File, signer: SignerFn): Promise<Blo
     ],
     content: `Upload ${file.name}`,
   };
+  console.log("[blossom] Auth event draft:", authEvent);
+
   const signedAuth = await signer(authEvent);
+  console.log("[blossom] Signed auth event:", {
+    id: signedAuth.id,
+    pubkey: signedAuth.pubkey,
+    sig: (signedAuth.sig as string)?.slice(0, 16) + "...",
+    kind: signedAuth.kind,
+  });
+
   const authBase64 = btoa(JSON.stringify(signedAuth));
 
   const uploadUrl = `${server}/upload?sha256=${sha256}`;
+  console.log("[blossom] PUT", uploadUrl);
+
   const response = await fetch(uploadUrl, {
     method: "PUT",
     headers: {
@@ -91,12 +104,14 @@ export async function uploadToBlossom(file: File, signer: SignerFn): Promise<Blo
     body: file,
   });
 
+  console.log("[blossom] Response:", response.status, response.statusText);
   if (!response.ok) {
     const text = await response.text().catch(() => "");
+    console.error("[blossom] Error body:", text);
     throw new Error(`Upload failed (${response.status}): ${text}`);
   }
   const result = await response.json();
-  // Blossom returns { url, sha256, size, type, uploaded }
+  console.log("[blossom] Upload result:", result);
   if (!result.sha256) {
     throw new Error("Unexpected upload response");
   }
@@ -284,6 +299,11 @@ export async function publishGalleryImage(
 ): Promise<{ success: boolean; eventId?: string; error?: string }> {
   if (!descriptor.url || !descriptor.url.startsWith("http")) throw new Error("Invalid image URL.");
   if (!caption.trim()) throw new Error("Caption is required.");
+  console.log("[gallery:publish] Whitelist check:", {
+    pubkey,
+    inWhitelist: WHITELISTED_PUBKEYS.includes(pubkey),
+    whitelist: WHITELISTED_PUBKEYS,
+  });
   if (!WHITELISTED_PUBKEYS.includes(pubkey)) {
     // In test mode, allow test-generated keys
     const testWhitelist =
@@ -291,6 +311,7 @@ export async function publishGalleryImage(
       typeof window !== "undefined" &&
       (window as any).__TEST_WHITELIST;
     if (!testWhitelist || !testWhitelist.includes(pubkey)) {
+      console.error("[gallery:publish] REJECTED — pubkey not in whitelist:", pubkey);
       return {
         success: false,
         error: "Not authorized to upload gallery images.",
