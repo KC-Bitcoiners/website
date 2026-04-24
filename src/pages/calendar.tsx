@@ -31,6 +31,7 @@ import { useNostr } from "../contexts/NostrContext";
 import { useRef, useCallback } from "react";
 import { logger } from "@/utils/logger";
 import { formatDate, formatTime, splitDescription } from "@/utils/formatting";
+import { fetchZapTotal } from "@/utils/zaps";
 
 interface CalendarPageProps {
   meetupGroup: MeetupGroup | null;
@@ -82,6 +83,23 @@ export default function CalendarPage({
   const { user, signEvent } = useNostr();
   const [chatOpen, setChatOpen] = useState(false);
   const chatIframeRef = useRef<HTMLIFrameElement>(null);
+
+  // Batch-fetch zap totals for all events
+  const [zapTotals, setZapTotals] = useState<Record<string, number>>({});
+  useEffect(() => {
+    const nostrEvents = events.filter((e) => e.id?.startsWith("nostr-") && e.rawEvent);
+    if (nostrEvents.length === 0) return;
+    let cancelled = false;
+    const totals: Record<string, number> = {};
+    Promise.all(
+      nostrEvents.map((e) => {
+        const rawId = e.id.replace("nostr-", "");
+        const pubkey = (e.rawEvent as any)?.pubkey as string | undefined;
+        return fetchZapTotal(rawId, pubkey).then((t) => { if (t > 0) totals[rawId] = t; });
+      }),
+    ).then(() => { if (!cancelled) setZapTotals(totals); });
+    return () => { cancelled = true; };
+  }, [events]);
 
   const CORNYCHAT_URL = "https://cornychat.com";
 
@@ -669,6 +687,7 @@ export default function CalendarPage({
                 getEventColor={getEventColor}
                 signEvent={signEvent}
                 pubkey={user?.pubkey}
+                zapTotals={zapTotals}
               />
             )}
 
