@@ -1,10 +1,8 @@
-import { buildBlossomURI, getServersFromServerListEvent, USER_BLOSSOM_SERVER_LIST_KIND } from "blossom-client-sdk";
-import type { BlobDescriptor } from "blossom-client-sdk";
+import { getServersFromServerListEvent, USER_BLOSSOM_SERVER_LIST_KIND } from "blossom-client-sdk";
 import { pool } from "@/lib/nostr";
 import {
   WHITELISTED_PUBKEYS,
   nostrRelays,
-  blossomConfig,
   CLIENT_TAG,
   LOCATION_TAG,
 } from "@/config";
@@ -32,92 +30,51 @@ export interface GalleryImage {
   blossomUri?: string;
 }
 
-const MIME_EXT: Record<string, string> = {
-  "image/jpeg": "jpg",
-  "image/jpg": "jpg",
-  "image/png": "png",
-  "image/gif": "gif",
-  "image/webp": "webp",
-  "image/avif": "avif",
-  "image/svg+xml": "svg",
-};
-
-function extFromFile(file: File): string {
-  const fromMime = MIME_EXT[file.type];
-  if (fromMime) return fromMime;
-  const dot = file.name.lastIndexOf(".");
-  if (dot > -1) return file.name.slice(dot + 1).toLowerCase();
-  return "bin";
-}
-
 /**
- * Upload a file to the configured Blossom server.
- * Uses manual HTTP + BUD-06 auth with `u` and `method` tags because
- * blossom.f7z.io doesn't accept the SDK v5's `server`-tag auth format.
+ * Upload an image file to nostr.build using NIP-98 (kind 27235) auth.
+ * Matches the approach used by ray_repub which is known to work.
  */
-export async function uploadToBlossom(file: File, signer: SignerFn): Promise<BlobDescriptor> {
-  const server = blossomConfig?.server || "https://blossom.primal.net";
+export async function uploadToBlossom(file: File, signer: SignerFn): Promise<string> {
+  const uploadUrl = "https://nostr.build/api/v2/upload/files";
 
-  // Compute SHA-256 of the file
-  const fileBuffer = await file.arrayBuffer();
-  const hashBuffer = await crypto.subtle.digest("SHA-256", fileBuffer);
-  const sha256 = Array.from(new Uint8Array(hashBuffer))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-
-  // Build BUD-06 auth event with `u` and `method` tags (required by blossom.f7z.io)
+  // Create NIP-98 auth event (kind 27235)
   const authEvent = {
-    kind: 24242,
+    kind: 27235,
     created_at: Math.floor(Date.now() / 1000),
     tags: [
-      ["u", server],
-      ["method", "PUT"],
-      ["x", sha256],
-      ["t", "upload"],
-      ["expiration", String(Math.floor(Date.now() / 1000) + 300)],
+      ["u", uploadUrl],
+      ["method", "POST"],
     ],
     content: `Upload ${file.name}`,
   };
   const signedAuth = await signer(authEvent);
-  // URL-safe base64 — blossom servers expect this encoding per BUD-06
-  const authBase64 = btoa(JSON.stringify(signedAuth))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/g, "");
+  const authBase64 = btoa(JSON.stringify(signedAuth));
 
-  const uploadUrl = `${server}/upload?sha256=${sha256}`;
+  // Upload via POST with FormData
+  const formData = new FormData();
+  formData.append("file", file);
+
   const response = await fetch(uploadUrl, {
-    method: "PUT",
+    method: "POST",
     headers: {
       Authorization: `Nostr ${authBase64}`,
-      "Content-Type": file.type || "application/octet-stream",
     },
-    body: file,
+    body: formData,
   });
 
   if (!response.ok) {
     const text = await response.text().catch(() => "");
     throw new Error(`Upload failed (${response.status}): ${text}`);
   }
-  const result = await response.json();
-  // Blossom returns { url, sha256, size, type, uploaded }
-  if (!result.sha256) {
-    throw new Error("Unexpected upload response");
-  }
-  return result as BlobDescriptor;
-}
 
-/** Build a BUD-10 blossom: URI from an upload result and author. */
-export function buildGalleryBlossomURI(descriptor: BlobDescriptor, file: File, pubkey: string): string {
-  const primary = blossomConfig?.server;
-  const servers = primary ? [new URL(primary).host] : [];
-  return buildBlossomURI({
-    sha256: descriptor.sha256,
-    ext: extFromFile(file),
-    servers,
-    authors: [pubkey],
-    size: descriptor.size,
-  });
+  const result = await response.json();
+
+  // nostr.build returns { status: "success", data: [{ url: "..." }] }
+  if (result.status === "success" && result.data?.[0]?.url) {
+    return result.data[0].url as string;
+  }
+
+  throw new Error(`Unexpected upload response: ${JSON.stringify(result)}`);
 }
 
 function parseImetaFields(imetaTag: string[]): Record<string, string[]> {
@@ -280,16 +237,14 @@ export function streamGalleryImages(onImage: (image: GalleryImage) => void): {
 }
 
 export async function publishGalleryImage(
-  descriptor: BlobDescriptor,
+  imageUrl: string,
   caption: string,
   signer: SignerFn,
   pubkey: string,
-  blossomUri?: string,
 ): Promise<{ success: boolean; eventId?: string; error?: string }> {
-  if (!descriptor.url || !descriptor.url.startsWith("http")) throw new Error("Invalid image URL.");
+  if (!imageUrl || !imageUrl.startsWith("http")) throw new Error("Invalid image URL.");
   if (!caption.trim()) throw new Error("Caption is required.");
   if (!WHITELISTED_PUBKEYS.includes(pubkey)) {
-    // In test mode, allow test-generated keys
     const testWhitelist =
       process.env.NODE_ENV !== "production" &&
       typeof window !== "undefined" &&
@@ -302,28 +257,14 @@ export async function publishGalleryImage(
     }
   }
 
-  const mime = descriptor.type || "image/jpeg";
-
-  // NIP-92 imeta entries are space-separated "key value" pairs spread across tag values
-  const imetaParts = [
-    `url ${descriptor.url}`,
-    `m ${mime}`,
-    `x ${descriptor.sha256}`,
-    `size ${descriptor.size}`,
-    `alt ${caption}`,
-  ];
-  if (blossomUri) imetaParts.push(`blossom ${blossomUri}`);
+  const imetaContent = `url ${imageUrl} m image/jpeg alt ${caption}`;
 
   // 1. Publish kind 20 image event
   const tags: string[][] = [
     [...CLIENT_TAG],
     [...LOCATION_TAG],
-    ["imeta", ...imetaParts],
-    ["x", descriptor.sha256],
-    ["m", mime],
-    ["size", String(descriptor.size)],
+    ["imeta", imetaContent],
   ];
-  if (blossomUri) tags.push(["blossom", blossomUri]);
 
   const imageEvent = {
     kind: 20,
