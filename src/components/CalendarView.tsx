@@ -2,6 +2,24 @@ import React, { useState, useEffect, useRef } from "react";
 import { CalendarEvent } from "../types/calendar";
 import { ChevronLeftIcon, ChevronRightIcon } from "./Icons";
 import EventActions from "./EventActions";
+import { fetchZapTotal } from "@/utils/zaps";
+
+/** Compact inline zap badge — always visible when the event has zaps. */
+function ZapBadge({ eventId, pubkey }: { eventId: string; pubkey?: string }) {
+  const [total, setTotal] = useState<number | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetchZapTotal(eventId, pubkey).then((t) => { if (!cancelled && t > 0) setTotal(t); });
+    return () => { cancelled = true; };
+  }, [eventId, pubkey]);
+  if (total === null) return null;
+  return (
+    <span className="inline-flex items-center gap-0.5 text-[10px] opacity-90 leading-none">
+      <span>&#x26A1;</span>
+      <span>{total >= 1000000 ? `${(total / 1000000).toFixed(1)}M` : total >= 1000 ? `${(total / 1000).toFixed(1)}k` : total}</span>
+    </span>
+  );
+}
 
 // type ViewType = "month" | "week" | "day"; // Unused - can be removed if not needed
 
@@ -374,11 +392,14 @@ export default function CalendarView({
                               })}
                             </div>
                           )}
-                          {event.rawEvent && (
-                            <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                              <EventActions event={event.rawEvent} signEvent={signEvent} pubkey={pubkey} className="!text-white/80 hover:!text-white !p-0.5 !min-w-[18px] !min-h-[18px] !text-[10px]" />
-                            </div>
-                          )}
+                          <div className="flex items-center justify-between">
+                            <ZapBadge eventId={event.id.replace("nostr-", "")} pubkey={event.pubkey} />
+                            {event.rawEvent && (
+                              <div className="opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                                <EventActions event={event.rawEvent} signEvent={signEvent} pubkey={pubkey} className="!text-white/80 hover:!text-white !p-0.5 !min-w-[18px] !min-h-[18px] !text-[10px]" />
+                              </div>
+                            )}
+                          </div>
                         </div>
                       ))}
                       {dayEvents.length > 3 && (
@@ -599,11 +620,14 @@ export default function CalendarView({
                               {event.end &&
                                 ` - ${formatTime(event.end?.includes("-") ? new Date(event.end) : new Date(parseInt(event.end || "0") * 1000))}`}
                             </div>
-                            {event.rawEvent && (
-                              <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                                <EventActions event={event.rawEvent} signEvent={signEvent} pubkey={pubkey} className="!text-white/80 hover:!text-white !p-0.5 !min-w-[18px] !min-h-[18px] !text-[10px]" />
-                              </div>
-                            )}
+                            <div className="flex items-center justify-between">
+                              <ZapBadge eventId={event.id.replace("nostr-", "")} pubkey={event.pubkey} />
+                              {event.rawEvent && (
+                                <div className="opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                                  <EventActions event={event.rawEvent} signEvent={signEvent} pubkey={pubkey} className="!text-white/80 hover:!text-white !p-0.5 !min-w-[18px] !min-h-[18px] !text-[10px]" />
+                                </div>
+                              )}
+                            </div>
                           </div>
                         );
                       })}
@@ -789,11 +813,14 @@ export default function CalendarView({
                       {formatTime(start)}
                       {event.end && ` - ${formatTime(end)}`}
                     </div>
-                    {event.rawEvent && (
-                      <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                        <EventActions event={event.rawEvent} signEvent={signEvent} pubkey={pubkey} className="!text-white/80 hover:!text-white !p-0.5 !min-w-[18px] !min-h-[18px] !text-[10px]" />
-                      </div>
-                    )}
+                    <div className="flex items-center justify-between">
+                      <ZapBadge eventId={event.id.replace("nostr-", "")} pubkey={event.pubkey} />
+                      {event.rawEvent && (
+                        <div className="opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                          <EventActions event={event.rawEvent} signEvent={signEvent} pubkey={pubkey} className="!text-white/80 hover:!text-white !p-0.5 !min-w-[18px] !min-h-[18px] !text-[10px]" />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 );
               });
@@ -816,7 +843,10 @@ export default function CalendarView({
                       {event.venueName}
                     </div>
                   )}
-                  <div className="text-xs text-gray-600">All day</div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-600">All day</span>
+                    <ZapBadge eventId={event.id.replace("nostr-", "")} pubkey={event.pubkey} />
+                  </div>
                   {event.rawEvent && (
                     <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
                       <EventActions event={event.rawEvent} signEvent={signEvent} pubkey={pubkey} className="!p-0.5 !min-w-[18px] !min-h-[18px] !text-[10px]" />
