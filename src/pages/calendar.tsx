@@ -889,6 +889,8 @@ export default function CalendarPage({
         <EventDetailsModal
           event={selectedEvent}
           onClose={() => setSelectedEvent(null)}
+          signEvent={signEvent}
+          pubkey={user?.pubkey}
         />
 
         {/* Success Popup */}

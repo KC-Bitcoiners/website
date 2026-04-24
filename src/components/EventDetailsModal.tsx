@@ -5,17 +5,22 @@ import {
   googleMapsSearchUrl,
 } from "../utils/calendar";
 import { XIcon } from "./Icons";
+import EventActions from "./EventActions";
 import { naddrEncode } from "applesauce-core/helpers";
 import { logger } from "@/utils/logger";
 
 interface EventDetailsModalProps {
   event: CalendarEvent | null;
   onClose: () => void;
+  signEvent?: (event: { kind: number; content: string; tags: string[][]; created_at: number }) => Promise<Record<string, unknown>>;
+  pubkey?: string | null;
 }
 
 export default function EventDetailsModal({
   event,
   onClose,
+  signEvent,
+  pubkey,
 }: EventDetailsModalProps) {
   if (!event) return null;
 
@@ -75,7 +80,12 @@ export default function EventDetailsModal({
       <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex justify-between items-center p-6 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-900">Event Details</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-2xl font-bold text-gray-900">Event Details</h2>
+            {event.rawEvent && (
+              <EventActions event={event.rawEvent} signEvent={signEvent} pubkey={pubkey} />
+            )}
+          </div>
           <button
             onClick={onClose}
             className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
