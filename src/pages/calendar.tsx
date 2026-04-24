@@ -667,6 +667,8 @@ export default function CalendarPage({
                 onEventClick={setSelectedEvent}
                 currentView={viewMode}
                 getEventColor={getEventColor}
+                signEvent={signEvent}
+                pubkey={user?.pubkey}
               />
             )}
 

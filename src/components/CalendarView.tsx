@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { CalendarEvent } from "../types/calendar";
 import { ChevronLeftIcon, ChevronRightIcon } from "./Icons";
+import EventActions from "./EventActions";
 
 // type ViewType = "month" | "week" | "day"; // Unused - can be removed if not needed
 
@@ -9,6 +10,8 @@ interface CalendarViewProps {
   onEventClick?: (event: CalendarEvent) => void;
   currentView?: "month" | "week" | "day";
   getEventColor?: (event: CalendarEvent) => string;
+  signEvent?: (event: { kind: number; content: string; tags: string[][]; created_at: number }) => Promise<Record<string, unknown>>;
+  pubkey?: string | null;
 }
 
 export default function CalendarView({
@@ -16,6 +19,8 @@ export default function CalendarView({
   onEventClick,
   currentView,
   getEventColor,
+  signEvent,
+  pubkey,
 }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const viewType = currentView || "month";
@@ -349,7 +354,7 @@ export default function CalendarView({
                         <div
                           key={eventIndex}
                           onClick={() => onEventClick?.(event)}
-                          className={`text-xs p-1 text-white rounded cursor-pointer hover:opacity-90 transition-colors whitespace-normal ${getEventColor ? getEventColor(event).replace(/border-\w+/, "") : "bg-bitcoin-orange"}`}
+                          className={`text-xs p-1 text-white rounded cursor-pointer hover:opacity-90 transition-colors whitespace-normal relative group ${getEventColor ? getEventColor(event).replace(/border-\w+/, "") : "bg-bitcoin-orange"}`}
                           title={`${event.title} - ${event.kind === 31923 ? (event.start?.includes("-") ? new Date(event.start).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) : new Date(parseInt(event.start!) * 1000).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })) : "All day"}`}
                         >
                           <div className="font-semibold">{event.title}</div>
@@ -367,6 +372,11 @@ export default function CalendarView({
                                 hour: "numeric",
                                 minute: "2-digit",
                               })}
+                            </div>
+                          )}
+                          {event.rawEvent && (
+                            <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                              <EventActions event={event.rawEvent} signEvent={signEvent} pubkey={pubkey} className="!text-white/80 hover:!text-white !p-0.5 !min-w-[18px] !min-h-[18px] !text-[10px]" />
                             </div>
                           )}
                         </div>
@@ -562,7 +572,7 @@ export default function CalendarView({
                           <div
                             key={event.id}
                             onClick={() => onEventClick?.(event)}
-                            className={`absolute text-white text-xs p-1 rounded cursor-pointer hover:opacity-90 transition-colors overflow-hidden z-10 ${getEventColor ? getEventColor(event).replace(/border-\w+/, "") : "bg-bitcoin-orange"}`}
+                            className={`absolute text-white text-xs p-1 rounded cursor-pointer hover:opacity-90 transition-colors overflow-hidden z-10 group ${getEventColor ? getEventColor(event).replace(/border-\w+/, "") : "bg-bitcoin-orange"}`}
                             style={{
                               top: `${relativeTop}px`,
                               left: `${2 + layoutItem.position.left}%`,
@@ -589,6 +599,11 @@ export default function CalendarView({
                               {event.end &&
                                 ` - ${formatTime(event.end?.includes("-") ? new Date(event.end) : new Date(parseInt(event.end || "0") * 1000))}`}
                             </div>
+                            {event.rawEvent && (
+                              <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                                <EventActions event={event.rawEvent} signEvent={signEvent} pubkey={pubkey} className="!text-white/80 hover:!text-white !p-0.5 !min-w-[18px] !min-h-[18px] !text-[10px]" />
+                              </div>
+                            )}
                           </div>
                         );
                       })}
@@ -754,7 +769,7 @@ export default function CalendarView({
                   <div
                     key={event.id}
                     onClick={() => onEventClick?.(event)}
-                    className={`absolute text-white p-2 rounded cursor-pointer hover:opacity-90 transition-colors overflow-hidden z-10 ${getEventColor ? getEventColor(event).replace(/border-\w+/, "") : "bg-bitcoin-orange"}`}
+                    className={`absolute text-white p-2 rounded cursor-pointer hover:opacity-90 transition-colors overflow-hidden z-10 group ${getEventColor ? getEventColor(event).replace(/border-\w+/, "") : "bg-bitcoin-orange"}`}
                     style={{
                       top: `${topPosition}px`,
                       left: `${2 + position.left}%`,
@@ -774,6 +789,11 @@ export default function CalendarView({
                       {formatTime(start)}
                       {event.end && ` - ${formatTime(end)}`}
                     </div>
+                    {event.rawEvent && (
+                      <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                        <EventActions event={event.rawEvent} signEvent={signEvent} pubkey={pubkey} className="!text-white/80 hover:!text-white !p-0.5 !min-w-[18px] !min-h-[18px] !text-[10px]" />
+                      </div>
+                    )}
                   </div>
                 );
               });
@@ -786,7 +806,7 @@ export default function CalendarView({
                 <div
                   key={event.id}
                   onClick={() => onEventClick?.(event)}
-                  className="absolute top-2 left-2 right-2 bg-gray-100 text-gray-800 p-2 rounded cursor-pointer hover:bg-gray-200 transition-colors overflow-hidden z-10"
+                  className="absolute top-2 left-2 right-2 bg-gray-100 text-gray-800 p-2 rounded cursor-pointer hover:bg-gray-200 transition-colors overflow-hidden z-10 group"
                 >
                   <div className="font-semibold text-sm truncate">
                     {event.title}
@@ -797,6 +817,11 @@ export default function CalendarView({
                     </div>
                   )}
                   <div className="text-xs text-gray-600">All day</div>
+                  {event.rawEvent && (
+                    <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                      <EventActions event={event.rawEvent} signEvent={signEvent} pubkey={pubkey} className="!p-0.5 !min-w-[18px] !min-h-[18px] !text-[10px]" />
+                    </div>
+                  )}
                 </div>
               ))}
           </div>
