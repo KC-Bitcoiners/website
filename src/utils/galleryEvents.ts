@@ -57,6 +57,7 @@ function extFromFile(file: File): string {
  */
 export async function uploadToBlossom(file: File, signer: SignerFn): Promise<BlobDescriptor> {
   const server = blossomConfig?.server || "https://blossom.primal.net";
+  window.alert(`[blossom:1] Server: ${server}\nConfig: ${JSON.stringify(blossomConfig)}\nFile: ${file.name} (${file.size} bytes, ${file.type})`);
 
   // Compute SHA-256 of the file
   const fileBuffer = await file.arrayBuffer();
@@ -78,10 +79,16 @@ export async function uploadToBlossom(file: File, signer: SignerFn): Promise<Blo
     ],
     content: `Upload ${file.name}`,
   };
+  window.alert(`[blossom:2] Asking signer for auth event...\nAuth draft kind: ${authEvent.kind}\nTags: ${JSON.stringify(authEvent.tags)}`);
+
   const signedAuth = await signer(authEvent);
+  window.alert(`[blossom:3] Got signed auth!\npubkey: ${signedAuth.pubkey}\nid: ${signedAuth.id}\nsig: ${(signedAuth.sig as string)?.slice(0, 20)}...`);
+
   const authBase64 = btoa(JSON.stringify(signedAuth));
 
   const uploadUrl = `${server}/upload?sha256=${sha256}`;
+  window.alert(`[blossom:4] Sending PUT to: ${uploadUrl}`);
+
   const response = await fetch(uploadUrl, {
     method: "PUT",
     headers: {
@@ -91,12 +98,15 @@ export async function uploadToBlossom(file: File, signer: SignerFn): Promise<Blo
     body: file,
   });
 
+  window.alert(`[blossom:5] Response: ${response.status} ${response.statusText}`);
+
   if (!response.ok) {
     const text = await response.text().catch(() => "");
+    window.alert(`[blossom:ERROR] ${response.status}: ${text}`);
     throw new Error(`Upload failed (${response.status}): ${text}`);
   }
   const result = await response.json();
-  // Blossom returns { url, sha256, size, type, uploaded }
+  window.alert(`[blossom:6] Success! URL: ${result.url}`);
   if (!result.sha256) {
     throw new Error("Unexpected upload response");
   }
