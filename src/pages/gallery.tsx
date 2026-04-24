@@ -7,7 +7,6 @@ import {
   GalleryImage,
   publishGalleryImage,
   uploadToBlossom,
-  buildGalleryBlossomURI,
   getBlossomServers,
 } from "@/utils/galleryEvents";
 import { buildDeleteEvent, publishDelete } from "@/utils/pinboardEvents";
@@ -76,23 +75,18 @@ export default function GalleryPage() {
     try {
       if (!uploadForm.file || !uploadForm.caption) throw new Error("Please fill in all fields");
       if (!user) throw new Error("You must be logged in to upload");
-      const descriptor = await uploadToBlossom(uploadForm.file, signEvent);
-      const blossomUri = buildGalleryBlossomURI(descriptor, uploadForm.file, user.pubkey);
-      const result = await publishGalleryImage(descriptor, uploadForm.caption, signEvent, user.pubkey, blossomUri);
+      const imageUrl = await uploadToBlossom(uploadForm.file, signEvent);
+      const result = await publishGalleryImage(imageUrl, uploadForm.caption, signEvent, user.pubkey);
       if (!result.success) throw new Error(result.error || "Failed to upload");
       const newImage: GalleryImage = {
         id: result.eventId || `local-${Date.now()}`,
         kind: 20,
         pubkey: user.pubkey,
-        tags: [["imeta", `url ${descriptor.url} m ${descriptor.type || "image/jpeg"} alt ${uploadForm.caption}`]],
+        tags: [["imeta", `url ${imageUrl} m image/jpeg alt ${uploadForm.caption}`]],
         content: uploadForm.caption,
-        imageUrl: descriptor.url,
+        imageUrl,
         caption: uploadForm.caption,
         created_at: Math.floor(Date.now() / 1000),
-        sha256: descriptor.sha256,
-        mimeType: descriptor.type,
-        size: descriptor.size,
-        blossomUri,
       };
       setImages((prev) => (prev.some((i) => i.id === newImage.id) ? prev : [newImage, ...prev]));
       setShowUploadModal(false);

@@ -73,12 +73,16 @@ test.describe("@gallery @whitelist logged in", () => {
     await page.goto("/gallery");
     await page.waitForTimeout(2000);
 
-    // Login via the upload modal
+    // Open upload modal and login if needed (localStorage may auto-login)
     await page.getByTestId("add-photo-btn").click();
-    await page
-      .getByRole("button", { name: /login with nostr extension/i })
-      .click();
-    await page.waitForTimeout(1000);
+    const loginBtn = page.getByRole("button", {
+      name: /login with nostr extension/i,
+    });
+    const loginVisible = await loginBtn.isVisible().catch(() => false);
+    if (loginVisible) {
+      await loginBtn.click();
+      await page.waitForTimeout(1000);
+    }
   });
 
   test("upload form fields are enabled after login", async ({ page }) => {
