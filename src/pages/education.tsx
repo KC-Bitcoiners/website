@@ -118,7 +118,7 @@ export default function EducationPage() {
   const [view, setView] = useState<"featured" | "boards">("featured");
   const [showAddPin, setShowAddPin] = useState(false);
   const [editPin, setEditPin] = useState<Pin | null>(null);
-  const [sortBy, setSortBy] = useState<"date" | "title" | "zaps">("date");
+  const [sortBy, setSortBy] = useState<"date" | "title" | "zaps">("zaps");
   const [selectedArticle, setSelectedArticle] = useState<Pin | null>(null);
 
   // Zap totals for sorting — fetched once for visible pins

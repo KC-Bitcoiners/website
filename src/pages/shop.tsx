@@ -7,6 +7,7 @@ import { useNostr } from "@/contexts/NostrContext";
 import { fetchBTCMapVendors, BTCMapVendor } from "@/utils/btcmap";
 import { pool } from "@/lib/nostr";
 import { config, nostrRelays, getWhitelistFilter, siteConfig } from "@/config";
+import { fetchZapTotal } from "@/utils/zaps";
 import type { Icon, LatLngBounds, DivIcon } from "leaflet";
 import { getEventHash, type NostrEvent } from "applesauce-core/helpers/event";
 
@@ -66,12 +67,12 @@ interface NostrVendor {
   rawEvent?: Record<string, unknown>;
 }
 
-type SortField = keyof NostrVendor | "submitterName";
+type SortField = keyof NostrVendor | "submitterName" | "zaps";
 type SortDirection = "asc" | "desc";
 
 export default function ShopPage() {
   const { user, signEvent } = useNostr();
-  const [sortField, setSortField] = useState<SortField>("name");
+  const [sortField, setSortField] = useState<SortField>("zaps");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [filters, setFilters] = useState<Record<string, string>>({
     name: "",
@@ -87,6 +88,9 @@ export default function ShopPage() {
   const [isEdit, setIsEdit] = useState(false);
   const vendorCardRefs = useRef<{ [key: string]: HTMLElement | null }>({});
 
+  // Zap totals for sorting vendors
+  const [vendorZapTotals, setVendorZapTotals] = useState<Record<string, number>>({});
+
   // Nostr vendors state
   const [nostrVendors, setNostrVendors] = useState<NostrVendor[]>([]);
   const [isLoadingNostr, setIsLoadingNostr] = useState(false);
@@ -96,6 +100,19 @@ export default function ShopPage() {
   const [btcMapVendors, setBTCMapVendors] = useState<BTCMapVendor[]>([]);
   const [isLoadingBTCMap, setIsLoadingBTCMap] = useState(false);
   const [btcMapError, setBTCMapError] = useState<string | null>(null);
+
+  // Fetch zap totals for Nostr vendors when they load
+  useEffect(() => {
+    if (nostrVendors.length === 0) return;
+    let cancelled = false;
+    const totals: Record<string, number> = {};
+    Promise.all(
+      nostrVendors.map((v) =>
+        fetchZapTotal(v.id).then((t) => { if (t > 0) totals[v.id] = t; }),
+      ),
+    ).then(() => { if (!cancelled) setVendorZapTotals(totals); });
+    return () => { cancelled = true; };
+  }, [nostrVendors]);
 
   // Fetch vendor profile info
   const fetchSubmitterProfile = async (
@@ -376,6 +393,13 @@ export default function ShopPage() {
 
     // Apply sorting
     result.sort((a, b) => {
+      // Zap sorting — sort by zap total (desc by default)
+      if (sortField === "zaps") {
+        const aZaps = ("id" in a) ? (vendorZapTotals[a.id] || 0) : 0;
+        const bZaps = ("id" in b) ? (vendorZapTotals[b.id] || 0) : 0;
+        return sortDirection === "desc" ? bZaps - aZaps : aZaps - bZaps;
+      }
+
       let aValue: string | number | undefined = a[
         sortField as keyof (NostrVendor | BTCMapVendor)
       ] as string | number | undefined;
@@ -413,7 +437,7 @@ export default function ShopPage() {
     });
 
     return result;
-  }, [nostrVendors, btcMapVendors, filters, sortField, sortDirection]);
+  }, [nostrVendors, btcMapVendors, filters, sortField, sortDirection, vendorZapTotals]);
 
   // Handle sort
   const handleSort = (field: SortField) => {
@@ -561,6 +585,7 @@ export default function ShopPage() {
   };
 
   const sortableFields: { key: SortField; label: string }[] = [
+    { key: "zaps", label: "\u26A1 Zaps" },
     { key: "name", label: "Vendor Name" },
     { key: "category", label: "Category" },
     { key: "submitterName", label: "Submitted By" },

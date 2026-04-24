@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import Head from "next/head";
 import { handleBrokenMedia } from "blossom-client-sdk";
 import { config, siteConfig, basePath } from "@/config";
@@ -13,6 +13,7 @@ import { buildDeleteEvent, publishDelete } from "@/utils/pinboardEvents";
 import { useNostr } from "@/contexts/NostrContext";
 import EventActions from "@/components/EventActions";
 import { useModal } from "@/hooks/useModal";
+import { fetchZapTotal } from "@/utils/zaps";
 
 export default function GalleryPage() {
   const [images, setImages] = useState<GalleryImage[]>([]);
@@ -27,6 +28,10 @@ export default function GalleryPage() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const { user, hasExtension, loginWithExtension, signEvent } = useNostr();
   const mediaRootRef = useRef<HTMLDivElement>(null);
+
+  // Sort controls
+  const [sortBy, setSortBy] = useState<"zaps" | "date">("zaps");
+  const [zapTotals, setZapTotals] = useState<Record<string, number>>({});
 
   // Modal accessibility: Escape key + scroll lock
   const closeImageModal = useCallback(() => setSelectedImage(null), []);
@@ -50,6 +55,27 @@ export default function GalleryPage() {
       stream.cancel();
     };
   }, []);
+
+  // Fetch zap totals for gallery images
+  useEffect(() => {
+    if (images.length === 0) return;
+    let cancelled = false;
+    const totals: Record<string, number> = {};
+    Promise.all(
+      images.map((img) =>
+        fetchZapTotal(img.id).then((t) => { if (t > 0) totals[img.id] = t; }),
+      ),
+    ).then(() => { if (!cancelled) setZapTotals(totals); });
+    return () => { cancelled = true; };
+  }, [images]);
+
+  // Compute sorted images
+  const sortedImages = useMemo(() => {
+    return [...images].sort((a, b) => {
+      if (sortBy === "zaps") return (zapTotals[b.id] || 0) - (zapTotals[a.id] || 0);
+      return b.created_at - a.created_at;
+    });
+  }, [images, sortBy, zapTotals]);
 
   // Auto-fallback for broken <img> elements via blossom-client-sdk: when an
   // image fails to load, the SDK looks up the author's kind 10063 server list
@@ -125,13 +151,31 @@ export default function GalleryPage() {
             <h2 className="text-2xl font-bold font-archivo-black text-gray-900">
               Event Photos
             </h2>
-            <button
-              data-testid="add-photo-btn"
-              onClick={() => setShowUploadModal(true)}
-              className="px-4 py-2 bg-bitcoin-orange text-white rounded-lg hover:bg-orange-600 transition-colors font-semibold"
-            >
-              Add Photo
-            </button>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
+                <span className="text-xs text-gray-500">Sort:</span>
+                {(["zaps", "date"] as const).map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setSortBy(s)}
+                    className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                      sortBy === s
+                        ? "bg-gray-800 text-white"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                  >
+                    {s === "zaps" ? "\u26A1 Zaps" : "Newest"}
+                  </button>
+                ))}
+              </div>
+              <button
+                data-testid="add-photo-btn"
+                onClick={() => setShowUploadModal(true)}
+                className="px-4 py-2 bg-bitcoin-orange text-white rounded-lg hover:bg-orange-600 transition-colors font-semibold"
+              >
+                Add Photo
+              </button>
+            </div>
           </div>
 
           {loading && images.length === 0 && (
@@ -150,7 +194,7 @@ export default function GalleryPage() {
 
           {images.length > 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {images.map((image) => (
+              {sortedImages.map((image) => (
                 <div
                   key={image.id}
                   data-testid={`gallery-image-${image.id.slice(0, 8)}`}
