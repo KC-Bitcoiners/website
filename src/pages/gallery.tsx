@@ -63,7 +63,7 @@ export default function GalleryPage() {
     const totals: Record<string, number> = {};
     Promise.all(
       images.map((img) =>
-        fetchZapTotal(img.id).then((t) => { if (t > 0) totals[img.id] = t; }),
+        fetchZapTotal(img.id, img.pubkey).then((t) => { if (t > 0) totals[img.id] = t; }),
       ),
     ).then(() => { if (!cancelled) setZapTotals(totals); });
     return () => { cancelled = true; };

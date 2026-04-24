@@ -266,6 +266,43 @@ export function clearLNURLCache(): void {
 // ── Zap Totals ─────────────────────────────────────────────────────────
 
 /**
+ * Fetch a user's NIP-65 relay list (kind 10002).
+ * Returns their read/write relays, merged with our configured relays.
+ */
+export async function getUserRelays(pubkey: string): Promise<string[]> {
+  return new Promise((resolve) => {
+    let settled = false;
+    const userRelays = new Set<string>(nostrRelays);
+
+    const sub = pool
+      .request(nostrRelays, { kinds: [10002], authors: [pubkey], limit: 1 })
+      .subscribe({
+        next: (event: any) => {
+          if (settled) return;
+          for (const tag of event.tags || []) {
+            // "r" tags with relay URLs; marker "read" or "write" (or no marker = both)
+            if (tag[0] === "r" && tag[1]?.startsWith("wss://")) {
+              userRelays.add(tag[1]);
+            }
+          }
+        },
+        error: () => {
+          if (!settled) { settled = true; resolve([...userRelays]); }
+        },
+        complete: () => {
+          if (!settled) { settled = true; resolve([...userRelays]); }
+        },
+      });
+
+    // Timeout after 3s
+    setTimeout(() => {
+      if (!settled) { settled = true; resolve([...userRelays]); }
+      sub.unsubscribe();
+    }, 3000);
+  });
+}
+
+/**
  * Extract zap amount in sats from a kind 9735 zap receipt event.
  * Tries the bolt11 invoice first, falls back to description tag.
  */
@@ -307,17 +344,20 @@ function extractZapAmount(event: any): number {
 
 /**
  * Fetch the total zap amount (in sats) received by a specific event.
- * Queries relays for kind 9735 zap receipts referencing the event ID.
+ * If pubkey is provided, queries the user's NIP-65 relays for broader coverage.
  * Deduplicates across relays by event ID.
  */
-export function fetchZapTotal(eventId: string): Promise<number> {
+export async function fetchZapTotal(eventId: string, pubkey?: string): Promise<number> {
+  // Build relay list: app relays + user's NIP-65 relays if available
+  const relays = pubkey ? await getUserRelays(pubkey) : nostrRelays;
+
   return new Promise((resolve) => {
     let settled = false;
     let total = 0;
     const seen = new Set<string>();
 
     const sub = pool
-      .request(nostrRelays, {
+      .request(relays, {
         kinds: [9735],
         "#e": [eventId],
         limit: 500,

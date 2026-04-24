@@ -108,7 +108,7 @@ export default function ShopPage() {
     const totals: Record<string, number> = {};
     Promise.all(
       nostrVendors.map((v) =>
-        fetchZapTotal(v.id).then((t) => { if (t > 0) totals[v.id] = t; }),
+        fetchZapTotal(v.id, v.rawEvent?.pubkey as string | undefined).then((t) => { if (t > 0) totals[v.id] = t; }),
       ),
     ).then(() => { if (!cancelled) setVendorZapTotals(totals); });
     return () => { cancelled = true; };

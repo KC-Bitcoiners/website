@@ -6,7 +6,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import QRCode from "qrcode";
 import { useModal } from "@/hooks/useModal";
-import { fetchZapInvoice, type SignerFn } from "@/utils/zaps";
+import { fetchZapInvoice, getUserRelays, type SignerFn } from "@/utils/zaps";
 import { generateKeyPair } from "@/utils/bech32";
 import { pool } from "@/lib/nostr";
 import { nostrRelays } from "@/config";
@@ -89,7 +89,7 @@ export default function ZapModal({
    * Uses pool.subscription (stays open) instead of pool.request (one-shot).
    * Matches by exact bolt11 invoice to avoid false positives from old zaps.
    */
-  const watchForZapReceipt = useCallback((millisats: number, bolt11: string) => {
+  const watchForZapReceipt = useCallback(async (millisats: number, bolt11: string) => {
     if (!eventId) return;
 
     // Clean up any existing subscription
@@ -97,8 +97,12 @@ export default function ZapModal({
       zapSubRef.current.unsubscribe();
     }
 
+    // Query the event author's NIP-65 relay list for broader coverage
+    const authorPubkey = event.pubkey as string | undefined;
+    const relays = authorPubkey ? await getUserRelays(authorPubkey) : nostrRelays;
+
     const sub = pool
-      .subscription(nostrRelays, {
+      .subscription(relays, {
         kinds: [9735],
         "#e": [eventId],
         limit: 100,

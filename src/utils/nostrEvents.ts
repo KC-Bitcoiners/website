@@ -205,6 +205,7 @@ export function convertNostrEventToCalendar(event: NostrCalendarEvent) {
         ?.filter((tag: string[]) => tag[0] === "e")
         .map((tag) => tag[1]) || [],
     created_at: event.created_at,
+    rawEvent: event as unknown as Record<string, unknown>,
   };
 }
 

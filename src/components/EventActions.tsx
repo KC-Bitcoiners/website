@@ -66,11 +66,12 @@ export default function EventActions({
     const id = event.id as string | undefined;
     if (!id) return;
     let cancelled = false;
-    fetchZapTotal(id).then((total) => {
+    const authorPubkey = event.pubkey as string | undefined;
+    fetchZapTotal(id, authorPubkey).then((total) => {
       if (!cancelled && total > 0) setZapTotal(total);
     });
     return () => { cancelled = true; };
-  }, [event.id, zapRefreshKey]);
+  }, [event.id, event.pubkey, zapRefreshKey]);
 
   const updatePosition = useCallback(() => {
     if (triggerRef.current) {

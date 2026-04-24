@@ -136,7 +136,7 @@ export default function EducationPage() {
     const totals: Record<string, number> = {};
     Promise.all(
       pins.map((p) =>
-        fetchZapTotal(p.id).then((t) => {
+        fetchZapTotal(p.id, p.pubkey).then((t) => {
           if (t > 0) totals[p.id] = t;
         }),
       ),
