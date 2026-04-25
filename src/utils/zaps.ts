@@ -281,7 +281,7 @@ export async function getUserRelays(pubkey: string): Promise<string[]> {
           if (settled) return;
           for (const tag of event.tags || []) {
             // "r" tags with relay URLs; marker "read" or "write" (or no marker = both)
-            if (tag[0] === "r" && tag[1]?.startsWith("wss://")) {
+            if (tag[0] === "r" && tag[1]?.startsWith("wss://") && !tag[1].includes(".onion")) {
               userRelays.add(tag[1]);
             }
           }

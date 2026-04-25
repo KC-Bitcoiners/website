@@ -135,151 +135,68 @@ export default function CalendarPage({
     } catch {}
   };
 
-  // Load events from localStorage, meetup data, and nostr
+  // Load all events: local + meetup + nostr in parallel
   useEffect(() => {
-    const loadInitialEvents = async () => {
-      logger.debug("📅 Starting to load initial events...");
+    const loadAllEvents = async () => {
+      logger.debug("📅 Loading all event sources in parallel...");
 
       try {
-        // Load local events
-        logger.debug("🗂️ Loading local events...");
-        const localEvents = loadEvents();
-        logger.debug(`📊 Loaded ${localEvents.length} local events`);
-
-        // Transform meetup events from props
-        logger.debug("🌐 Processing meetup events from props...");
-        let meetupEvents: CalendarEvent[] = [];
-
-        if (meetupGroup) {
-          logger.debug(
-            `📋 Found ${meetupGroup.events.edges.length} meetup events in group`,
-          );
-          meetupEvents = meetupGroup.events.edges.map((edge) => {
-            const event = edge.node;
-            // meetup.com dateTime is an ISO string, convert to Unix timestamp
-            const startTime = Math.floor(
-              new Date(event.dateTime).getTime() / 1000,
-            );
-            const endTime = event.endTime
-              ? Math.floor(new Date(event.endTime).getTime() / 1000)
-              : startTime + 3600; // Default 1 hour duration
-
-            logger.debug(
-              `🎯 Processing meetup event: ${event.title} at ${new Date(startTime * 1000).toLocaleString()}`,
-            );
-
-            return {
-              id: `meetup-${event.id}`,
-              kind: 31923, // Timed event
-              pubkey: "meetup",
-              tags: [],
-              content: event.description,
-              dTag: "meetup-event",
-              title: event.title,
-              summary: event.title,
-              description: event.description,
-              location: getVenueAddress(event.venues),
-              locations: event.venues?.map((v: any) => v.address) || [],
-              venueName: event.venues?.[0]?.name?.trim() || undefined,
-              start: startTime.toString(),
-              end: endTime.toString(),
-              timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-              image: event.venues?.[0]?.id
-                ? `https://secure.meetupstatic.com/photos/event/${event.venues[0].id}/450x300.jpeg`
-                : undefined,
-              hashtags: [],
-              references: [event.eventUrl],
-              created_at: Math.floor(Date.now() / 1000),
-            };
-          });
-          logger.debug(
-            `✅ Successfully processed ${meetupEvents.length} meetup events`,
-          );
-        } else {
-          logger.debug("⚠️ No meetup group data available");
-        }
-
-        // Load local and meetup events immediately
-        logger.debug(
-          `🚀 Displaying immediate events: ${localEvents.length} local + ${meetupEvents.length} meetup`,
-        );
-        logger.debug(
-          "🔍 Meetup events before sorting:",
-          meetupEvents.map((e) => ({
-            id: e.id,
-            title: e.title,
-            start: e.start,
-            kind: e.kind,
-            pubkey: e.pubkey,
-          })),
-        );
-
-        const immediateEvents = sortEventsByTime([
-          ...localEvents,
-          ...meetupEvents,
+        // Load all three sources concurrently
+        const [localEvents, meetupEvents, nostrCalendarEvents] = await Promise.all([
+          Promise.resolve(loadEvents()),
+          // Transform meetup events from props
+          (async () => {
+            if (!meetupGroup) return [];
+            logger.debug(`📋 Processing ${meetupGroup.events.edges.length} meetup events`);
+            return meetupGroup.events.edges.map((edge) => {
+              const event = edge.node;
+              const startTime = Math.floor(new Date(event.dateTime).getTime() / 1000);
+              const endTime = event.endTime
+                ? Math.floor(new Date(event.endTime).getTime() / 1000)
+                : startTime + 3600;
+              return {
+                id: `meetup-${event.id}`,
+                kind: 31923,
+                pubkey: "meetup",
+                tags: [],
+                content: event.description,
+                dTag: "meetup-event",
+                title: event.title,
+                summary: event.title,
+                description: event.description,
+                location: getVenueAddress(event.venues),
+                locations: event.venues?.map((v: any) => v.address) || [],
+                venueName: event.venues?.[0]?.name?.trim() || undefined,
+                start: startTime.toString(),
+                end: endTime.toString(),
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                image: event.venues?.[0]?.id
+                  ? `https://secure.meetupstatic.com/photos/event/${event.venues[0].id}/450x300.jpeg`
+                  : undefined,
+                hashtags: [],
+                references: [event.eventUrl],
+                created_at: Math.floor(Date.now() / 1000),
+              };
+            });
+          })(),
+          // Fetch nostr events
+          (async () => {
+            setIsLoadingNostrEvents(true);
+            try {
+              return await fetchNostrCalendarEvents();
+            } catch (error) {
+              logger.warn("⚠️ Failed to load nostr events:", error);
+              return [];
+            } finally {
+              setIsLoadingNostrEvents(false);
+            }
+          })(),
         ]);
-        logger.debug(
-          "🔍 All immediate events after sorting:",
-          immediateEvents.map((e) => ({
-            id: e.id,
-            title: e.title,
-            start: e.start,
-            kind: e.kind,
-            pubkey: e.pubkey,
-          })),
-        );
 
-        const upcoming = getUpcomingEvents(immediateEvents);
-        const past = getPastEvents(immediateEvents);
-        logger.debug("🔍 Upcoming events count:", upcoming.length);
-        logger.debug("🔍 Past events count:", past.length);
-        logger.debug(
-          "🔍 Upcoming events:",
-          upcoming.map((e) => ({
-            id: e.id,
-            title: e.title,
-            start: e.start,
-            kind: e.kind,
-          })),
-        );
-        logger.debug(
-          "🔍 Past events:",
-          past.map((e) => ({
-            id: e.id,
-            title: e.title,
-            start: e.start,
-            kind: e.kind,
-          })),
-        );
+        logger.debug(`📊 Loaded ${localEvents.length} local, ${meetupEvents.length} meetup, ${nostrCalendarEvents.length} nostr events`);
 
-        setEvents(immediateEvents);
-      } catch (error) {
-        logger.error("Error loading initial events:", error);
-        // Fallback to local events only
-        const localEvents = loadEvents();
-        setEvents(sortEventsByTime(localEvents));
-      }
-    };
-
-    loadInitialEvents();
-  }, [meetupGroup]);
-
-  // Load nostr events separately in the background
-  useEffect(() => {
-    const loadNostrEvents = async () => {
-      logger.debug("🕰️ Loading nostr events in background...");
-      setIsLoadingNostrEvents(true);
-      let nostrEvents: CalendarEvent[] = [];
-
-      try {
-        const nostrCalendarEvents = await fetchNostrCalendarEvents();
-        logger.debug(`📡 Found ${nostrCalendarEvents.length} raw nostr events`);
-        nostrEvents = nostrCalendarEvents.map(convertNostrEventToCalendar);
-        logger.debug(
-          `✅ Converted ${nostrEvents.length} nostr events to calendar format`,
-        );
-
-        // Fetch zap totals immediately alongside event loading
+        // Convert nostr events and fetch zaps inline
+        const nostrEvents = nostrCalendarEvents.map(convertNostrEventToCalendar);
         nostrEvents.forEach((e) => {
           const rawId = e.id.replace("nostr-", "");
           const pubkey = (e.rawEvent as any)?.pubkey as string | undefined;
@@ -288,31 +205,18 @@ export default function CalendarPage({
           });
         });
 
-        logger.debug(
-          `✅ Converted ${nostrEvents.length} nostr events to calendar format`,
-        );
+        // Merge and deduplicate
+        const allEvents = sortEventsByTime([...localEvents, ...meetupEvents, ...nostrEvents]);
+        logger.debug(`📅 Total events: ${allEvents.length}`);
+        setEvents(allEvents);
       } catch (error) {
-        logger.warn("⚠️ Failed to load nostr events:", error);
-      } finally {
-        setIsLoadingNostrEvents(false);
+        logger.error("Error loading events:", error);
+        const localEvents = loadEvents();
+        setEvents(sortEventsByTime(localEvents));
       }
-
-      // Add nostr events to existing events, deduplicating by ID
-      setEvents((prevEvents) => {
-        const existingIds = new Set(prevEvents.map((e) => e.id));
-        const newEvents = nostrEvents.filter((e) => !existingIds.has(e.id));
-        logger.debug(
-          `➕ Adding ${newEvents.length} new nostr events to existing ${prevEvents.length} events (${nostrEvents.length - newEvents.length} duplicates skipped)`,
-        );
-        const allEvents = sortEventsByTime([...prevEvents, ...newEvents]);
-        logger.debug(`📅 Total events after adding nostr: ${allEvents.length}`);
-        return allEvents;
-      });
     };
 
-    // Load nostr events after a short delay to ensure immediate events are displayed first
-    const timer = setTimeout(loadNostrEvents, 100);
-    return () => clearTimeout(timer);
+    loadAllEvents();
   }, [meetupGroup]);
 
   const handleCreateEvent = async (formData: EventFormData) => {
