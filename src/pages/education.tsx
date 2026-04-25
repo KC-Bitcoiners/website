@@ -524,7 +524,11 @@ export default function EducationPage() {
                         <img
                           src={selectedBoard.image}
                           alt={selectedBoard.title}
+                          width={192}
+                          height={144}
                           className="w-full h-full object-cover"
+                          loading="lazy"
+                          decoding="async"
                         />
                       </div>
                     )}
@@ -609,7 +613,11 @@ export default function EducationPage() {
                         <img
                           src={board.image}
                           alt={board.title}
+                          width={400}
+                          height={160}
                           className="w-full h-full object-cover"
+                          loading="lazy"
+                          decoding="async"
                         />
                       </div>
                     )}

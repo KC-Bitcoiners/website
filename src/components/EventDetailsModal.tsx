@@ -146,7 +146,11 @@ export default function EventDetailsModal({
               <img
                 src={event.image}
                 alt={event.title}
+                width={600}
+                height={400}
                 className="max-w-full h-auto rounded-lg border border-gray-200"
+                loading="lazy"
+                decoding="async"
                 onError={(e) => {
                   e.currentTarget.style.display = "none";
                 }}

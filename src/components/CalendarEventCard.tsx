@@ -155,7 +155,11 @@ export default function CalendarEventCard({
             <img
               src={event.image}
               alt={event.title || "Event image"}
+              width={400}
+              height={192}
               className="w-full h-48 object-cover rounded-lg"
+              loading="lazy"
+              decoding="async"
               onError={(e) => {
                 // Hide broken images
                 (e.target as HTMLImageElement).style.display = "none";

@@ -1144,7 +1144,10 @@ export default function ShopPage() {
                         <img
                           src={vendor.submitterPicture}
                           alt={vendor.submitterName || "Submitter"}
+                          width={24}
+                          height={24}
                           className="w-6 h-6 rounded-full"
+                          loading="lazy"
                         />
                       ) : (
                         <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-xs text-gray-600">

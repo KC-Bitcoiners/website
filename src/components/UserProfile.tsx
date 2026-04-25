@@ -28,6 +28,8 @@ export default function UserProfile() {
           <img
             src={user.metadata.picture}
             alt={displayName}
+            width={24}
+            height={24}
             className="w-6 h-6 rounded-full object-cover"
             onError={(e) => {
               // Fallback to default avatar if image fails to load
@@ -73,6 +75,8 @@ export default function UserProfile() {
                     <img
                       src={user.metadata.picture}
                       alt={displayName}
+                      width={48}
+                      height={48}
                       className="w-12 h-12 rounded-full object-cover"
                       onError={(e) => {
                         e.currentTarget.style.display = "none";

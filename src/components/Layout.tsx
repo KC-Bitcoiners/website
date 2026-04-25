@@ -133,7 +133,10 @@ export default function Layout({ children, className }: LayoutProps) {
                 <img
                   src={config.site.images.logo}
                   alt={config.site.organization.name}
+                  width={32}
+                  height={32}
                   className="h-8 w-auto"
+                  fetchPriority="high"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.src = config.site.images.logoFallback;
@@ -143,7 +146,10 @@ export default function Layout({ children, className }: LayoutProps) {
                 <img
                   src={`${basePath}${config.site.images.logo}`}
                   alt={config.site.organization.name}
+                  width={32}
+                  height={32}
                   className="h-8 w-auto"
+                  fetchPriority="high"
                 />
               )}
               <span className="hidden sm:inline">

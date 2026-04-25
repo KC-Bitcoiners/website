@@ -593,6 +593,8 @@ export default function CalendarPage({
                   <img
                     src={`${basePath}/bitcoinShaka.jpg`}
                     alt="Loading..."
+                    width={48}
+                    height={48}
                     className="w-auto h-auto max-w-12 max-h-12 rounded-full animate-spin"
                   />
                   <p className="text-purple-600 font-medium">
@@ -680,6 +682,8 @@ export default function CalendarPage({
                       <img
                         src={`${basePath}/bitcoinShaka.jpg`}
                         alt="Loading..."
+                        width={80}
+                        height={80}
                         className="bitcoin-shaka-spinner"
                       />
                       <p className="text-purple-600 font-medium mt-4 text-center">

@@ -184,6 +184,8 @@ const NoteQRCode = ({
           <img
             src={qrCodeUrl}
             alt={`QR code to zap: ${goal.content?.slice(0, 50) || "fundraising goal"}`}
+            width={128}
+            height={128}
             className="w-32 h-32"
           />
         </div>
@@ -233,6 +235,8 @@ const NoteIdQRCode = ({
           <img
             src={qrCodeUrl}
             alt={`QR code for note: ${goal.content?.slice(0, 50) || "nostr event"}`}
+            width={128}
+            height={128}
             className="w-32 h-32"
           />
         </div>
@@ -278,7 +282,10 @@ const ZapraiserCard = ({
               <img
                 src={zapraiser.author.picture}
                 alt={zapraiser.author.name || "Author"}
+                width={48}
+                height={48}
                 className="w-12 h-12 rounded-full mr-3"
+                loading="lazy"
               />
             )}
             <div>
@@ -727,6 +734,8 @@ export default function DonatePage() {
             <img
               src={`${basePath}/bitcoinShaka.jpg`}
               alt="Loading..."
+              width={80}
+              height={80}
               className="bitcoin-shaka-spinner"
             />
           </div>

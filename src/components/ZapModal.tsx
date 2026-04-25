@@ -327,7 +327,7 @@ export default function ZapModal({
           <div className="flex flex-col items-center">
             {qrDataUrl && (
               <div className="p-2 bg-white border border-gray-200 rounded-lg mb-4">
-                <img src={qrDataUrl} alt="Lightning invoice QR code" className="w-64 h-64" />
+                <img src={qrDataUrl} alt="Lightning invoice QR code" width={256} height={256} className="w-64 h-64" />
               </div>
             )}
             <p className="text-sm text-gray-600 mb-1">

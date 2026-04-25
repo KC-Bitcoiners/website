@@ -205,8 +205,11 @@ export default function GalleryPage() {
                     src={image.imageUrl}
                     data-pubkey={image.pubkey}
                     alt={image.caption || "Gallery image"}
+                    width={400}
+                    height={256}
                     className="w-full h-64 object-cover rounded-lg bg-gray-100"
                     loading="lazy"
+                    decoding="async"
                   />
                   <div className="flex items-start justify-between gap-1">
                     <div className="flex-1 min-w-0">
