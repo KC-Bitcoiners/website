@@ -8,6 +8,7 @@ import Head from "next/head";
 import dynamic from "next/dynamic";
 import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import EventActions from "@/components/EventActions";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import {
   basePath,
   config,
@@ -421,7 +422,9 @@ export default function EducationPage() {
           })()}
 
         {/* Active Livestreams */}
-        <LivestreamPlayer streams={livestreams ?? []} />
+        <ErrorBoundary>
+          <LivestreamPlayer streams={livestreams ?? []} />
+        </ErrorBoundary>
 
         {/* Tab Navigation */}
         <div className="flex justify-center gap-4 mb-10">

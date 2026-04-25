@@ -2,6 +2,7 @@ import React from "react";
 import Head from "next/head";
 import BitcoinLogo from "@/components/BitcoinLogo";
 import NewsletterForm from "@/components/NewsletterForm";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { config, newsletterConfig, basePath } from "@/config";
 
 export default function Home() {
@@ -91,7 +92,9 @@ export default function Home() {
             </h2>
             <p className="text-gray-600">{newsletterConfig.description}</p>
           </div>
-          <NewsletterForm />
+          <ErrorBoundary>
+            <NewsletterForm />
+          </ErrorBoundary>
         </div>
       </section>
     </>

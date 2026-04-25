@@ -3,6 +3,7 @@ import EventCard from "../components/EventCard";
 import EventForm from "../components/EventForm";
 import CalendarView from "../components/CalendarView";
 import EventDetailsModal from "../components/EventDetailsModal";
+import ErrorBoundary from "../components/ErrorBoundary";
 import { CalendarEvent, EventFormData } from "../types/calendar";
 import {
   createEventFromFormData,
@@ -664,14 +665,16 @@ export default function CalendarPage({
 
             {/* Calendar View */}
             {viewMode !== "list" && (
-              <CalendarView
-                events={events}
-                onEventClick={setSelectedEvent}
-                currentView={viewMode}
-                getEventColor={getEventColor}
-                signEvent={signEvent}
-                pubkey={user?.pubkey}
-              />
+              <ErrorBoundary>
+                <CalendarView
+                  events={events}
+                  onEventClick={setSelectedEvent}
+                  currentView={viewMode}
+                  getEventColor={getEventColor}
+                  signEvent={signEvent}
+                  pubkey={user?.pubkey}
+                />
+              </ErrorBoundary>
             )}
 
             {viewMode === "list" && (
@@ -1024,16 +1027,18 @@ export default function CalendarPage({
             </svg>
           </button>
           {chatOpen && (
-            <iframe
-              ref={chatIframeRef}
-              sandbox="allow-scripts allow-same-origin"
-              loading="lazy"
-              src={CORNYCHAT_URL}
-              className="w-full border-0"
-              style={{ height: "calc(100vh - 200px)", minHeight: "400px" }}
-              allow="microphone; camera; autoplay"
-              title="CornyChat"
-            />
+            <ErrorBoundary fallback={<p className="text-gray-500 text-sm p-4 text-center">Chat failed to load.</p>}>
+              <iframe
+                ref={chatIframeRef}
+                sandbox="allow-scripts allow-same-origin"
+                loading="lazy"
+                src={CORNYCHAT_URL}
+                className="w-full border-0"
+                style={{ height: "calc(100vh - 200px)", minHeight: "400px" }}
+                allow="microphone; camera; autoplay"
+                title="CornyChat"
+              />
+            </ErrorBoundary>
           )}
         </div>
       </div>
