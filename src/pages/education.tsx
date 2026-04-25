@@ -5,11 +5,9 @@ import { kinds, unixNow } from "applesauce-core/helpers";
 import { use$ } from "applesauce-react/hooks";
 import { onlyEvents } from "applesauce-relay/operators";
 import Head from "next/head";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import ReactMarkdown from "react-markdown";
-import rehypeSanitize from "rehype-sanitize";
+import dynamic from "next/dynamic";
+import React, { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import EventActions from "@/components/EventActions";
-import LivestreamPlayer from "@/components/LivestreamPlayer";
 import {
   basePath,
   config,
@@ -53,6 +51,35 @@ function getYouTubeId(url: string): string | null {
   );
   return match ? match[1] : null;
 }
+
+// Lazy-load markdown rendering (~200KB combined) — only needed when articles/newsletters are viewed
+const LazyMarkdown: React.FC<{ children: string }> = ({ children }) => {
+  const [mod, setMod] = useState<{ default: React.ComponentType<{ children: string; rehypePlugins: unknown[] }> } | null>(null);
+  const [sanitize, setSanitize] = useState<unknown>(null);
+
+  useEffect(() => {
+    Promise.all([
+      import("react-markdown"),
+      import("rehype-sanitize"),
+    ]).then(([md, san]) => {
+      setMod(md as typeof mod);
+      setSanitize(san.default);
+    });
+  }, []);
+
+  if (!mod || !sanitize) {
+    return <div className="animate-pulse bg-gray-100 rounded h-24" />;
+  }
+
+  const MarkdownComponent = mod.default;
+  return <MarkdownComponent rehypePlugins={[sanitize]}>{children}</MarkdownComponent>;
+};
+
+// Lazy-load LivestreamPlayer + hls.js (~300KB) — only rendered when active streams exist
+const LivestreamPlayer = dynamic(() => import("@/components/LivestreamPlayer"), {
+  ssr: false,
+  loading: () => null,
+});
 
 function getVimeoId(url: string): string | null {
   const match = url.match(/vimeo\.com\/(\d+)/);
@@ -373,9 +400,7 @@ export default function EducationPage() {
                   </h2>
                   {selectedArticle.content && (
                     <div className="prose prose-sm max-w-none text-gray-700 mb-4">
-                      <ReactMarkdown rehypePlugins={[rehypeSanitize]}>
-                        {selectedArticle.content}
-                      </ReactMarkdown>
+                      <LazyMarkdown>{selectedArticle.content}</LazyMarkdown>
                     </div>
                   )}
                   <div className="pt-4 border-t border-gray-100 flex items-center gap-4">
@@ -1685,9 +1710,7 @@ function AddPinModal({
             )}
             {selectedType === "newsletter" && showPreview ? (
               <div className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm min-h-[200px] max-h-[400px] overflow-y-auto prose prose-sm prose-headings:text-gray-900 prose-h1:text-2xl prose-h1:font-bold prose-h1:border-b prose-h1:border-gray-200 prose-h1:pb-1 prose-h2:text-xl prose-h2:font-semibold prose-h3:text-lg prose-h3:font-semibold prose-p:text-gray-700 prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:font-mono prose-code:text-orange-700 prose-pre:bg-gray-900 prose-pre:text-gray-100">
-                <ReactMarkdown rehypePlugins={[rehypeSanitize]}>
-                  {description}
-                </ReactMarkdown>
+                <LazyMarkdown>{description}</LazyMarkdown>
               </div>
             ) : (
               <textarea

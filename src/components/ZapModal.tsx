@@ -4,7 +4,6 @@
  * and relay-based payment confirmation via kind 9735 zap receipts.
  */
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import QRCode from "qrcode";
 import { useModal } from "@/hooks/useModal";
 import { fetchZapInvoice, getUserRelays, type SignerFn } from "@/utils/zaps";
 import { generateKeyPair } from "@/utils/bech32";
@@ -212,8 +211,9 @@ export default function ZapModal({
       }
     }
 
-    // QR code fallback
+    // QR code fallback — dynamically import qrcode (~50KB) only when needed
     try {
+      const QRCode = (await import("qrcode")).default;
       const url = await QRCode.toDataURL(bolt11, {
         width: 256,
         margin: 2,

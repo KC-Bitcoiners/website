@@ -18,9 +18,30 @@ import CommitteeFormModal from "@/components/CommitteeFormModal";
 import CommitteeMemberFormModal from "@/components/CommitteeMemberFormModal";
 import CommitteeOpeningFormModal from "@/components/CommitteeOpeningFormModal";
 import EventActions from "@/components/EventActions";
-import ReactMarkdown from "react-markdown";
-import rehypeSanitize from "rehype-sanitize";
 import { logger } from "@/utils/logger";
+
+// Lazy-load markdown rendering (~200KB) — only needed when opening descriptions are expanded
+const LazyMarkdown: React.FC<{ children: string }> = ({ children }) => {
+  const [mod, setMod] = useState<{ default: React.ComponentType<{ children: string; rehypePlugins: unknown[] }> } | null>(null);
+  const [sanitize, setSanitize] = useState<unknown>(null);
+
+  useEffect(() => {
+    Promise.all([
+      import("react-markdown"),
+      import("rehype-sanitize"),
+    ]).then(([md, san]) => {
+      setMod(md as typeof mod);
+      setSanitize(san.default);
+    });
+  }, []);
+
+  if (!mod || !sanitize) {
+    return <div className="animate-pulse bg-gray-100 rounded h-12" />;
+  }
+
+  const MarkdownComponent = mod.default;
+  return <MarkdownComponent rehypePlugins={[sanitize]}>{children}</MarkdownComponent>;
+};
 
 // UI-facing committee shape (matches the existing rendering code)
 interface UICommittee {
@@ -861,11 +882,7 @@ export default function CommitteesPage() {
                             <div className="text-sm text-gray-600 mt-1">
                               {expandedOpenings.has(opening.id) ? (
                                 <div className="prose prose-sm max-w-none">
-                                  <ReactMarkdown
-                                    rehypePlugins={[rehypeSanitize]}
-                                  >
-                                    {opening.description}
-                                  </ReactMarkdown>
+                                  <LazyMarkdown>{opening.description}</LazyMarkdown>
                                   <button
                                     onClick={() =>
                                       setExpandedOpenings((prev) => {
@@ -888,11 +905,7 @@ export default function CommitteesPage() {
                                   }
                                   className="line-clamp-2 cursor-pointer"
                                 >
-                                  <ReactMarkdown
-                                    rehypePlugins={[rehypeSanitize]}
-                                  >
-                                    {opening.description}
-                                  </ReactMarkdown>
+                                  <LazyMarkdown>{opening.description}</LazyMarkdown>
                                   <span className="text-bitcoin-orange hover:underline text-xs font-medium">
                                     Show more
                                   </span>

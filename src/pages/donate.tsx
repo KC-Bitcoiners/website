@@ -16,7 +16,6 @@ import {
   getEventPointerForEvent,
   neventEncode,
 } from "applesauce-core/helpers/pointers";
-import QRCode from "qrcode";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 export interface Zapraiser {
@@ -159,22 +158,27 @@ const NoteQRCode = ({
 
   useEffect(() => {
     // Generate QR code for the njump.me URL with encoded nevent
+    let cancelled = false;
     const nevent = neventEncode(pointer);
     const url = `https://njump.me/${nevent}`;
-    QRCode.toDataURL(url, {
-      width: 200,
-      margin: 1,
-      color: {
-        dark: "#000000",
-        light: "#FFFFFF",
-      },
-    })
-      .then((url) => {
-        setQrCodeUrl(url);
+    import("qrcode").then((QRCode) => {
+      if (cancelled) return;
+      QRCode.default.toDataURL(url, {
+        width: 200,
+        margin: 1,
+        color: {
+          dark: "#000000",
+          light: "#FFFFFF",
+        },
       })
-      .catch((err) => {
-        logger.error("Error generating QR code:", err);
-      });
+        .then((dataUrl) => {
+          setQrCodeUrl(dataUrl);
+        })
+        .catch((err) => {
+          logger.error("Error generating QR code:", err);
+        });
+    });
+    return () => { cancelled = true; };
   }, [goal, relays]);
 
   return (
@@ -208,22 +212,27 @@ const NoteIdQRCode = ({
 
   useEffect(() => {
     // Convert note ID to a proper nevent format using nip19
+    let cancelled = false;
     const nevent = neventEncode(pointer);
 
-    QRCode.toDataURL(nevent, {
-      width: 200,
-      margin: 1,
-      color: {
-        dark: "#000000",
-        light: "#FFFFFF",
-      },
-    })
-      .then((url) => {
-        setQrCodeUrl(url);
+    import("qrcode").then((QRCode) => {
+      if (cancelled) return;
+      QRCode.default.toDataURL(nevent, {
+        width: 200,
+        margin: 1,
+        color: {
+          dark: "#000000",
+          light: "#FFFFFF",
+        },
       })
-      .catch((err) => {
-        logger.error("Error generating QR code:", err);
-      });
+        .then((url) => {
+          setQrCodeUrl(url);
+        })
+        .catch((err) => {
+          logger.error("Error generating QR code:", err);
+        });
+    });
+    return () => { cancelled = true; };
   }, [goal, relays, pointer]);
 
   return (
