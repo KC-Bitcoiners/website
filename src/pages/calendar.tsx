@@ -1023,6 +1023,7 @@ export default function CalendarPage({
             <iframe
               ref={chatIframeRef}
               sandbox="allow-scripts allow-same-origin"
+              loading="lazy"
               src={CORNYCHAT_URL}
               className="w-full border-0"
               style={{ height: "calc(100vh - 200px)", minHeight: "400px" }}

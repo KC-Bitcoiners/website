@@ -7,6 +7,7 @@ export default function NewsletterForm() {
   return (
     <iframe
       sandbox="allow-scripts allow-same-origin allow-forms"
+      loading="lazy"
       src={FORMSTR_URL}
       height="700px"
       width="100%"

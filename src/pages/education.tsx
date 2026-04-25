@@ -943,6 +943,7 @@ function PinCard({
           {ytId && (
             <iframe
               sandbox="allow-scripts allow-presentation"
+              loading="lazy"
               src={`https://www.youtube.com/embed/${ytId}`}
               title={pin.title || "YouTube video"}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -953,6 +954,7 @@ function PinCard({
           {vimeoId && (
             <iframe
               sandbox="allow-scripts allow-presentation"
+              loading="lazy"
               src={`https://player.vimeo.com/video/${vimeoId}`}
               title={pin.title || "Vimeo video"}
               allow="autoplay; fullscreen; picture-in-picture"
@@ -963,6 +965,7 @@ function PinCard({
           {rumbleId && (
             <iframe
               sandbox="allow-scripts allow-presentation"
+              loading="lazy"
               src={`https://rumble.com/embed/${rumbleId}/`}
               title={pin.title || "Rumble video"}
               allowFullScreen
@@ -999,13 +1002,13 @@ function PinCard({
         <div className="w-full">
           <iframe
             sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
+            loading="lazy"
             src={`https://open.spotify.com/embed/episode/${spotifyEpisodeId}?utm_source=generator&theme=0`}
             title={pin.title || "Podcast Episode"}
             width="100%"
             height="152"
             frameBorder="0"
             allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-            loading="lazy"
             className="w-full"
           />
         </div>
