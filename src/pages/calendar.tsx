@@ -28,7 +28,7 @@ import {
 } from "@/config";
 import { config } from "@/config";
 import { useNostr } from "../contexts/NostrContext";
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useMemo } from "react";
 import { logger } from "@/utils/logger";
 import { formatDate, formatTime, splitDescription } from "@/utils/formatting";
 
@@ -474,7 +474,7 @@ export default function CalendarPage({
   };
 
   // Function to get color based on event creator
-  const getEventColor = (event: CalendarEvent): string => {
+  const getEventColor = useCallback((event: CalendarEvent): string => {
     if (event.pubkey === "meetup") {
       return "bg-bitcoin-orange border-bitcoin-orange"; // Meetup events - bitcoin orange
     }
@@ -499,10 +499,10 @@ export default function CalendarPage({
     return colorIndex >= 0
       ? colors[colorIndex % colors.length]
       : "bg-gray-50 border-gray-200"; // Default fallback
-  };
+  }, []);
 
-  const upcomingEvents = getUpcomingEvents(events);
-  const pastEvents = getPastEvents(events);
+  const upcomingEvents = useMemo(() => getUpcomingEvents(events), [events]);
+  const pastEvents = useMemo(() => getPastEvents(events), [events]);
 
   // Debug event rendering
   logger.debug("🎯 Event Rendering Debug:");

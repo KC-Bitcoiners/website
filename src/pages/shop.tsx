@@ -1,5 +1,5 @@
 import { logger } from "@/utils/logger";
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import dynamic from "next/dynamic";
 import VendorForm from "@/components/VendorForm";
 import EventActions from "@/components/EventActions";
@@ -548,7 +548,7 @@ export default function ShopPage() {
   };
 
   // Create custom pin icon
-  const createPinIcon = (
+  const createPinIcon = useCallback((
     hasLightning: boolean,
     hasOnchain: boolean,
   ): DivIcon | undefined => {
@@ -572,17 +572,17 @@ export default function ShopPage() {
       iconAnchor: [16, 16],
       popupAnchor: [0, -16],
     });
-  };
+  }, [LeafletDivIcon]);
 
   // Render sort indicator
-  const renderSortIndicator = (field: SortField) => {
+  const renderSortIndicator = useCallback((field: SortField) => {
     if (sortField !== field) return <span className="text-gray-400">⇅</span>;
     return sortDirection === "asc" ? (
       <span className="text-bitcoin-orange">↑</span>
     ) : (
       <span className="text-bitcoin-orange">↓</span>
     );
-  };
+  }, [sortField, sortDirection]);
 
   const sortableFields: { key: SortField; label: string }[] = [
     { key: "zaps", label: "\u26A1 Zaps" },

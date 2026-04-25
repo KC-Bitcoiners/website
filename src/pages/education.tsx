@@ -272,7 +272,7 @@ export default function EducationPage() {
   }, []);
 
   const activePins = view === "featured" ? featuredPins : boardPins;
-  const filteredPins = (
+  const filteredPins = useMemo(() => (
     displayFilter === "all"
       ? activePins
       : activePins.filter((p) => getDisplayType(p) === displayFilter)
@@ -280,7 +280,7 @@ export default function EducationPage() {
     if (sortBy === "zaps") return (zapTotals[b.id] || 0) - (zapTotals[a.id] || 0);
     if (sortBy === "title") return (a.title || "").localeCompare(b.title || "");
     return b.created_at - a.created_at; // date desc (newest first)
-  });
+  }), [activePins, displayFilter, sortBy, zapTotals]);
 
   // Get the default board coordinate for adding pins.
   // When a NIP-07 extension is present, always allow adding — the pinboard

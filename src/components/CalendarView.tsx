@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { CalendarEvent } from "../types/calendar";
 import { ChevronLeftIcon, ChevronRightIcon } from "./Icons";
 import EventActions from "./EventActions";
@@ -32,7 +32,7 @@ export default function CalendarView({
     // This useEffect can be used for future optimizations if needed
   }, [viewType, currentDate, events]);
 
-  const navigateDate = (direction: "prev" | "next") => {
+  const navigateDate = useCallback((direction: "prev" | "next") => {
     const newDate = new Date(currentDate);
 
     switch (viewType) {
@@ -60,11 +60,11 @@ export default function CalendarView({
     }
 
     setCurrentDate(newDate);
-  };
+  }, [currentDate, viewType]);
 
-  const goToToday = () => {
+  const goToToday = useCallback(() => {
     setCurrentDate(new Date());
-  };
+  }, []);
 
   const formatMonthYear = (date: Date) => {
     return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
@@ -88,7 +88,7 @@ export default function CalendarView({
     });
   };
 
-  const getEventsForDate = (date: Date): CalendarEvent[] => {
+  const getEventsForDate = useCallback((date: Date): CalendarEvent[] => {
     // Use local timezone for date comparison
     const startOfDay = new Date(
       date.getFullYear(),
@@ -142,7 +142,7 @@ export default function CalendarView({
         );
       }
     });
-  };
+  }, [events]);
 
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
@@ -186,7 +186,7 @@ export default function CalendarView({
     return weekDays;
   };
 
-  const calculateEventPosition = (event: CalendarEvent) => {
+  const calculateEventPosition = useCallback((event: CalendarEvent) => {
     if (event.kind === 31922) return null; // Skip all-day events
 
     // Handle both timestamp strings and date strings
@@ -222,9 +222,9 @@ export default function CalendarView({
       startMinutes,
       endMinutes,
     };
-  };
+  }, []);
 
-  const calculateEventLayout = (events: CalendarEvent[]) => {
+  const calculateEventLayout = useCallback((events: CalendarEvent[]) => {
     if (events.length === 0) return [];
 
     // Sort events by start time
@@ -292,16 +292,15 @@ export default function CalendarView({
     }
 
     return layout;
-  };
+  }, [calculateEventPosition]);
 
-  const formatTime = (date: Date): string => {
+  const formatTime = useCallback((date: Date): string => {
     return date.toLocaleTimeString("en-US", {
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
     });
-  };
-
+  }, []);
   const renderMonthView = () => {
     const days = getDaysInMonth(currentDate);
     const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
