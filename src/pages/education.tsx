@@ -268,12 +268,14 @@ export default function EducationPage() {
   }, []);
 
   const activePins = view === "featured" ? featuredPins : boardPins;
+  const zapsLoaded = Object.keys(zapTotals).length > 0;
   const filteredPins = (
     displayFilter === "all"
       ? activePins
       : activePins.filter((p) => getDisplayType(p) === displayFilter)
   ).sort((a, b) => {
-    if (sortBy === "zaps") return (zapTotals[b.id] || 0) - (zapTotals[a.id] || 0);
+    // Fall back to date sort until zaps have loaded
+    if (sortBy === "zaps" && zapsLoaded) return (zapTotals[b.id] || 0) - (zapTotals[a.id] || 0);
     if (sortBy === "title") return (a.title || "").localeCompare(b.title || "");
     return b.created_at - a.created_at; // date desc (newest first)
   });

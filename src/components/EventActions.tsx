@@ -288,7 +288,7 @@ export default function EventActions({
       {/* Dropdown — fixed positioning to escape overflow clipping */}
       {open && position && (
         <div
-          className="fixed bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[180px] z-[9999]"
+          className="fixed bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[180px] max-w-[calc(100vw-2rem)] z-[9999]"
           style={{ top: position.top, right: position.right }}
         >
           {actions.map((action, i) => (

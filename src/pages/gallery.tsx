@@ -69,10 +69,11 @@ export default function GalleryPage() {
     return () => { cancelled = true; };
   }, [images]);
 
-  // Compute sorted images
+  // Compute sorted images — fall back to date sort until zaps have loaded
   const sortedImages = useMemo(() => {
+    const zapsLoaded = Object.keys(zapTotals).length > 0;
     return [...images].sort((a, b) => {
-      if (sortBy === "zaps") return (zapTotals[b.id] || 0) - (zapTotals[a.id] || 0);
+      if (sortBy === "zaps" && zapsLoaded) return (zapTotals[b.id] || 0) - (zapTotals[a.id] || 0);
       return b.created_at - a.created_at;
     });
   }, [images, sortBy, zapTotals]);

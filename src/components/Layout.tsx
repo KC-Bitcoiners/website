@@ -15,7 +15,7 @@ function NavLinks({ currentPath }: { currentPath: string }) {
       <Link
         href="/"
         className={clsx(
-          "font-semibold transition-colors",
+          "font-semibold transition-colors py-2",
           currentPath === "/" ? "bitcoin-orange" : "hover:text-bitcoin-orange",
         )}
       >
@@ -24,7 +24,7 @@ function NavLinks({ currentPath }: { currentPath: string }) {
       {/* <Link
         href="/events"
         className={clsx(
-          "font-semibold transition-colors",
+          "font-semibold transition-colors py-2",
           currentPath === "/events"
             ? "bitcoin-orange"
             : "hover:text-bitcoin-orange",
@@ -35,7 +35,7 @@ function NavLinks({ currentPath }: { currentPath: string }) {
       <Link
         href="/calendar"
         className={clsx(
-          "font-semibold transition-colors",
+          "font-semibold transition-colors py-2",
           currentPath === "/calendar"
             ? "bitcoin-orange"
             : "hover:text-bitcoin-orange",
@@ -46,7 +46,7 @@ function NavLinks({ currentPath }: { currentPath: string }) {
       <Link
         href="/shop"
         className={clsx(
-          "font-semibold transition-colors",
+          "font-semibold transition-colors py-2",
           currentPath === "/shop"
             ? "bitcoin-orange"
             : "hover:text-bitcoin-orange",
@@ -57,7 +57,7 @@ function NavLinks({ currentPath }: { currentPath: string }) {
       <Link
         href="/education"
         className={clsx(
-          "font-semibold transition-colors",
+          "font-semibold transition-colors py-2",
           currentPath === "/education"
             ? "bitcoin-orange"
             : "hover:text-bitcoin-orange",
@@ -68,7 +68,7 @@ function NavLinks({ currentPath }: { currentPath: string }) {
       <Link
         href="/donate"
         className={clsx(
-          "font-semibold transition-colors",
+          "font-semibold transition-colors py-2",
           currentPath === "/donate"
             ? "bitcoin-orange"
             : "hover:text-bitcoin-orange",
@@ -79,7 +79,7 @@ function NavLinks({ currentPath }: { currentPath: string }) {
       <Link
         href="/gallery"
         className={clsx(
-          "font-semibold transition-colors",
+          "font-semibold transition-colors py-2",
           currentPath === "/gallery"
             ? "bitcoin-orange"
             : "hover:text-bitcoin-orange",
@@ -90,7 +90,7 @@ function NavLinks({ currentPath }: { currentPath: string }) {
       <Link
         href="/committees"
         className={clsx(
-          "font-semibold transition-colors",
+          "font-semibold transition-colors py-2",
           currentPath === "/committees"
             ? "bitcoin-orange"
             : "hover:text-bitcoin-orange",

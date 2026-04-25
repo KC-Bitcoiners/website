@@ -322,35 +322,53 @@ export default function CalendarView({
     );
     const hasEvents = monthEvents.length > 0;
 
-    return (
-      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden relative">
-        {/* Weekday headers */}
-        <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-200">
-          {weekDays.map((day) => (
-            <div
-              key={day}
-              className="p-2 text-center text-xs font-semibold text-gray-700"
-            >
-              {day}
-            </div>
-          ))}
-        </div>
+    // Detect which day-of-week columns have events this month
+    const dowHasEvents = new Set<number>();
+    days.forEach((day) => {
+      if (day && getEventsForDate(day).length > 0) {
+        dowHasEvents.add(day.getDay());
+      }
+    });
 
-        {/* Calendar days */}
-        <div className="grid grid-cols-7">
+    // Build grid-template-columns:
+    // Empty columns: 2.5rem (date number up to 2 digits)
+    // Event columns: minmax(5rem, 1fr) — equal width, min 5rem, scroll if needed
+    const colTemplate = Array.from({ length: 7 }, (_, i) =>
+      dowHasEvents.has(i) ? "minmax(5rem, 1fr)" : "2.5rem"
+    ).join(" ");
+
+    return (
+      <div className="bg-white border border-gray-200 rounded-lg overflow-x-auto relative">
+        <div className="min-w-fit">
+          {/* Weekday headers */}
+          <div className="grid bg-gray-50 border-b border-gray-200" style={{ gridTemplateColumns: colTemplate }}>
+            {weekDays.map((day, i) => (
+              <div
+                key={day}
+                className="p-2 text-center text-xs font-semibold text-gray-700 overflow-hidden"
+              >
+                {!dowHasEvents.has(i) ? day.charAt(0) : day}
+              </div>
+            ))}
+          </div>
+
+          {/* Calendar days */}
+          <div className="grid" style={{ gridTemplateColumns: colTemplate }}>
           {days.map((day, index) => {
             const dayEvents = day ? getEventsForDate(day) : [];
             const isToday =
               day && day.toDateString() === new Date().toDateString();
             const isCurrentMonth =
               day && day.getMonth() === currentDate.getMonth();
+            const dow = day ? day.getDay() : -1;
+            const isEmptyCol = !dowHasEvents.has(dow);
 
             return (
               <div
                 key={index}
-                className={`min-h-[100px] p-2 border-r border-b border-gray-200 ${
-                  isToday ? "bg-bitcoin-orange/20" : ""
-                } ${!isCurrentMonth ? "bg-gray-50" : ""}`}
+                className={`p-2 border-r border-b border-gray-200 ${
+                  isEmptyCol ? "min-h-auto md:min-h-[100px]" : "min-h-[100px]"
+                } ${isToday ? "bg-bitcoin-orange/20" : ""} ${!isCurrentMonth ? "bg-gray-50" : ""}`}
               >
                 {day && (
                   <>
@@ -361,7 +379,7 @@ export default function CalendarView({
                     >
                       {day.getDate()}
                     </div>
-                    <div className="space-y-1">
+                    {!isEmptyCol && <div className="space-y-1">
                       {dayEvents.slice(0, 3).map((event, eventIndex) => (
                         <div
                           key={eventIndex}
@@ -401,12 +419,13 @@ export default function CalendarView({
                           +{dayEvents.length - 3} more
                         </div>
                       )}
-                    </div>
+                    </div>}
                   </>
                 )}
               </div>
             );
           })}
+        </div>
         </div>
 
         {!hasEvents && (
@@ -431,7 +450,18 @@ export default function CalendarView({
     const weekEvents = weekDays.flatMap((day) => getEventsForDate(day));
     const hasEvents = weekEvents.length > 0;
 
-    // Calculate time range for this view
+    // Detect which days in this week have events
+    const dayHasEvents = weekDays.map((day) => getEventsForDate(day).length > 0);
+
+    // Build grid-template-columns: time column + 7 days
+    // Empty days get 2.5rem, event days get minmax(5rem, 1fr)
+    const weekColTemplate = [
+      "3rem",
+      ...Array.from({ length: 7 }, (_, i) =>
+        dayHasEvents[i] ? "minmax(5rem, 1fr)" : "2.5rem"
+      ),
+    ].join(" ");
+
     const calculateTimeRange = (events: CalendarEvent[]) => {
       if (events.length === 0) {
         return {
@@ -470,167 +500,153 @@ export default function CalendarView({
     const timeRange = calculateTimeRange(weekEvents);
 
     return (
-      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-        {/* Week grid - no separate header to avoid duplication */}
-        <div className="grid grid-cols-8">
-          {/* Time column header */}
-          <div className="p-2 border-r border-b border-gray-200 bg-gray-50">
-            <div className="text-xs font-semibold text-gray-700">Time</div>
-          </div>
+      <div className="bg-white border border-gray-200 rounded-lg overflow-x-auto">
+        <div className="min-w-fit">
+          {/* Header row */}
+          <div className="grid" style={{ gridTemplateColumns: weekColTemplate }}>
+            <div className="p-2 border-r border-b border-gray-200 bg-gray-50"></div>
+            {weekDays.map((day, index) => {
+              const isToday = day.toDateString() === new Date().toDateString();
+              const isEmpty = !dayHasEvents[index];
 
-          {/* Day headers */}
-          {weekDays.map((day, index) => {
-            const dayEvents = getEventsForDate(day);
-            const isToday = day.toDateString() === new Date().toDateString();
-
-            return (
-              <div
-                key={index}
-                className={`p-2 border-r border-b border-gray-200 ${
-                  isToday ? "bg-bitcoin-orange/20" : "bg-gray-50"
-                }`}
-              >
+              return (
                 <div
-                  className={`text-xs font-semibold ${
-                    isToday ? "text-bitcoin-orange" : "text-gray-700"
+                  key={index}
+                  className={`p-2 border-r border-b border-gray-200 overflow-hidden ${
+                    isToday ? "bg-bitcoin-orange/20" : "bg-gray-50"
                   }`}
                 >
-                  {day.toLocaleDateString("en-US", {
-                    weekday: "short",
-                    month: "short",
-                    day: "numeric",
-                  })}
-                </div>
-                {dayEvents.length > 0 && (
-                  <div className="text-xs text-gray-600 mt-1">
-                    {dayEvents.length} event{dayEvents.length !== 1 ? "s" : ""}
+                  <div
+                    className={`text-xs font-semibold ${
+                      isToday ? "text-bitcoin-orange" : "text-gray-700"
+                    }`}
+                  >
+                    {isEmpty
+                      ? day.toLocaleDateString("en-US", { weekday: "narrow" })
+                      : day.toLocaleDateString("en-US", {
+                          weekday: "short",
+                          month: "short",
+                          day: "numeric",
+                        })}
                   </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Week grid */}
-        <div ref={weekScrollRef} className="h-[600px] relative overflow-y-auto">
-          {" "}
-          {/* Reduced height to enable scrolling */}
-          {!hasEvents && (
-            <div className="absolute inset-0 flex items-start justify-center pt-16 bg-gray-50/90">
-              <div className="text-center">
-                <div className="text-gray-400 text-6xl mb-4">�️</div>
-                <h3 className="text-xl font-semibold text-gray-700 mb-2">
-                  No Events This Week
-                </h3>
-                <p className="text-gray-500">
-                  There are no events scheduled for this week.
-                </p>
-              </div>
-            </div>
-          )}
-          {(() => {
-            // Calculate layout for each day once, outside the hour loop
-            const dayLayouts = weekDays.map((day) => {
-              const dayEvents = getEventsForDate(day).filter(
-                (event) => event.kind !== 31922,
-              ); // Skip all-day events
-              return calculateEventLayout(dayEvents);
-            });
-
-            return timeRange.hours.map((hour: number) => (
-              <div
-                key={hour}
-                data-hour={hour}
-                className="grid grid-cols-8 border-b border-gray-300"
-              >
-                {/* Time column */}
-                <div className="w-20 p-2 border-r border-gray-200 text-sm text-gray-600">
-                  {formatTime(new Date(2000, 0, 1, hour, 0, 0, 0))}
                 </div>
+              );
+            })}
+          </div>
 
-                {/* Day columns with events */}
-                {weekDays.map((day, dayIndex) => {
-                  const dayEvents = getEventsForDate(day).filter(
-                    (event) => event.kind !== 31922,
-                  ); // Skip all-day events
+          {/* Week grid */}
+          <div ref={weekScrollRef} className="h-[600px] relative overflow-y-auto">
+            {!hasEvents && (
+              <div className="absolute inset-0 flex items-start justify-center pt-16 bg-gray-50/90">
+                <div className="text-center">
+                  <div className="text-gray-400 text-6xl mb-4">&#x1F4C5;</div>
+                  <h3 className="text-xl font-semibold text-gray-700 mb-2">
+                    No Events This Week
+                  </h3>
+                  <p className="text-gray-500">
+                    There are no events scheduled for this week.
+                  </p>
+                </div>
+              </div>
+            )}
+            {(() => {
+              const dayLayouts = weekDays.map((day) => {
+                const dayEvents = getEventsForDate(day).filter(
+                  (event) => event.kind !== 31922,
+                );
+                return calculateEventLayout(dayEvents);
+              });
 
-                  return (
-                    <div
-                      key={dayIndex}
-                      className="border-r border-gray-200 relative h-[60px]"
-                    >
-                      {/* Only render events that start in this hour */}
-                      {dayEvents.map((event) => {
-                        const eventStart = event.start?.includes("-")
-                          ? new Date(event.start)
-                          : new Date(parseInt(event.start || "0") * 1000);
-                        const eventHour = eventStart.getHours();
+              return timeRange.hours.map((hour: number) => (
+                <div
+                  key={hour}
+                  data-hour={hour}
+                  className="grid border-b border-gray-300"
+                  style={{ gridTemplateColumns: weekColTemplate }}
+                >
+                  <div className="p-2 border-r border-gray-200 text-xs text-gray-600">
+                    {formatTime(new Date(2000, 0, 1, hour, 0, 0, 0))}
+                  </div>
 
-                        // Only render if this event belongs to this hour slot
-                        if (eventHour !== hour) return null;
+                  {weekDays.map((day, dayIndex) => {
+                    const dayEvents = getEventsForDate(day).filter(
+                      (event) => event.kind !== 31922,
+                    );
 
-                        // Find this event's layout from the pre-calculated day layout
-                        const dayLayout = dayLayouts[dayIndex];
-                        const layoutItem = dayLayout.find(
-                          (item) => item.event.id === event.id,
-                        );
+                    return (
+                      <div
+                        key={dayIndex}
+                        className="border-r border-gray-200 relative h-[60px]"
+                      >
+                        {dayEvents.map((event) => {
+                          const eventStart = event.start?.includes("-")
+                            ? new Date(event.start)
+                            : new Date(parseInt(event.start || "0") * 1000);
+                          const eventHour = eventStart.getHours();
 
-                        if (!layoutItem) return null;
+                          if (eventHour !== hour) return null;
 
-                        // Calculate position relative to current hour
-                        const eventPosition = calculateEventPosition(event);
-                        if (!eventPosition) return null;
+                          const dayLayout = dayLayouts[dayIndex];
+                          const layoutItem = dayLayout.find(
+                            (item) => item.event.id === event.id,
+                          );
 
-                        const relativeTop = eventPosition.top - hour * 60; // Position relative to current hour
+                          if (!layoutItem) return null;
 
-                        return (
-                          <div
-                            key={event.id}
-                            onClick={() => onEventClick?.(event)}
-                            className={`absolute text-white text-xs p-1 rounded cursor-pointer hover:opacity-90 transition-colors overflow-hidden z-10 group ${getEventColor ? getEventColor(event).replace(/border-\w+/, "") : "bg-bitcoin-orange"}`}
-                            style={{
-                              top: `${relativeTop}px`,
-                              left: `${2 + layoutItem.position.left}%`,
-                              width: `${layoutItem.position.width - 4}%`,
-                              height: `${layoutItem.position.height}px`,
-                              minHeight: "20px",
-                            }}
-                            title={
-                              event.venueName
-                                ? `${event.title} — ${event.venueName}`
-                                : event.title
-                            }
-                          >
-                            <div className="font-semibold truncate">
-                              {event.title}
-                            </div>
-                            {event.venueName && (
-                              <div className="text-[10px] opacity-95 truncate leading-tight">
-                                {event.venueName}
+                          const eventPosition = calculateEventPosition(event);
+                          if (!eventPosition) return null;
+
+                          const relativeTop = eventPosition.top - hour * 60;
+
+                          return (
+                            <div
+                              key={event.id}
+                              onClick={() => onEventClick?.(event)}
+                              className={`absolute text-white text-xs p-1 rounded cursor-pointer hover:opacity-90 transition-colors overflow-hidden z-10 group ${getEventColor ? getEventColor(event).replace(/border-\w+/, "") : "bg-bitcoin-orange"}`}
+                              style={{
+                                top: `${relativeTop}px`,
+                                left: `${2 + layoutItem.position.left}%`,
+                                width: `${layoutItem.position.width - 4}%`,
+                                height: `${layoutItem.position.height}px`,
+                                minHeight: "20px",
+                              }}
+                              title={
+                                event.venueName
+                                  ? `${event.title} \u2014 ${event.venueName}`
+                                  : event.title
+                              }
+                            >
+                              <div className="font-semibold truncate">
+                                {event.title}
                               </div>
-                            )}
-                            <div className="text-xs opacity-90">
-                              {formatTime(eventStart)}
-                              {event.end &&
-                                ` - ${formatTime(event.end?.includes("-") ? new Date(event.end) : new Date(parseInt(event.end || "0") * 1000))}`}
-                            </div>
-                            <div className="flex items-center justify-between">
-                              {zapTotals?.[event.id.replace("nostr-", "")] && <ZapBadge total={zapTotals[event.id.replace("nostr-", "")]} />}
-                              {event.rawEvent && (
-                                <div className="opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                                  <EventActions event={event.rawEvent} signEvent={signEvent} pubkey={pubkey} hideZapBadge className="!text-white/80 hover:!text-white !p-0.5 !min-w-[18px] !min-h-[18px] !text-[10px]" />
+                              {event.venueName && (
+                                <div className="text-[10px] opacity-95 truncate leading-tight">
+                                  {event.venueName}
                                 </div>
                               )}
+                              <div className="text-xs opacity-90">
+                                {formatTime(eventStart)}
+                                {event.end &&
+                                  ` - ${formatTime(event.end?.includes("-") ? new Date(event.end) : new Date(parseInt(event.end || "0") * 1000))}`}
+                              </div>
+                              <div className="flex items-center justify-between">
+                                {zapTotals?.[event.id.replace("nostr-", "")] && <ZapBadge total={zapTotals[event.id.replace("nostr-", "")]} />}
+                                {event.rawEvent && (
+                                  <div className="opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                                    <EventActions event={event.rawEvent} signEvent={signEvent} pubkey={pubkey} hideZapBadge className="!text-white/80 hover:!text-white !p-0.5 !min-w-[18px] !min-h-[18px] !text-[10px]" />
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })}
-              </div>
-            ));
-          })()}
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+                </div>
+              ));
+            })()}
+          </div>
         </div>
       </div>
     );
@@ -869,14 +885,14 @@ export default function CalendarView({
           </div>
 
           {/* Navigation */}
-          <div className="flex items-center gap-4">
-            <div className="text-lg font-semibold text-gray-900 min-w-[200px] text-center">
+          <div className="flex items-center justify-center gap-2 sm:gap-4">
+            <div className="text-sm sm:text-lg font-semibold text-gray-900 text-center">
               {viewType === "month" && formatMonthYear(currentDate)}
               {viewType === "week" && formatWeekRange(currentDate)}
               {viewType === "day" && formatDayDate(currentDate)}
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
               <button
                 onClick={() => navigateDate("prev")}
                 className="p-2 text-gray-600 hover:text-gray-900 transition-colors"

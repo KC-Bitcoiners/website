@@ -68,7 +68,7 @@ export async function fetchNostrCalendarEvents(): Promise<
 
         pool.request(relays, filter).subscribe({
           next: (nostrEvent) => {
-            logger.debug("Found calendar event", nostrEvent.id);
+            // logger.debug("Found calendar event", nostrEvent.id);
 
             const calendarEvent: NostrCalendarEvent = {
               id: nostrEvent.id,
@@ -129,12 +129,12 @@ export async function fetchNostrCalendarEvents(): Promise<
         if (!existingNaddrs.has(naddr)) {
           allEvents.push(event);
           existingNaddrs.add(naddr);
-          logger.debug("Added event", event.title || "No title");
+          // logger.debug("Added event", event.title || "No title");
         } else {
-          logger.debug(
-            "Duplicate event skipped by naddr",
-            event.title || "No title",
-          );
+          // logger.debug(
+          //   "Duplicate event skipped by naddr",
+          //   event.title || "No title",
+          // );
         }
       } else {
         // For events without dTag, use old method as fallback

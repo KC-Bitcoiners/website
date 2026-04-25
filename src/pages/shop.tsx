@@ -392,9 +392,11 @@ export default function ShopPage() {
     });
 
     // Apply sorting
+    const zapsLoaded = Object.keys(vendorZapTotals).length > 0;
     result.sort((a, b) => {
       // Zap sorting — sort by zap total (desc by default)
-      if (sortField === "zaps") {
+      // Fall back to date sort until zaps have loaded
+      if (sortField === "zaps" && zapsLoaded) {
         const aZaps = ("id" in a) ? (vendorZapTotals[a.id] || 0) : 0;
         const bZaps = ("id" in b) ? (vendorZapTotals[b.id] || 0) : 0;
         return sortDirection === "desc" ? bZaps - aZaps : aZaps - bZaps;

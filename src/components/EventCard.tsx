@@ -18,6 +18,8 @@ interface EventCardProps {
   onDelete?: () => void;
   signEvent?: (event: { kind: number; content: string; tags: string[][]; created_at: number }) => Promise<Record<string, unknown>>;
   pubkey?: string | null;
+  /** Hide the zap badge inside EventActions (to avoid duplicates when parent renders its own). */
+  hideZapBadge?: boolean;
 }
 
 export default function EventCard({
@@ -34,6 +36,7 @@ export default function EventCard({
   onDelete,
   signEvent,
   pubkey,
+  hideZapBadge,
 }: EventCardProps) {
   return (
     <div
@@ -63,7 +66,7 @@ export default function EventCard({
             <h3 className="text-2xl sm:text-3xl font-bold bitcoin-orange font-archivo-black">
               {date}
             </h3>
-            {rawEvent && <EventActions event={rawEvent} signEvent={signEvent} pubkey={pubkey} onDelete={onDelete} />}
+            {rawEvent && <EventActions event={rawEvent} signEvent={signEvent} pubkey={pubkey} onDelete={onDelete} hideZapBadge={hideZapBadge} />}
           </div>
         </div>
 
