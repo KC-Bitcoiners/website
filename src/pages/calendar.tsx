@@ -84,22 +84,7 @@ export default function CalendarPage({
   const [chatOpen, setChatOpen] = useState(false);
   const chatIframeRef = useRef<HTMLIFrameElement>(null);
 
-  // Batch-fetch zap totals for all events
   const [zapTotals, setZapTotals] = useState<Record<string, number>>({});
-  useEffect(() => {
-    const nostrEvents = events.filter((e) => e.id?.startsWith("nostr-") && e.rawEvent);
-    if (nostrEvents.length === 0) return;
-    let cancelled = false;
-    nostrEvents.forEach((e) => {
-      const rawId = e.id.replace("nostr-", "");
-      const pubkey = (e.rawEvent as any)?.pubkey as string | undefined;
-      fetchZapTotal(rawId, pubkey).then((t) => {
-        if (cancelled || t === 0) return;
-        setZapTotals((prev) => ({ ...prev, [rawId]: t }));
-      });
-    });
-    return () => { cancelled = true; };
-  }, [events]);
 
   const CORNYCHAT_URL = "https://cornychat.com";
 
@@ -290,6 +275,19 @@ export default function CalendarPage({
         const nostrCalendarEvents = await fetchNostrCalendarEvents();
         logger.debug(`📡 Found ${nostrCalendarEvents.length} raw nostr events`);
         nostrEvents = nostrCalendarEvents.map(convertNostrEventToCalendar);
+        logger.debug(
+          `✅ Converted ${nostrEvents.length} nostr events to calendar format`,
+        );
+
+        // Fetch zap totals immediately alongside event loading
+        nostrEvents.forEach((e) => {
+          const rawId = e.id.replace("nostr-", "");
+          const pubkey = (e.rawEvent as any)?.pubkey as string | undefined;
+          fetchZapTotal(rawId, pubkey).then((t) => {
+            if (t > 0) setZapTotals((prev) => ({ ...prev, [rawId]: t }));
+          });
+        });
+
         logger.debug(
           `✅ Converted ${nostrEvents.length} nostr events to calendar format`,
         );
