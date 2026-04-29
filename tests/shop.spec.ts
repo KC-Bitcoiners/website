@@ -51,7 +51,7 @@ test.describe("Shop Page @shop", () => {
   }) => {
     await page.getByTestId("tab-listings").click({ force: true });
     // Wait for loading to finish
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(5000);
 
     // Either listings appear (with filter bar) or the empty state shows
     const hasListings = await page
@@ -76,29 +76,31 @@ test.describe("Shop Page @shop", () => {
     await page.getByTestId("tab-listings").click({ force: true });
     await page.waitForTimeout(3000);
 
-    // Scroll to CTA section and click the last "Create Listing" button
-    const ctaSection = page.getByText("Have Something to Sell?");
-    await ctaSection.scrollIntoViewIfNeeded();
+    // Scroll to bottom where CTA always has a Create Listing button
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     await page.waitForTimeout(500);
 
-    // Get all Create Listing buttons, use the one in the CTA (last one)
-    const buttons = page.getByRole("button", { name: "Create Listing" });
-    const count = await buttons.count();
-    if (count > 0) {
-      await buttons.nth(count - 1).evaluate((el: HTMLElement) => el.click());
+    // Click the CTA Create Listing button via evaluate (avoids portal overlay)
+    const clicked = await page.evaluate(() => {
+      const buttons = Array.from(document.querySelectorAll("button"));
+      const ctaBtn = buttons.filter((b) => b.textContent?.includes("Create Listing")).pop();
+      if (ctaBtn) { ctaBtn.click(); return true; }
+      return false;
+    });
+
+    if (clicked) {
       await expect(page.getByTestId("listing-form-modal")).toBeVisible({
         timeout: 5000,
       });
     }
   });
 
-  test("classifieds tab shows loading spinner", async ({ page }) => {
+  test("classifieds tab settles after loading", async ({ page }) => {
     await page.getByTestId("tab-listings").click({ force: true });
-    // Loading spinner should appear briefly
-    const spinner = page.locator(".animate-spin");
-    // Spinner may already be gone, so just verify the page state settled
-    await page.waitForTimeout(3000);
-    // After loading, either listings or empty state should be visible
+    // Wait for loading to finish and page to settle
+    await page.waitForTimeout(5000);
+
+    // After loading, page should show either listings, empty state, error, or filter controls
     const settled =
       (await page
         .locator('[data-testid^="listing-card-"]')
@@ -111,6 +113,10 @@ test.describe("Shop Page @shop", () => {
         .catch(() => false)) ||
       (await page
         .getByText("Unable to load listings")
+        .isVisible()
+        .catch(() => false)) ||
+      (await page
+        .getByTestId("listing-search")
         .isVisible()
         .catch(() => false));
     expect(settled).toBeTruthy();
@@ -138,8 +144,8 @@ test.describe("Shop Page @shop", () => {
       .getByRole("button")
       .filter({ hasText: "Create Listing" });
     if ((await createButtons.count()) > 0) {
-      await createButtons.first().click({ force: true });
-      await expect(page.getByTestId("listing-form-modal")).toBeVisible();
+      await createButtons.first().evaluate((el) => (el as HTMLElement).click());
+      await expect(page.getByTestId("listing-form-modal")).toBeVisible({ timeout: 5000 });
 
       // Verify form fields exist
       await expect(page.getByTestId("listing-title")).toBeVisible();

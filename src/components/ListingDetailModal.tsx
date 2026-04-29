@@ -23,14 +23,12 @@ function formatPrice(listing: ClassifiedListing): string {
 interface ListingDetailModalProps {
   listing: ClassifiedListing;
   onClose: () => void;
-  onEdit?: () => void;
   onDelete?: () => void;
 }
 
 export default function ListingDetailModal({
   listing,
   onClose,
-  onEdit,
   onDelete,
 }: ListingDetailModalProps) {
   const [currentImage, setCurrentImage] = useState(0);
@@ -80,7 +78,6 @@ export default function ListingDetailModal({
               {listing.rawEvent && (
                 <EventActions
                   event={listing.rawEvent}
-                  onEdit={onEdit}
                   onDelete={onDelete}
                 />
               )}

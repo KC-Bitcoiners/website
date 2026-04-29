@@ -4,8 +4,9 @@ import type { ClassifiedListing } from "@/types/classifieds";
 interface ListingCardProps {
   listing: ClassifiedListing;
   onClick: () => void;
-  onEdit?: () => void;
+  zapTotal?: number;
   onDelete?: () => void;
+  pubkey?: string | null;
 }
 
 /** Format price for display */
@@ -32,8 +33,9 @@ function formatPrice(listing: ClassifiedListing): string {
 export default function ListingCard({
   listing,
   onClick,
-  onEdit,
+  zapTotal = 0,
   onDelete,
+  pubkey,
 }: ListingCardProps) {
   const statusColor =
     listing.status === "active"
@@ -99,8 +101,8 @@ export default function ListingCard({
             >
               <EventActions
                 event={listing.rawEvent}
-                onEdit={onEdit}
                 onDelete={onDelete}
+                pubkey={pubkey}
               />
             </div>
           )}
@@ -143,9 +145,12 @@ export default function ListingCard({
         {/* Spacer to push footer down */}
         <div className="flex-1" />
 
-        {/* Footer: date */}
-        <div className="pt-3 border-t border-gray-100 text-xs text-gray-400">
-          {new Date(listing.createdAt * 1000).toLocaleDateString()}
+        {/* Footer: date + zaps */}
+        <div className="pt-3 border-t border-gray-100 flex justify-between items-center text-xs text-gray-400">
+          <span>{new Date(listing.createdAt * 1000).toLocaleDateString()}</span>
+          {zapTotal > 0 && (
+            <span className="text-yellow-500 font-medium">⚡ {zapTotal.toLocaleString()} sats</span>
+          )}
         </div>
       </div>
     </div>

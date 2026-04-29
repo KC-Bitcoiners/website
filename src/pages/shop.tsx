@@ -126,7 +126,8 @@ export default function ShopPage() {
   const [listingSearch, setListingSearch] = useState("");
   const [listingCategory, setListingCategory] = useState("");
   const [listingStatus, setListingStatus] = useState<"all" | "active" | "sold">("all");
-  const [listingSort, setListingSort] = useState<"newest" | "oldest" | "price_low" | "price_high">("newest");
+  const [listingSort, setListingSort] = useState<"newest" | "oldest" | "price_low" | "price_high" | "zaps">("newest");
+  const [listingZapTotals, setListingZapTotals] = useState<Record<string, number>>({});
 
   // Fetch zap totals for Nostr vendors when they load
   useEffect(() => {
@@ -406,6 +407,19 @@ export default function ShopPage() {
     };
     fetchListings();
   }, [view, listingSuccess]);
+
+  // Fetch zap totals for classified listings
+  useEffect(() => {
+    if (listings.length === 0) return;
+    let cancelled = false;
+    const totals: Record<string, number> = {};
+    Promise.all(
+      listings.map((l) =>
+        fetchZapTotal(l.id, l.pubkey).then((t) => { if (t > 0) totals[l.id] = t; }),
+      ),
+    ).then(() => { if (!cancelled) setListingZapTotals(totals); });
+    return () => { cancelled = true; };
+  }, [listings]);
 
   // Apply filters and sorting to all vendors
   const filteredAndSortedVendors = useMemo(() => {
@@ -743,6 +757,11 @@ export default function ShopPage() {
           const bP = b.price ? parseFloat(b.price.amount) : -Infinity;
           return bP - aP;
         }
+        case "zaps": {
+          const aZ = listingZapTotals[a.id] || 0;
+          const bZ = listingZapTotals[b.id] || 0;
+          return bZ - aZ;
+        }
         case "newest":
         default:
           return b.createdAt - a.createdAt;
@@ -750,7 +769,7 @@ export default function ShopPage() {
     });
 
     return result;
-  }, [listings, listingSearch, listingCategory, listingStatus, listingSort]);
+  }, [listings, listingSearch, listingCategory, listingStatus, listingSort, listingZapTotals]);
 
   // Extract unique categories from all listings
   const allListingCategories = useMemo(() => {
@@ -1577,6 +1596,7 @@ export default function ShopPage() {
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
                   >
+                    <option value="zaps">⚡ Zaps</option>
                     <option value="newest">Newest First</option>
                     <option value="oldest">Oldest First</option>
                     <option value="price_low">Price: Low to High</option>
@@ -1603,16 +1623,8 @@ export default function ShopPage() {
                 <ListingCard
                   key={listing.id}
                   listing={listing}
+                  zapTotal={listingZapTotals[listing.id] || 0}
                   onClick={() => setSelectedListing(listing)}
-                  onEdit={
-                    user && listing.pubkey === user.pubkey
-                      ? () => {
-                          setEditListing(listing);
-                          setIsEditListing(true);
-                          setShowListingForm(true);
-                        }
-                      : undefined
-                  }
                   onDelete={
                     user && listing.pubkey === user.pubkey
                       ? () => {
@@ -1626,6 +1638,7 @@ export default function ShopPage() {
                         }
                       : undefined
                   }
+                  pubkey={user?.pubkey}
                 />
               ))}
             </div>
@@ -1753,16 +1766,6 @@ export default function ShopPage() {
             <ListingDetailModal
               listing={selectedListing}
               onClose={() => setSelectedListing(null)}
-              onEdit={
-                user && selectedListing.pubkey === user.pubkey
-                  ? () => {
-                      setSelectedListing(null);
-                      setEditListing(selectedListing);
-                      setIsEditListing(true);
-                      setShowListingForm(true);
-                    }
-                  : undefined
-              }
               onDelete={
                 user && selectedListing.pubkey === user.pubkey
                   ? () => {
