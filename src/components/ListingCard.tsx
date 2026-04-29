@@ -3,6 +3,7 @@ import type { ClassifiedListing } from "@/types/classifieds";
 
 interface ListingCardProps {
   listing: ClassifiedListing;
+  onClick: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
 }
@@ -19,7 +20,6 @@ function formatPrice(listing: ClassifiedListing): string {
     return `${formatted} sats${frequency ? `/${frequency}` : ""}`;
   }
 
-  // Fiat currencies — show with symbol
   const symbols: Record<string, string> = {
     USD: "$",
     EUR: "€",
@@ -31,6 +31,7 @@ function formatPrice(listing: ClassifiedListing): string {
 
 export default function ListingCard({
   listing,
+  onClick,
   onEdit,
   onDelete,
 }: ListingCardProps) {
@@ -44,15 +45,16 @@ export default function ListingCard({
   return (
     <div
       data-testid={`listing-card-${listing.id}`}
-      className="bg-white border border-gray-200 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 overflow-hidden flex flex-col"
+      className="bg-white border border-gray-200 rounded-lg shadow-md hover:shadow-lg transition-all duration-200 overflow-hidden flex flex-col cursor-pointer"
+      onClick={onClick}
     >
       {/* Image banner */}
       {listing.images.length > 0 && (
-        <div className="relative h-48 bg-gray-100">
+        <div className="relative h-48 bg-gray-100 overflow-hidden">
           <img
             src={listing.images[0]}
             alt={listing.title}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
             loading="lazy"
           />
           {listing.images.length > 1 && (
@@ -89,12 +91,18 @@ export default function ListingCard({
             </div>
           </div>
 
+          {/* EventActions: stop click propagation so menu doesn't trigger card click */}
           {listing.rawEvent && (
-            <EventActions
-              event={listing.rawEvent}
-              onEdit={onEdit}
-              onDelete={onDelete}
-            />
+            <div
+              onClick={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              <EventActions
+                event={listing.rawEvent}
+                onEdit={onEdit}
+                onDelete={onDelete}
+              />
+            </div>
           )}
         </div>
 
@@ -116,7 +124,7 @@ export default function ListingCard({
         {/* Tags */}
         {listing.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-3">
-            {listing.tags.map((tag) => (
+            {listing.tags.slice(0, 4).map((tag) => (
               <span
                 key={tag}
                 className="inline-block px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 rounded"
@@ -124,6 +132,11 @@ export default function ListingCard({
                 {tag}
               </span>
             ))}
+            {listing.tags.length > 4 && (
+              <span className="inline-block px-2 py-0.5 text-xs font-medium bg-gray-50 text-gray-400 rounded">
+                +{listing.tags.length - 4}
+              </span>
+            )}
           </div>
         )}
 

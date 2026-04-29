@@ -12,6 +12,7 @@ import type { Icon, LatLngBounds, DivIcon } from "leaflet";
 import { getEventHash, type NostrEvent } from "applesauce-core/helpers/event";
 import ListingCard from "@/components/ListingCard";
 import ListingForm from "@/components/ListingForm";
+import ListingDetailModal from "@/components/ListingDetailModal";
 import {
   fetchClassifiedListings,
 } from "@/utils/classifiedEvents";
@@ -119,6 +120,13 @@ export default function ShopPage() {
     eventId: string;
     naddr: string;
   } | null>(null);
+  const [selectedListing, setSelectedListing] = useState<ClassifiedListing | null>(null);
+
+  // Classifieds filter/sort state
+  const [listingSearch, setListingSearch] = useState("");
+  const [listingCategory, setListingCategory] = useState("");
+  const [listingStatus, setListingStatus] = useState<"all" | "active" | "sold">("all");
+  const [listingSort, setListingSort] = useState<"newest" | "oldest" | "price_low" | "price_high">("newest");
 
   // Fetch zap totals for Nostr vendors when they load
   useEffect(() => {
@@ -693,6 +701,65 @@ export default function ShopPage() {
         : []),
     ]),
   );
+
+  // Filter and sort classified listings
+  const filteredListings = useMemo(() => {
+    let result = [...listings];
+
+    // Search filter (title, summary, description, location)
+    if (listingSearch.trim()) {
+      const q = listingSearch.toLowerCase();
+      result = result.filter(
+        (l) =>
+          l.title.toLowerCase().includes(q) ||
+          (l.summary && l.summary.toLowerCase().includes(q)) ||
+          (l.description && l.description.toLowerCase().includes(q)) ||
+          (l.location && l.location.toLowerCase().includes(q)),
+      );
+    }
+
+    // Category filter
+    if (listingCategory) {
+      result = result.filter((l) => l.tags.includes(listingCategory));
+    }
+
+    // Status filter
+    if (listingStatus !== "all") {
+      result = result.filter((l) => l.status === listingStatus);
+    }
+
+    // Sort
+    result.sort((a, b) => {
+      switch (listingSort) {
+        case "oldest":
+          return a.createdAt - b.createdAt;
+        case "price_low": {
+          const aP = a.price ? parseFloat(a.price.amount) : Infinity;
+          const bP = b.price ? parseFloat(b.price.amount) : Infinity;
+          return aP - bP;
+        }
+        case "price_high": {
+          const aP = a.price ? parseFloat(a.price.amount) : -Infinity;
+          const bP = b.price ? parseFloat(b.price.amount) : -Infinity;
+          return bP - aP;
+        }
+        case "newest":
+        default:
+          return b.createdAt - a.createdAt;
+      }
+    });
+
+    return result;
+  }, [listings, listingSearch, listingCategory, listingStatus, listingSort]);
+
+  // Extract unique categories from all listings
+  const allListingCategories = useMemo(() => {
+    const cats = new Set<string>();
+    for (const l of listings) {
+      for (const t of l.tags) cats.add(t);
+    }
+    return Array.from(cats).sort();
+  }, [listings]);
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -1437,13 +1504,106 @@ export default function ShopPage() {
             </div>
           )}
 
-          {/* Listings Grid */}
+          {/* Filter and Sort Controls */}
           {listings.length > 0 && (
+            <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                {/* Search */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Search
+                  </label>
+                  <input
+                    type="text"
+                    data-testid="listing-search"
+                    value={listingSearch}
+                    onChange={(e) => setListingSearch(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
+                    placeholder="Search listings..."
+                  />
+                </div>
+
+                {/* Category Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Category
+                  </label>
+                  <select
+                    data-testid="listing-category-filter"
+                    value={listingCategory}
+                    onChange={(e) => setListingCategory(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
+                  >
+                    <option value="">All Categories</option>
+                    {allListingCategories.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Status Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Status
+                  </label>
+                  <select
+                    data-testid="listing-status-filter"
+                    value={listingStatus}
+                    onChange={(e) =>
+                      setListingStatus(e.target.value as "all" | "active" | "sold")
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
+                  >
+                    <option value="all">All Statuses</option>
+                    <option value="active">Active</option>
+                    <option value="sold">Sold</option>
+                  </select>
+                </div>
+
+                {/* Sort */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Sort By
+                  </label>
+                  <select
+                    data-testid="listing-sort"
+                    value={listingSort}
+                    onChange={(e) =>
+                      setListingSort(
+                        e.target.value as "newest" | "oldest" | "price_low" | "price_high",
+                      )
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
+                  >
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                    <option value="price_low">Price: Low to High</option>
+                    <option value="price_high">Price: High to Low</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Results Count */}
+              <div className="text-sm text-gray-600">
+                Showing{" "}
+                <span className="font-semibold text-bitcoin-orange">
+                  {filteredListings.length}
+                </span>{" "}
+                of {listings.length} listings
+              </div>
+            </div>
+          )}
+
+          {/* Listings Grid */}
+          {filteredListings.length > 0 && (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {listings.map((listing) => (
+              {filteredListings.map((listing) => (
                 <ListingCard
                   key={listing.id}
                   listing={listing}
+                  onClick={() => setSelectedListing(listing)}
                   onEdit={
                     user && listing.pubkey === user.pubkey
                       ? () => {
@@ -1471,7 +1631,27 @@ export default function ShopPage() {
             </div>
           )}
 
-          {/* Empty State */}
+          {/* No results after filtering */}
+          {listings.length > 0 && filteredListings.length === 0 && (
+            <div className="text-center py-12">
+              <div className="text-4xl mb-3">🔍</div>
+              <p className="text-lg text-gray-600">
+                No listings match your filters.
+              </p>
+              <button
+                onClick={() => {
+                  setListingSearch("");
+                  setListingCategory("");
+                  setListingStatus("all");
+                }}
+                className="mt-3 text-bitcoin-orange hover:underline text-sm"
+              >
+                Clear filters
+              </button>
+            </div>
+          )}
+
+          {/* Empty State (no listings at all) */}
           {!isLoadingListings && listings.length === 0 && !listingsError && (
             <div className="text-center py-16">
               <div className="text-6xl mb-4">📋</div>
@@ -1565,6 +1745,38 @@ export default function ShopPage() {
               }}
               editListing={editListing}
               isEdit={isEditListing}
+            />
+          )}
+
+          {/* Listing Detail Modal */}
+          {selectedListing && (
+            <ListingDetailModal
+              listing={selectedListing}
+              onClose={() => setSelectedListing(null)}
+              onEdit={
+                user && selectedListing.pubkey === user.pubkey
+                  ? () => {
+                      setSelectedListing(null);
+                      setEditListing(selectedListing);
+                      setIsEditListing(true);
+                      setShowListingForm(true);
+                    }
+                  : undefined
+              }
+              onDelete={
+                user && selectedListing.pubkey === user.pubkey
+                  ? () => {
+                      if (
+                        window.confirm(
+                          `Are you sure you want to delete "${selectedListing.title}"?`,
+                        )
+                      ) {
+                        handleDeleteListing(selectedListing);
+                        setSelectedListing(null);
+                      }
+                    }
+                  : undefined
+              }
             />
           )}
         </>
