@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import EventCard from "../components/EventCard";
 import EventForm from "../components/EventForm";
 import CalendarView from "../components/CalendarView";
@@ -29,9 +29,10 @@ import {
 } from "@/config";
 import { config } from "@/config";
 import { useNostr } from "../contexts/NostrContext";
-import { useRef, useCallback, useMemo } from "react";
+import { useRef, useCallback } from "react";
 import { logger } from "@/utils/logger";
 import { formatDate, formatTime, splitDescription } from "@/utils/formatting";
+import { fetchZapTotal } from "@/utils/zaps";
 
 interface CalendarPageProps {
   meetupGroup: MeetupGroup | null;
@@ -65,12 +66,11 @@ export default function CalendarPage({
   meetupGroup,
   meetupError,
 }: InferGetStaticPropsType<typeof getStaticProps>) {
+  // Default to list view on mobile, month on desktop (deferred to avoid hydration mismatch)
+  const [viewMode, setViewMode] = useState<"list" | "month" | "week" | "day">("month");
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
-  const [viewMode, setViewMode] = useState<"list" | "month" | "week" | "day">(
-    "month",
-  );
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(
     null,
   );
@@ -83,6 +83,10 @@ export default function CalendarPage({
   const { user, signEvent } = useNostr();
   const [chatOpen, setChatOpen] = useState(false);
   const chatIframeRef = useRef<HTMLIFrameElement>(null);
+
+  const [zapTotals, setZapTotals] = useState<Record<string, number>>({});
+  const [pastExpanded, setPastExpanded] = useState(false);
+  const [pastPage, setPastPage] = useState(1);
 
   const CORNYCHAT_URL = "https://cornychat.com";
 
@@ -133,172 +137,97 @@ export default function CalendarPage({
     } catch {}
   };
 
-  // Load events from localStorage, meetup data, and nostr
+  // Load all events: local + meetup + nostr in parallel
   useEffect(() => {
-    const loadInitialEvents = async () => {
-      logger.debug("📅 Starting to load initial events...");
+    let cancelled = false;
+
+    const loadAllEvents = async () => {
+      if (cancelled) return;
 
       try {
-        // Load local events
-        logger.debug("🗂️ Loading local events...");
-        const localEvents = loadEvents();
-        logger.debug(`📊 Loaded ${localEvents.length} local events`);
-
-        // Transform meetup events from props
-        logger.debug("🌐 Processing meetup events from props...");
-        let meetupEvents: CalendarEvent[] = [];
-
-        if (meetupGroup) {
-          logger.debug(
-            `📋 Found ${meetupGroup.events.edges.length} meetup events in group`,
-          );
-          meetupEvents = meetupGroup.events.edges.map((edge) => {
-            const event = edge.node;
-            // meetup.com dateTime is an ISO string, convert to Unix timestamp
-            const startTime = Math.floor(
-              new Date(event.dateTime).getTime() / 1000,
-            );
-            const endTime = event.endTime
-              ? Math.floor(new Date(event.endTime).getTime() / 1000)
-              : startTime + 3600; // Default 1 hour duration
-
-            logger.debug(
-              `🎯 Processing meetup event: ${event.title} at ${new Date(startTime * 1000).toLocaleString()}`,
-            );
-
-            return {
-              id: `meetup-${event.id}`,
-              kind: 31923, // Timed event
-              pubkey: "meetup",
-              tags: [],
-              content: event.description,
-              dTag: "meetup-event",
-              title: event.title,
-              summary: event.title,
-              description: event.description,
-              location: getVenueAddress(event.venues),
-              locations: event.venues?.map((v: any) => v.address) || [],
-              venueName: event.venues?.[0]?.name?.trim() || undefined,
-              start: startTime.toString(),
-              end: endTime.toString(),
-              timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-              image: event.venues?.[0]?.id
-                ? `https://secure.meetupstatic.com/photos/event/${event.venues[0].id}/450x300.jpeg`
-                : undefined,
-              hashtags: [],
-              references: [event.eventUrl],
-              created_at: Math.floor(Date.now() / 1000),
-            };
-          });
-          logger.debug(
-            `✅ Successfully processed ${meetupEvents.length} meetup events`,
-          );
-        } else {
-          logger.debug("⚠️ No meetup group data available");
-        }
-
-        // Load local and meetup events immediately
-        logger.debug(
-          `🚀 Displaying immediate events: ${localEvents.length} local + ${meetupEvents.length} meetup`,
-        );
-        logger.debug(
-          "🔍 Meetup events before sorting:",
-          meetupEvents.map((e) => ({
-            id: e.id,
-            title: e.title,
-            start: e.start,
-            kind: e.kind,
-            pubkey: e.pubkey,
-          })),
-        );
-
-        const immediateEvents = sortEventsByTime([
-          ...localEvents,
-          ...meetupEvents,
+        // Load all three sources concurrently
+        const [localEvents, meetupEvents, nostrCalendarEvents] = await Promise.all([
+          Promise.resolve(loadEvents()),
+          // Transform meetup events from props
+          (async () => {
+            if (!meetupGroup) return [];
+            return meetupGroup.events.edges.map((edge) => {
+              const event = edge.node;
+              const startTime = Math.floor(new Date(event.dateTime).getTime() / 1000);
+              const endTime = event.endTime
+                ? Math.floor(new Date(event.endTime).getTime() / 1000)
+                : startTime + 3600;
+              return {
+                id: `meetup-${event.id}`,
+                kind: 31923,
+                pubkey: "meetup",
+                tags: [],
+                content: event.description,
+                dTag: "meetup-event",
+                title: event.title,
+                summary: event.title,
+                description: event.description,
+                location: getVenueAddress(event.venues),
+                locations: event.venues?.map((v: any) => v.address) || [],
+                venueName: event.venues?.[0]?.name?.trim() || undefined,
+                start: startTime.toString(),
+                end: endTime.toString(),
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                image: event.venues?.[0]?.id
+                  ? `https://secure.meetupstatic.com/photos/event/${event.venues[0].id}/450x300.jpeg`
+                  : undefined,
+                hashtags: [],
+                references: [event.eventUrl],
+                created_at: Math.floor(Date.now() / 1000),
+              };
+            });
+          })(),
+          // Fetch nostr events
+          (async () => {
+            if (!cancelled) setIsLoadingNostrEvents(true);
+            try {
+              return await fetchNostrCalendarEvents();
+            } catch (error) {
+              logger.warn("⚠️ Failed to load nostr events:", error);
+              return [];
+            } finally {
+              if (!cancelled) setIsLoadingNostrEvents(false);
+            }
+          })(),
         ]);
-        logger.debug(
-          "🔍 All immediate events after sorting:",
-          immediateEvents.map((e) => ({
-            id: e.id,
-            title: e.title,
-            start: e.start,
-            kind: e.kind,
-            pubkey: e.pubkey,
-          })),
-        );
 
-        const upcoming = getUpcomingEvents(immediateEvents);
-        const past = getPastEvents(immediateEvents);
-        logger.debug("🔍 Upcoming events count:", upcoming.length);
-        logger.debug("🔍 Past events count:", past.length);
-        logger.debug(
-          "🔍 Upcoming events:",
-          upcoming.map((e) => ({
-            id: e.id,
-            title: e.title,
-            start: e.start,
-            kind: e.kind,
-          })),
-        );
-        logger.debug(
-          "🔍 Past events:",
-          past.map((e) => ({
-            id: e.id,
-            title: e.title,
-            start: e.start,
-            kind: e.kind,
-          })),
-        );
+        if (cancelled) return;
 
-        setEvents(immediateEvents);
+        // Convert nostr events and fetch zaps inline
+        const nostrEvents = nostrCalendarEvents.map(convertNostrEventToCalendar);
+        nostrEvents.forEach((e) => {
+          const rawId = e.id.replace("nostr-", "");
+          const pubkey = (e.rawEvent as any)?.pubkey as string | undefined;
+          fetchZapTotal(rawId, pubkey).then((t) => {
+            if (!cancelled && t > 0) setZapTotals((prev) => ({ ...prev, [rawId]: t }));
+          });
+        });
+
+        // Merge and deduplicate
+        const allEvents = sortEventsByTime([...localEvents, ...meetupEvents, ...nostrEvents]);
+        if (!cancelled) setEvents(allEvents);
       } catch (error) {
-        logger.error("Error loading initial events:", error);
-        // Fallback to local events only
-        const localEvents = loadEvents();
-        setEvents(sortEventsByTime(localEvents));
+        logger.error("Error loading events:", error);
+        if (!cancelled) {
+          const localEvents = loadEvents();
+          setEvents(sortEventsByTime(localEvents));
+        }
       }
     };
 
-    loadInitialEvents();
+    loadAllEvents();
+    return () => { cancelled = true; };
   }, [meetupGroup]);
 
-  // Load nostr events separately in the background
+  // Switch to list view on mobile after hydration
   useEffect(() => {
-    const loadNostrEvents = async () => {
-      logger.debug("🕰️ Loading nostr events in background...");
-      setIsLoadingNostrEvents(true);
-      let nostrEvents: CalendarEvent[] = [];
-
-      try {
-        const nostrCalendarEvents = await fetchNostrCalendarEvents();
-        logger.debug(`📡 Found ${nostrCalendarEvents.length} raw nostr events`);
-        nostrEvents = nostrCalendarEvents.map(convertNostrEventToCalendar);
-        logger.debug(
-          `✅ Converted ${nostrEvents.length} nostr events to calendar format`,
-        );
-      } catch (error) {
-        logger.warn("⚠️ Failed to load nostr events:", error);
-      } finally {
-        setIsLoadingNostrEvents(false);
-      }
-
-      // Add nostr events to existing events, deduplicating by ID
-      setEvents((prevEvents) => {
-        const existingIds = new Set(prevEvents.map((e) => e.id));
-        const newEvents = nostrEvents.filter((e) => !existingIds.has(e.id));
-        logger.debug(
-          `➕ Adding ${newEvents.length} new nostr events to existing ${prevEvents.length} events (${nostrEvents.length - newEvents.length} duplicates skipped)`,
-        );
-        const allEvents = sortEventsByTime([...prevEvents, ...newEvents]);
-        logger.debug(`📅 Total events after adding nostr: ${allEvents.length}`);
-        return allEvents;
-      });
-    };
-
-    // Load nostr events after a short delay to ensure immediate events are displayed first
-    const timer = setTimeout(loadNostrEvents, 100);
-    return () => clearTimeout(timer);
-  }, [meetupGroup]);
+    if (window.innerWidth < 768) setViewMode("list");
+  }, []);
 
   const handleCreateEvent = async (formData: EventFormData) => {
     setIsSubmitting(true);
@@ -474,8 +403,8 @@ export default function CalendarPage({
     }
   };
 
-  // Function to get color based on event creator
-  const getEventColor = useCallback((event: CalendarEvent): string => {
+  // Function to get color based on event creator (for calendar grid — full bg + border)
+  const getEventColor = (event: CalendarEvent): string => {
     if (event.pubkey === "meetup") {
       return "bg-bitcoin-orange border-bitcoin-orange"; // Meetup events - bitcoin orange
     }
@@ -500,26 +429,52 @@ export default function CalendarPage({
     return colorIndex >= 0
       ? colors[colorIndex % colors.length]
       : "bg-gray-50 border-gray-200"; // Default fallback
-  }, []);
+  };
 
-  const upcomingEvents = useMemo(() => getUpcomingEvents(events), [events]);
-  const pastEvents = useMemo(() => getPastEvents(events), [events]);
+  // Left-border accent for list view cards (white bg, colored left border)
+  const getListAccent = (event: CalendarEvent): string => {
+    if (event.pubkey === "meetup") return "border-l-4 border-l-bitcoin-orange";
+    const hexIndex = WHITELISTED_PUBKEYS.findIndex((hex: string) => hex === event.pubkey);
+    const npubIndex = WHITELISTED_NPUBS.findIndex((npub: string) => npub === event.pubkey);
+    const colorIndex = Math.max(hexIndex, npubIndex);
+    const accents = [
+      "border-l-4 border-l-purple-500",
+      "border-l-4 border-l-green-500",
+      "border-l-4 border-l-yellow-500",
+      "border-l-4 border-l-pink-500",
+      "border-l-4 border-l-indigo-500",
+    ];
+    return colorIndex >= 0 ? accents[colorIndex % accents.length] : "border-l-4 border-l-gray-300";
+  };
 
-  // Debug event rendering
-  logger.debug("🎯 Event Rendering Debug:");
-  logger.debug(`📊 Total events: ${events.length}`);
-  logger.debug(`🟢 Upcoming events: ${upcomingEvents.length}`);
-  logger.debug(`🔴 Past events: ${pastEvents.length}`);
-  logger.debug(
-    "📋 All events:",
-    events.map((e) => ({
-      id: e.id,
-      title: e.title,
-      pubkey: e.pubkey,
-      start: e.start,
-      color: getEventColor(e),
-    })),
-  );
+  const upcomingEvents = getUpcomingEvents(events);
+  const pastEvents = getPastEvents(events);
+
+  // Filter past events to 12 months, sort newest first
+  const recentPastEvents = useMemo(() => {
+    const twelveMonthsAgo = Date.now() - 365 * 24 * 60 * 60 * 1000;
+    return pastEvents
+      .filter((e) => {
+        const ts = e.kind === 31922
+          ? new Date(e.start || "0").getTime()
+          : parseInt(e.start || "0") * 1000;
+        return ts >= twelveMonthsAgo;
+      })
+      .sort((a, b) => {
+        const getTs = (e: CalendarEvent) =>
+          e.kind === 31922
+            ? new Date(e.start || "0").getTime()
+            : parseInt(e.start || "0") * 1000;
+        return getTs(b) - getTs(a);
+      });
+  }, [pastEvents]);
+
+  const hasUpcoming = upcomingEvents.length > 0;
+  const PAST_PAGE_SIZE = 10;
+  const visiblePastEvents = hasUpcoming && !pastExpanded
+    ? []
+    : recentPastEvents.slice(0, pastPage * PAST_PAGE_SIZE);
+  const hasMorePast = recentPastEvents.length > pastPage * PAST_PAGE_SIZE;
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -589,8 +544,8 @@ export default function CalendarPage({
           <div className="flex-1 min-w-0 relative">
             {/* Loading Overlay - Over calendar with transparent background */}
             {viewMode !== "list" && isLoadingNostrEvents && (
-              <div className="absolute top-4 left-0 right-0 z-50 flex justify-center">
-                <div className="flex flex-col items-center gap-3 px-6 py-3 bg-white bg-opacity-95 rounded-lg shadow-lg backdrop-blur-sm">
+              <div className="absolute top-4 left-0 right-0 z-50 flex justify-center pointer-events-none">
+                <div className="flex flex-col items-center gap-3 px-6 py-3 bg-white bg-opacity-95 rounded-lg shadow-lg backdrop-blur-sm pointer-events-auto">
                   <img
                     src={`${basePath}/bitcoinShaka.jpg`}
                     alt="Loading..."
@@ -606,12 +561,12 @@ export default function CalendarPage({
             )}
 
             {/* Always show view selector */}
-            <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
+            <div className="bg-white border border-gray-200 rounded-lg px-2 py-2 sm:px-4 sm:py-4 mb-6">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-0.5 sm:gap-1">
                   <button
                     onClick={() => setViewMode("month")}
-                    className={`px-4 py-2 text-sm font-medium transition-colors rounded-l-lg ${
+                    className={`px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors rounded-l-lg ${
                       viewMode === "month"
                         ? "bg-bitcoin-orange text-white"
                         : "text-gray-600 hover:text-gray-900"
@@ -621,7 +576,7 @@ export default function CalendarPage({
                   </button>
                   <button
                     onClick={() => setViewMode("week")}
-                    className={`px-4 py-2 text-sm font-medium transition-colors ${
+                    className={`px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors ${
                       viewMode === "week"
                         ? "bg-bitcoin-orange text-white"
                         : "text-gray-600 hover:text-gray-900"
@@ -631,7 +586,7 @@ export default function CalendarPage({
                   </button>
                   <button
                     onClick={() => setViewMode("day")}
-                    className={`px-4 py-2 text-sm font-medium transition-colors rounded-r-lg ${
+                    className={`px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors rounded-r-lg ${
                       viewMode === "day"
                         ? "bg-bitcoin-orange text-white"
                         : "text-gray-600 hover:text-gray-900"
@@ -642,7 +597,7 @@ export default function CalendarPage({
 
                   <button
                     onClick={() => setViewMode("list")}
-                    className={`px-4 py-2 text-sm font-medium transition-colors rounded-lg border border-gray-200 bg-white ml-2 ${
+                    className={`px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium transition-colors rounded-lg border border-gray-200 bg-white ml-1 sm:ml-2 ${
                       viewMode === "list"
                         ? "bg-bitcoin-orange text-white"
                         : "text-gray-600 hover:text-gray-900"
@@ -654,11 +609,12 @@ export default function CalendarPage({
 
                 {/* Orange plus button for creating events */}
                 <button
+                  data-testid="create-event-btn"
                   onClick={() => setShowCreateForm(true)}
-                  className="inline-flex items-center justify-center w-11 h-11 sm:w-10 sm:h-10 bg-bitcoin-orange text-white rounded-full hover:bg-bitcoin-orange-hover transition-colors"
+                  className="inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 bg-bitcoin-orange text-white rounded-full hover:bg-bitcoin-orange-hover transition-colors flex-shrink-0"
                   title="Create New Event"
                 >
-                  <PlusIcon className="w-5 h-5" />
+                  <PlusIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
               </div>
             </div>
@@ -673,6 +629,7 @@ export default function CalendarPage({
                   getEventColor={getEventColor}
                   signEvent={signEvent}
                   pubkey={user?.pubkey}
+                  zapTotals={zapTotals}
                 />
               </ErrorBoundary>
             )}
@@ -684,9 +641,9 @@ export default function CalendarPage({
                     <div className="bitcoin-shaka-container">
                       <img
                         src={`${basePath}/bitcoinShaka.jpg`}
-                        alt="Loading..."
                         width={80}
                         height={80}
+                        alt="Loading..."
                         className="bitcoin-shaka-spinner"
                       />
                       <p className="text-purple-600 font-medium mt-4 text-center">
@@ -713,14 +670,17 @@ export default function CalendarPage({
                   </div>
                 )}
 
-                {/* Upcoming Events Section */}
+                {/* Upcoming Events */}
                 {upcomingEvents.length > 0 && (
-                  <section className="mb-16">
+                  <section>
+                    <h3 className="text-xl font-bold text-gray-900 mb-4 font-archivo-black">
+                      Upcoming Events ({upcomingEvents.length})
+                    </h3>
                     <div className="space-y-8">
                       {upcomingEvents.map((event) => (
                         <EventCard
                           key={event.id}
-                          className={getEventColor(event)}
+                          className={`bg-white border border-gray-200 ${getListAccent(event)}`}
                           date={formatDate(event.start)}
                           title={event.title || "Untitled Event"}
                           startTime={formatTime(event.start)}
@@ -745,38 +705,67 @@ export default function CalendarPage({
                   </section>
                 )}
 
-                {/* Past Events Section */}
-                {pastEvents.length > 0 && (
+                {/* Past Events — collapsed when upcoming exist, expanded otherwise */}
+                {recentPastEvents.length > 0 && (
                   <section>
-                    <h3 className="text-xl font-bold text-gray-900 mb-4 font-archivo-black">
-                      Past Events
-                    </h3>
-                    <div className="space-y-8">
-                      {pastEvents.slice(0, 5).map((event) => (
-                        <EventCard
-                          key={event.id}
-                          className={getEventColor(event)}
-                          date={formatDate(event.start)}
-                          title={event.title || "Untitled Event"}
-                          startTime={formatTime(event.start)}
-                          endTime={event.end ? formatTime(event.end) : "TBA"}
-                          location={event.location || "Location TBD"}
-                          venueName={event.venueName}
-                          description={splitDescription(
-                            event.description || "",
-                          )}
-                          link={event.references?.[0]}
-                          rawEvent={event.rawEvent}
-                          signEvent={signEvent}
-                          pubkey={user?.pubkey}
-                          onDelete={
-                            user && user.pubkey === event.pubkey
-                              ? () => handleDeleteEvent(event)
-                              : undefined
-                          }
-                        />
-                      ))}
-                    </div>
+                    {hasUpcoming ? (
+                      <button
+                        onClick={() => { setPastExpanded(!pastExpanded); setPastPage(1); }}
+                        className="w-full flex items-center justify-between py-3 px-4 bg-gray-50 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+                      >
+                        <span className="font-semibold font-archivo-black">
+                          Past Events ({recentPastEvents.length})
+                        </span>
+                        <svg
+                          className={`w-5 h-5 text-gray-400 transition-transform ${pastExpanded ? "rotate-180" : ""}`}
+                          fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                    ) : (
+                      <h3 className="text-xl font-bold text-gray-900 mb-4 font-archivo-black">
+                        Past Events ({recentPastEvents.length})
+                      </h3>
+                    )}
+                    {(pastExpanded || !hasUpcoming) && (
+                      <div className="space-y-8 mt-4">
+                        {visiblePastEvents.map((event) => (
+                          <EventCard
+                            key={event.id}
+                            className={`bg-white border border-gray-200 ${getListAccent(event)}`}
+                            date={formatDate(event.start)}
+                            title={event.title || "Untitled Event"}
+                            startTime={formatTime(event.start)}
+                            endTime={event.end ? formatTime(event.end) : "TBA"}
+                            location={event.location || "Location TBD"}
+                            venueName={event.venueName}
+                            description={splitDescription(
+                              event.description || "",
+                            )}
+                            link={event.references?.[0]}
+                            rawEvent={event.rawEvent}
+                            signEvent={signEvent}
+                            pubkey={user?.pubkey}
+                            onDelete={
+                              user && user.pubkey === event.pubkey
+                                ? () => handleDeleteEvent(event)
+                                : undefined
+                            }
+                          />
+                        ))}
+                        {hasMorePast && (
+                          <div className="text-center py-4">
+                            <button
+                              onClick={() => setPastPage((p) => p + 1)}
+                              className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium text-sm"
+                            >
+                              Load more ({recentPastEvents.length - visiblePastEvents.length} remaining)
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </section>
                 )}
 
@@ -1037,7 +1026,7 @@ export default function CalendarPage({
                 style={{ height: "calc(100vh - 200px)", minHeight: "400px" }}
                 allow="microphone; camera; autoplay"
                 title="CornyChat"
-              />
+            />
             </ErrorBoundary>
           )}
         </div>
