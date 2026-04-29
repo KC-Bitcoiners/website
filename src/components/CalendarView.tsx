@@ -38,6 +38,15 @@ export default function CalendarView({
   const viewType = currentView || "month";
   const weekScrollRef = useRef<HTMLDivElement>(null);
   const dayScrollRef = useRef<HTMLDivElement>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile viewport after hydration
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   // Time range calculation is now handled within each view's render function
   useEffect(() => {
@@ -330,16 +339,16 @@ export default function CalendarView({
       }
     });
 
-    // Build grid-template-columns:
-    // Empty columns: 2.5rem (date number up to 2 digits)
-    // Event columns: minmax(5rem, 1fr) — equal width, min 5rem, scroll if needed
-    const colTemplate = Array.from({ length: 7 }, (_, i) =>
-      dowHasEvents.has(i) ? "minmax(5rem, 1fr)" : "2.5rem"
-    ).join(" ");
+    // Desktop: equal 1fr columns. Mobile: collapse empty cols to 2.5rem
+    const colTemplate = isMobile
+      ? Array.from({ length: 7 }, (_, i) =>
+          dowHasEvents.has(i) ? "minmax(5rem, 1fr)" : "2.5rem"
+        ).join(" ")
+      : "repeat(7, 1fr)";
 
     return (
-      <div className="bg-white border border-gray-200 rounded-lg overflow-x-auto relative">
-        <div className="min-w-fit">
+      <div className={`bg-white border border-gray-200 rounded-lg relative ${isMobile ? "overflow-x-auto" : "overflow-hidden"}`}>
+        <div className={isMobile ? "min-w-fit" : ""}>
           {/* Weekday headers */}
           <div className="grid bg-gray-50 border-b border-gray-200" style={{ gridTemplateColumns: colTemplate }}>
             {weekDays.map((day, i) => (
@@ -347,7 +356,7 @@ export default function CalendarView({
                 key={day}
                 className="p-2 text-center text-xs font-semibold text-gray-700 overflow-hidden"
               >
-                {!dowHasEvents.has(i) ? day.charAt(0) : day}
+                {isMobile && !dowHasEvents.has(i) ? day.charAt(0) : day}
               </div>
             ))}
           </div>
@@ -361,13 +370,13 @@ export default function CalendarView({
             const isCurrentMonth =
               day && day.getMonth() === currentDate.getMonth();
             const dow = day ? day.getDay() : -1;
-            const isEmptyCol = !dowHasEvents.has(dow);
+            const isEmptyCol = isMobile && !dowHasEvents.has(dow);
 
             return (
               <div
                 key={index}
                 className={`p-2 border-r border-b border-gray-200 ${
-                  isEmptyCol ? "min-h-auto md:min-h-[100px]" : "min-h-[100px]"
+                  isEmptyCol ? "min-h-auto" : "min-h-[100px]"
                 } ${isToday ? "bg-bitcoin-orange/20" : ""} ${!isCurrentMonth ? "bg-gray-50" : ""}`}
               >
                 {day && (
@@ -453,14 +462,15 @@ export default function CalendarView({
     // Detect which days in this week have events
     const dayHasEvents = weekDays.map((day) => getEventsForDate(day).length > 0);
 
-    // Build grid-template-columns: time column + 7 days
-    // Empty days get 2.5rem, event days get minmax(5rem, 1fr)
-    const weekColTemplate = [
-      "3rem",
-      ...Array.from({ length: 7 }, (_, i) =>
-        dayHasEvents[i] ? "minmax(5rem, 1fr)" : "2.5rem"
-      ),
-    ].join(" ");
+    // Desktop: equal columns. Mobile: collapse empty days
+    const weekColTemplate = isMobile
+      ? [
+          "3rem",
+          ...Array.from({ length: 7 }, (_, i) =>
+            dayHasEvents[i] ? "minmax(5rem, 1fr)" : "2.5rem"
+          ),
+        ].join(" ")
+      : "3rem repeat(7, 1fr)";
 
     const calculateTimeRange = (events: CalendarEvent[]) => {
       if (events.length === 0) {
@@ -500,14 +510,14 @@ export default function CalendarView({
     const timeRange = calculateTimeRange(weekEvents);
 
     return (
-      <div className="bg-white border border-gray-200 rounded-lg overflow-x-auto">
-        <div className="min-w-fit">
+      <div className={`bg-white border border-gray-200 rounded-lg ${isMobile ? "overflow-x-auto" : "overflow-hidden"}`}>
+        <div className={isMobile ? "min-w-fit" : ""}>
           {/* Header row */}
           <div className="grid" style={{ gridTemplateColumns: weekColTemplate }}>
             <div className="p-2 border-r border-b border-gray-200 bg-gray-50"></div>
             {weekDays.map((day, index) => {
               const isToday = day.toDateString() === new Date().toDateString();
-              const isEmpty = !dayHasEvents[index];
+              const isEmpty = isMobile && !dayHasEvents[index];
 
               return (
                 <div
