@@ -309,35 +309,51 @@ export default function CalendarView({
     );
     const hasEvents = monthEvents.length > 0;
 
-    return (
-      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden relative">
-        {/* Weekday headers */}
-        <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-200">
-          {weekDays.map((day) => (
-            <div
-              key={day}
-              className="p-2 text-center text-xs font-semibold text-gray-700"
-            >
-              {day}
-            </div>
-          ))}
-        </div>
+    // Detect which day-of-week columns have events this month
+    const dowHasEvents = new Set<number>();
+    days.forEach((day) => {
+      if (day && getEventsForDate(day).length > 0) {
+        dowHasEvents.add(day.getDay());
+      }
+    });
 
-        {/* Calendar days */}
-        <div className="grid grid-cols-7">
+    // Build grid-template-columns: empty cols get 2.5rem, event cols get 1fr
+    const colTemplate = Array.from({ length: 7 }, (_, i) =>
+      dowHasEvents.has(i) ? "1fr" : "2.5rem"
+    ).join(" ");
+
+    return (
+      <div className="bg-white border border-gray-200 rounded-lg overflow-x-auto relative">
+        <div className="min-w-fit">
+          {/* Weekday headers */}
+          <div className="grid bg-gray-50 border-b border-gray-200" style={{ gridTemplateColumns: colTemplate }}>
+            {weekDays.map((day, i) => (
+              <div
+                key={day}
+                className="p-2 text-center text-xs font-semibold text-gray-700 overflow-hidden"
+              >
+                {!dowHasEvents.has(i) ? day.charAt(0) : day}
+              </div>
+            ))}
+          </div>
+
+          {/* Calendar days */}
+          <div className="grid" style={{ gridTemplateColumns: colTemplate }}>
           {days.map((day, index) => {
             const dayEvents = day ? getEventsForDate(day) : [];
             const isToday =
               day && day.toDateString() === new Date().toDateString();
             const isCurrentMonth =
               day && day.getMonth() === currentDate.getMonth();
+            const dow = day ? day.getDay() : -1;
+            const isEmptyCol = !dowHasEvents.has(dow);
 
             return (
               <div
                 key={index}
-                className={`min-h-[100px] p-2 border-r border-b border-gray-200 ${
-                  isToday ? "bg-bitcoin-orange/20" : ""
-                } ${!isCurrentMonth ? "bg-gray-50" : ""}`}
+                className={`p-2 border-r border-b border-gray-200 ${
+                  isEmptyCol ? "min-h-auto md:min-h-[100px]" : "min-h-[100px]"
+                } ${isToday ? "bg-bitcoin-orange/20" : ""} ${!isCurrentMonth ? "bg-gray-50" : ""}`}
               >
                 {day && (
                   <>
@@ -348,7 +364,7 @@ export default function CalendarView({
                     >
                       {day.getDate()}
                     </div>
-                    <div className="space-y-1">
+                    {!isEmptyCol && <div className="space-y-1">
                       {dayEvents.slice(0, 3).map((event, eventIndex) => (
                         <div
                           key={eventIndex}
@@ -385,12 +401,13 @@ export default function CalendarView({
                           +{dayEvents.length - 3} more
                         </div>
                       )}
-                    </div>
+                    </div>}
                   </>
                 )}
               </div>
             );
           })}
+        </div>
         </div>
 
         {!hasEvents && (
@@ -414,6 +431,17 @@ export default function CalendarView({
     const weekDays = getWeekDays(currentDate);
     const weekEvents = weekDays.flatMap((day) => getEventsForDate(day));
     const hasEvents = weekEvents.length > 0;
+
+    // Detect which days in this week have events
+    const dayHasEvents = weekDays.map((day) => getEventsForDate(day).length > 0);
+
+    // Build grid-template-columns: time column + 7 days
+    const weekColTemplate = [
+      "3rem",
+      ...Array.from({ length: 7 }, (_, i) =>
+        dayHasEvents[i] ? "1fr" : "2.5rem"
+      ),
+    ].join(" ");
 
     // Calculate time range for this view
     const calculateTimeRange = (events: CalendarEvent[]) => {
@@ -454,23 +482,19 @@ export default function CalendarView({
     const timeRange = calculateTimeRange(weekEvents);
 
     return (
-      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-        {/* Week grid - no separate header to avoid duplication */}
-        <div className="grid grid-cols-8">
-          {/* Time column header */}
-          <div className="p-2 border-r border-b border-gray-200 bg-gray-50">
-            <div className="text-xs font-semibold text-gray-700">Time</div>
-          </div>
-
-          {/* Day headers */}
+      <div className="bg-white border border-gray-200 rounded-lg overflow-x-auto">
+        <div className="min-w-fit">
+        {/* Header row */}
+        <div className="grid" style={{ gridTemplateColumns: weekColTemplate }}>
+          <div className="p-2 border-r border-b border-gray-200 bg-gray-50"></div>
           {weekDays.map((day, index) => {
-            const dayEvents = getEventsForDate(day);
             const isToday = day.toDateString() === new Date().toDateString();
+            const isEmpty = !dayHasEvents[index];
 
             return (
               <div
                 key={index}
-                className={`p-2 border-r border-b border-gray-200 ${
+                className={`p-2 border-r border-b border-gray-200 overflow-hidden ${
                   isToday ? "bg-bitcoin-orange/20" : "bg-gray-50"
                 }`}
               >
@@ -479,17 +503,14 @@ export default function CalendarView({
                     isToday ? "text-bitcoin-orange" : "text-gray-700"
                   }`}
                 >
-                  {day.toLocaleDateString("en-US", {
-                    weekday: "short",
-                    month: "short",
-                    day: "numeric",
-                  })}
+                  {isEmpty
+                    ? day.toLocaleDateString("en-US", { weekday: "narrow" })
+                    : day.toLocaleDateString("en-US", {
+                        weekday: "short",
+                        month: "short",
+                        day: "numeric",
+                      })}
                 </div>
-                {dayEvents.length > 0 && (
-                  <div className="text-xs text-gray-600 mt-1">
-                    {dayEvents.length} event{dayEvents.length !== 1 ? "s" : ""}
-                  </div>
-                )}
               </div>
             );
           })}
@@ -525,7 +546,8 @@ export default function CalendarView({
               <div
                 key={hour}
                 data-hour={hour}
-                className="grid grid-cols-8 border-b border-gray-300"
+                className="grid border-b border-gray-300"
+                style={{ gridTemplateColumns: weekColTemplate }}
               >
                 {/* Time column */}
                 <div className="w-20 p-2 border-r border-gray-200 text-sm text-gray-600">
@@ -612,6 +634,7 @@ export default function CalendarView({
               </div>
             ));
           })()}
+        </div>
         </div>
       </div>
     );
@@ -844,14 +867,14 @@ export default function CalendarView({
           </div>
 
           {/* Navigation */}
-          <div className="flex items-center gap-4">
-            <div className="text-lg font-semibold text-gray-900 min-w-[200px] text-center">
+          <div className="flex items-center justify-center gap-2 sm:gap-4">
+            <div className="text-sm sm:text-lg font-semibold text-gray-900 text-center">
               {viewType === "month" && formatMonthYear(currentDate)}
               {viewType === "week" && formatWeekRange(currentDate)}
               {viewType === "day" && formatDayDate(currentDate)}
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
               <button
                 onClick={() => navigateDate("prev")}
                 className="p-2 text-gray-600 hover:text-gray-900 transition-colors"
