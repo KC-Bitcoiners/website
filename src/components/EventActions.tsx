@@ -32,6 +32,8 @@ interface EventActionsProps {
   signEvent?: SignerFn;
   /** Current user's pubkey for zap support. */
   pubkey?: string | null;
+  /** Hide the zap total badge (e.g. when parent already shows it) */
+  hideZapBadge?: boolean;
 }
 
 export default function EventActions({
@@ -42,6 +44,7 @@ export default function EventActions({
   onEdit,
   signEvent,
   pubkey,
+  hideZapBadge,
 }: EventActionsProps) {
   const [open, setOpen] = useState(false);
   const [showRaw, setShowRaw] = useState(false);
@@ -275,7 +278,7 @@ export default function EventActions({
       </button>
 
       {/* Zap total badge */}
-      {zapTotal !== null && (
+      {!hideZapBadge && zapTotal !== null && (
         <div className={`text-xs text-bitcoin-orange font-semibold flex items-center gap-0.5 justify-center ${className || ""}`}>
           <span>&#x26A1;</span>
           <span>{zapTotal >= 1000000 ? `${(zapTotal / 1000000).toFixed(1)}M` : zapTotal >= 1000 ? `${(zapTotal / 1000).toFixed(1)}k` : zapTotal}</span>
