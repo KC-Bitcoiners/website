@@ -10,6 +10,12 @@ import { config, nostrRelays, getWhitelistFilter, siteConfig } from "@/config";
 import { fetchZapTotal } from "@/utils/zaps";
 import type { Icon, LatLngBounds, DivIcon } from "leaflet";
 import { getEventHash, type NostrEvent } from "applesauce-core/helpers/event";
+import ListingCard from "@/components/ListingCard";
+import ListingForm from "@/components/ListingForm";
+import {
+  fetchClassifiedListings,
+} from "@/utils/classifiedEvents";
+import type { ClassifiedListing } from "@/types/classifieds";
 
 // Relay configuration for Nostr operations
 const RELAYS = nostrRelays;
@@ -72,6 +78,7 @@ type SortDirection = "asc" | "desc";
 
 export default function ShopPage() {
   const { user, signEvent } = useNostr();
+  const [view, setView] = useState<"vendors" | "listings">("vendors");
   const [sortField, setSortField] = useState<SortField>("zaps");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [filters, setFilters] = useState<Record<string, string>>({
@@ -100,6 +107,18 @@ export default function ShopPage() {
   const [btcMapVendors, setBTCMapVendors] = useState<BTCMapVendor[]>([]);
   const [isLoadingBTCMap, setIsLoadingBTCMap] = useState(false);
   const [btcMapError, setBTCMapError] = useState<string | null>(null);
+
+  // Classified listings state
+  const [listings, setListings] = useState<ClassifiedListing[]>([]);
+  const [isLoadingListings, setIsLoadingListings] = useState(false);
+  const [listingsError, setListingsError] = useState<string | null>(null);
+  const [showListingForm, setShowListingForm] = useState(false);
+  const [editListing, setEditListing] = useState<ClassifiedListing | null>(null);
+  const [isEditListing, setIsEditListing] = useState(false);
+  const [listingSuccess, setListingSuccess] = useState<{
+    eventId: string;
+    naddr: string;
+  } | null>(null);
 
   // Fetch zap totals for Nostr vendors when they load
   useEffect(() => {
@@ -360,6 +379,26 @@ export default function ShopPage() {
     fetchBTCMapData();
   }, []);
 
+  // Fetch classified listings when on the listings tab
+  useEffect(() => {
+    if (view !== "listings") return;
+    const fetchListings = async () => {
+      setIsLoadingListings(true);
+      setListingsError(null);
+      try {
+        const data = await fetchClassifiedListings();
+        setListings(data);
+      } catch (error) {
+        setListingsError(
+          error instanceof Error ? error.message : "Failed to fetch listings",
+        );
+      } finally {
+        setIsLoadingListings(false);
+      }
+    };
+    fetchListings();
+  }, [view, listingSuccess]);
+
   // Apply filters and sorting to all vendors
   const filteredAndSortedVendors = useMemo(() => {
     let result = [...nostrVendors, ...btcMapVendors];
@@ -547,6 +586,47 @@ export default function ShopPage() {
     }
   };
 
+  // Handle classified listing deletion
+  const handleDeleteListing = async (listing: ClassifiedListing) => {
+    if (!user || !pool) {
+      alert("You must be logged in to delete listings.");
+      return;
+    }
+
+    try {
+      const deleteEventTemplate = {
+        kind: 5,
+        created_at: Math.floor(Date.now() / 1000),
+        tags: [
+          ["e", listing.id],
+          ["k", "30402"],
+        ],
+        content: "Deleted classified listing",
+      };
+
+      const signedEvent = await signEvent(deleteEventTemplate as any);
+      const signedRecord = signedEvent as Record<string, unknown>;
+      const deleteEvent = {
+        ...signedEvent,
+        id:
+          (signedRecord.id as string) ||
+          getEventHash(signedEvent as NostrEvent),
+      } as NostrEvent;
+
+      const responses = await pool.publish(RELAYS, deleteEvent);
+      const successfulResponses = responses.filter((r) => r.ok);
+
+      if (successfulResponses.length === 0) {
+        throw new Error("Failed to publish to any relay");
+      }
+
+      setListings((prev) => prev.filter((l) => l.id !== listing.id));
+    } catch (error) {
+      logger.error("Error deleting listing:", error);
+      alert("Failed to delete listing. Please try again.");
+    }
+  };
+
   // Create custom pin icon
   const createPinIcon = useCallback((
     hasLightning: boolean,
@@ -616,6 +696,35 @@ export default function ShopPage() {
 
   return (
     <div className="container mx-auto px-4 py-12">
+      {/* Tab Navigation */}
+      <div className="flex justify-center gap-4 mb-10">
+        <button
+          data-testid="tab-vendors"
+          onClick={() => setView("vendors")}
+          className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
+            view === "vendors"
+              ? "bg-bitcoin-orange text-white"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+          }`}
+        >
+          Vendors
+        </button>
+        <button
+          data-testid="tab-listings"
+          onClick={() => setView("listings")}
+          className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
+            view === "listings"
+              ? "bg-bitcoin-orange text-white"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+          }`}
+        >
+          Classifieds
+        </button>
+      </div>
+
+      {/* ===== VENDORS TAB ===== */}
+      {view === "vendors" && (
+      <>
       {/* Loading State */}
       {(isLoadingNostr || isLoadingBTCMap) &&
         filteredAndSortedVendors.length === 0 && (
@@ -1310,6 +1419,155 @@ export default function ShopPage() {
           editVendor={editVendor}
           isEdit={isEdit}
         />
+      )}
+      </>
+      )}
+
+      {/* ===== CLASSIFIEDS TAB ===== */}
+      {view === "listings" && (
+        <>
+          {/* Loading State */}
+          {isLoadingListings && listings.length === 0 && (
+            <div className="text-center py-16">
+              <div className="text-6xl mb-4">📋</div>
+              <div className="text-lg text-gray-600 mb-2">
+                Loading classified listings...
+              </div>
+              <div className="animate-spin inline-block w-8 h-8 border-4 border-bitcoin-orange border-t-transparent rounded-full"></div>
+            </div>
+          )}
+
+          {/* Listings Grid */}
+          {listings.length > 0 && (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {listings.map((listing) => (
+                <ListingCard
+                  key={listing.id}
+                  listing={listing}
+                  onEdit={
+                    user && listing.pubkey === user.pubkey
+                      ? () => {
+                          setEditListing(listing);
+                          setIsEditListing(true);
+                          setShowListingForm(true);
+                        }
+                      : undefined
+                  }
+                  onDelete={
+                    user && listing.pubkey === user.pubkey
+                      ? () => {
+                          if (
+                            window.confirm(
+                              `Are you sure you want to delete "${listing.title}"?`,
+                            )
+                          ) {
+                            handleDeleteListing(listing);
+                          }
+                        }
+                      : undefined
+                  }
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Empty State */}
+          {!isLoadingListings && listings.length === 0 && !listingsError && (
+            <div className="text-center py-16">
+              <div className="text-6xl mb-4">📋</div>
+              <div className="text-xl font-bold text-gray-800 mb-2">
+                No Classified Listings Yet
+              </div>
+              <div className="text-lg text-gray-600 mb-6">
+                Be the first to post a classified listing!
+              </div>
+              <button
+                onClick={() => setShowListingForm(true)}
+                className="px-6 py-3 bg-bitcoin-orange text-white font-semibold rounded-lg hover:bg-orange-600 transition-colors"
+              >
+                Create Listing
+              </button>
+            </div>
+          )}
+
+          {/* Error State */}
+          {!isLoadingListings && listings.length === 0 && listingsError && (
+            <div className="text-center py-16">
+              <div className="text-6xl mb-4">⚠️</div>
+              <div className="text-lg text-gray-600 mb-2">
+                Unable to load listings
+              </div>
+              <div className="text-sm text-gray-500">{listingsError}</div>
+            </div>
+          )}
+
+          {/* Listing Success Message */}
+          {listingSuccess && (
+            <div className="mt-8 bg-green-50 border border-green-200 rounded-lg p-6 text-center">
+              <h3 className="text-xl font-bold mb-4 font-archivo-black text-green-800">
+                Listing Published Successfully!
+              </h3>
+              <div className="space-y-2 text-sm text-green-700">
+                <p>
+                  <strong>Event ID:</strong>{" "}
+                  {listingSuccess.eventId.substring(0, 20)}...
+                </p>
+                <p className="break-all">
+                  <strong>Nostr Address:</strong> {listingSuccess.naddr}
+                </p>
+              </div>
+              <button
+                onClick={() => setListingSuccess(null)}
+                className="mt-4 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+
+          {/* CTA for Listings */}
+          <section className="mt-16 bg-gradient-to-r from-gray-50 to-orange-50 border border-gray-200 rounded-lg p-8 text-center">
+            <h3 className="text-2xl font-bold mb-4 font-archivo-black">
+              Have Something to Sell?
+            </h3>
+            <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
+              Post a classified listing on the Nostr network. Bitcoiners can buy,
+              sell, and trade goods and services.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <button
+                onClick={() => setShowListingForm(true)}
+                className="px-6 py-3 bg-bitcoin-orange text-white font-semibold rounded-lg hover:bg-orange-600 transition-colors focus:outline-none focus:ring-2 focus:ring-bitcoin-orange focus:ring-offset-2"
+              >
+                Create Listing
+              </button>
+              {!user && (
+                <p className="text-sm text-gray-500 self-center">
+                  Connect your Nostr account to create listings
+                </p>
+              )}
+            </div>
+          </section>
+
+          {/* Listing Form Modal */}
+          {showListingForm && (
+            <ListingForm
+              onClose={() => {
+                setShowListingForm(false);
+                setEditListing(null);
+                setIsEditListing(false);
+              }}
+              onSuccess={(data) => {
+                setListingSuccess(data);
+                setShowListingForm(false);
+                setEditListing(null);
+                setIsEditListing(false);
+              }}
+              editListing={editListing}
+              isEdit={isEditListing}
+            />
+          )}
+        </>
       )}
     </div>
   );
