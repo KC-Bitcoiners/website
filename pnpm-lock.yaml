@@ -60,6 +60,9 @@ importers:
       next:
         specifier: 15.3.4
         version: 15.3.4(@babel/core@7.28.5)(@playwright/test@1.59.1)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      nostr-tools:
+        specifier: 2.18.2
+        version: 2.18.2(typescript@5.9.3)
       qrcode:
         specifier: ^1.5.4
         version: 1.5.4

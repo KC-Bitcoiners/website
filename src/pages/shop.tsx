@@ -23,6 +23,7 @@ interface CheckoutItem extends CartItem {
   satsTotal: number;
 }
 import { fiatToSats } from "@/utils/prices";
+import { sendOrderDM } from "@/utils/orderDM";
 import {
   fetchClassifiedListings,
 } from "@/utils/classifiedEvents";
@@ -182,13 +183,27 @@ function ShopContent() {
   /** After a zap is confirmed during checkout, advance the queue */
   const handleCheckoutZapConfirmed = useCallback(() => {
     if (checkoutQueue.length > 0) {
+      const paidItem = checkoutQueue[0];
+      // Send order DM to seller
+      if (user?.pubkey) {
+        const listing = listings.find((l) => l.id === paidItem.listingId);
+        if (listing) {
+          sendOrderDM({
+            sellerPubkey: paidItem.pubkey,
+            buyerPubkey: user.pubkey,
+            listingTitle: paidItem.title,
+            listingCoordinate: `30402:${paidItem.pubkey}:${listings.find((l) => l.id === paidItem.listingId)?.dTag || ""}`,
+            amountSats: paidItem.satsTotal,
+          });
+        }
+      }
       // Remove paid item from cart and queue
-      removeFromCart(checkoutQueue[0].listingId);
+      removeFromCart(paidItem.listingId);
       const remaining = checkoutQueue.slice(1);
       setCheckoutQueue(remaining);
       setZapTarget(null);
     }
-  }, [checkoutQueue, removeFromCart]);
+  }, [checkoutQueue, removeFromCart, listings, user?.pubkey]);
 
   /** Cancel checkout — clear queue and zap target */
   const handleCheckoutCancel = useCallback(() => {
@@ -1930,7 +1945,27 @@ function ShopContent() {
               onClose={checkoutQueue.length > 0 ? handleCheckoutCancel : () => setZapTarget(null)}
               signEvent={signEvent}
               pubkey={user?.pubkey ?? null}
-              onZapConfirmed={checkoutQueue.length > 0 ? handleCheckoutZapConfirmed : () => setZapTarget(null)}
+              onZapConfirmed={
+                checkoutQueue.length > 0
+                  ? handleCheckoutZapConfirmed
+                  : () => {
+                      // Buy Now — send order DM to seller
+                      if (zapTarget && user?.pubkey) {
+                        // Find the listing for this zap target
+                        const listing = listings.find((l) => l.id === zapTarget.eventId);
+                        if (listing) {
+                          sendOrderDM({
+                            sellerPubkey: listing.pubkey,
+                            buyerPubkey: user.pubkey,
+                            listingTitle: listing.title,
+                            listingCoordinate: listing.coordinate,
+                            amountSats: zapTarget.amount,
+                          });
+                        }
+                      }
+                      setZapTarget(null);
+                    }
+              }
             />
           )}
         </>
