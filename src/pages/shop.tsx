@@ -937,13 +937,13 @@ function ShopContent() {
   }, [listings, listingProfiles]);
 
   return (
-    <div className="container mx-auto px-4 py-12">
+    <div className="container mx-auto px-4 py-6">
       {/* Tab Navigation */}
-      <div className="flex justify-center gap-4 mb-10">
+      <div className="flex justify-center gap-2 mb-4">
         <button
           data-testid="tab-vendors"
           onClick={() => setView("vendors")}
-          className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
+          className={`px-3 py-1 rounded text-xs font-semibold transition-colors ${
             view === "vendors"
               ? "bg-bitcoin-orange text-white"
               : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -954,7 +954,7 @@ function ShopContent() {
         <button
           data-testid="tab-listings"
           onClick={() => setView("listings")}
-          className={`px-6 py-2 rounded-lg font-semibold transition-colors ${
+          className={`px-3 py-1 rounded text-xs font-semibold transition-colors ${
             view === "listings"
               ? "bg-bitcoin-orange text-white"
               : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -981,17 +981,17 @@ function ShopContent() {
 
       {/* Filter and Sort Controls */}
       {filteredAndSortedVendors.length > 0 && (
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white rounded-lg shadow-sm p-3 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 mb-2">
             {/* Filter by Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-medium text-gray-500 mb-1">
                 Filter Vendor Name
               </label>
               <select
                 value={filters.name || ""}
                 onChange={(e) => handleFilterChange("name", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
+                className="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
               >
                 <option value="">All Vendors</option>
                 {allNames.map((name) => (
@@ -1004,13 +1004,13 @@ function ShopContent() {
 
             {/* Filter by Category */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-medium text-gray-500 mb-1">
                 Filter Category
               </label>
               <select
                 value={filters.category || ""}
                 onChange={(e) => handleFilterChange("category", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
+                className="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
               >
                 <option value="">All Categories</option>
                 {allCategories.map((category) => (
@@ -1023,7 +1023,7 @@ function ShopContent() {
 
             {/* Filter by Submitter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-medium text-gray-500 mb-1">
                 Filter Submitter
               </label>
               <select
@@ -1031,7 +1031,7 @@ function ShopContent() {
                 onChange={(e) =>
                   handleFilterChange("submitterName", e.target.value)
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
+                className="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
               >
                 <option value="">All Submitters</option>
                 {allSubmitters.map((submitterName) => (
@@ -1044,13 +1044,13 @@ function ShopContent() {
 
             {/* Sort */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs font-medium text-gray-500 mb-1">
                 Sort By
               </label>
               <select
                 value={sortField}
                 onChange={(e) => handleSort(e.target.value as SortField)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
+                className="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
               >
                 {sortableFields.map((field) => (
                   <option key={field.key} value={field.key}>
@@ -1681,11 +1681,11 @@ function ShopContent() {
 
           {/* Filter and Sort Controls */}
           {listings.length > 0 && (
-            <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
+            <div className="bg-white rounded-lg shadow-sm p-3 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-2 mb-2">
                 {/* Search */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">
                     Search
                   </label>
                   <input
@@ -1693,21 +1693,21 @@ function ShopContent() {
                     data-testid="listing-search"
                     value={listingSearch}
                     onChange={(e) => setListingSearch(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
+                    className="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
                     placeholder="Search listings..."
                   />
                 </div>
 
                 {/* Category Filter */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">
                     Category
                   </label>
                   <select
                     data-testid="listing-category-filter"
                     value={listingCategory}
                     onChange={(e) => setListingCategory(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
+                    className="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
                   >
                     <option value="">All Categories</option>
                     {allListingCategories.map((cat) => (
@@ -1720,14 +1720,14 @@ function ShopContent() {
 
                 {/* Seller Filter */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">
                     Seller
                   </label>
                   <select
                     data-testid="listing-seller-filter"
                     value={listingSeller}
                     onChange={(e) => setListingSeller(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
+                    className="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
                   >
                     <option value="">All Sellers</option>
                     {allListingSellers.map((pk) => (
@@ -1740,7 +1740,7 @@ function ShopContent() {
 
                 {/* Status Filter */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">
                     Status
                   </label>
                   <select
@@ -1749,7 +1749,7 @@ function ShopContent() {
                     onChange={(e) =>
                       setListingStatus(e.target.value as "all" | "active" | "sold")
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
+                    className="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
                   >
                     <option value="all">All Statuses</option>
                     <option value="active">Active</option>
@@ -1759,7 +1759,7 @@ function ShopContent() {
 
                 {/* Sort */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">
                     Sort By
                   </label>
                   <select
@@ -1770,7 +1770,7 @@ function ShopContent() {
                         e.target.value as "newest" | "oldest" | "price_low" | "price_high",
                       )
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
+                    className="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
                   >
                     <option value="zaps">⚡ Zaps</option>
                     <option value="newest">Newest First</option>

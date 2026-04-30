@@ -736,9 +736,8 @@ export default function DonatePage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 py-6">
         <div className="text-center">
-          <h1 className="text-4xl font-bold mb-8 font-archivo-black">Donate</h1>
           <div className="bitcoin-shaka-container">
             <img
               src={`${basePath}/bitcoinShaka.jpg`}
@@ -756,9 +755,8 @@ export default function DonatePage() {
 
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 py-6">
         <div className="text-center">
-          <h1 className="text-4xl font-bold mb-8 font-archivo-black">Donate</h1>
           <div className="bg-red-50 border border-red-200 rounded-lg p-6">
             <p className="text-red-600">
               Unable to load zapraisers at this time.
@@ -771,13 +769,9 @@ export default function DonatePage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-12">
+    <div className="container mx-auto px-4 py-6">
       {/* zapraisers Section */}
       <section className="mb-16">
-        <h2 className="text-3xl font-bold mb-8 font-archivo-black bitcoin-orange text-center">
-          Active Zapraisers
-        </h2>
-
         {zapraisers.length > 0 ? (
           <div className="space-y-8">
             {zapraisers.map((zapraiser, index) => (

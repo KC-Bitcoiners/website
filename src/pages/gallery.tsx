@@ -135,17 +135,7 @@ export default function GalleryPage() {
         <link rel="icon" href={`${basePath}/favicon.ico`} />
       </Head>
 
-      <div className="container mx-auto px-4 py-12" data-testid="gallery-page" ref={mediaRootRef}>
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-black bitcoin-orange mb-4 font-archivo-black">
-            Gallery
-          </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Photos from {siteConfig.organization.name} events, meetups, and
-            community activities.
-          </p>
-        </div>
-
+      <div className="container mx-auto px-4 py-6" data-testid="gallery-page" ref={mediaRootRef}>
         <div className="mb-8">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold font-archivo-black text-gray-900">
