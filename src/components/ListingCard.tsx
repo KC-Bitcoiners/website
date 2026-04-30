@@ -38,6 +38,7 @@ interface ListingCardProps {
   onAddToCart?: () => void;
   onBuyNow?: () => void;
   pubkey?: string | null;
+  sellerProfile?: { name?: string; picture?: string };
 }
 
 /** Format price for display */
@@ -70,6 +71,7 @@ export default function ListingCard({
   onAddToCart,
   onBuyNow,
   pubkey,
+  sellerProfile,
 }: ListingCardProps) {
   const statusColor =
     listing.status === "sold"
@@ -238,12 +240,31 @@ export default function ListingCard({
           </div>
         )}
 
-        {/* Footer: date + zaps */}
+        {/* Footer: seller + date + zaps */}
         <div className="pt-3 border-t border-gray-100 flex justify-between items-center text-xs text-gray-400">
-          <span>{new Date(listing.createdAt * 1000).toLocaleDateString()}</span>
-          {zapTotal > 0 && (
-            <span className="text-yellow-500 font-medium">⚡ {zapTotal.toLocaleString()} sats</span>
-          )}
+          <div className="flex items-center gap-1.5 min-w-0">
+            {sellerProfile?.picture ? (
+              <img
+                src={sellerProfile.picture}
+                alt={sellerProfile.name || "Seller"}
+                className="w-5 h-5 rounded-full flex-shrink-0"
+                loading="lazy"
+              />
+            ) : (
+              <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 flex-shrink-0" style={{ fontSize: 9 }}>
+                ?
+              </div>
+            )}
+            <span className="truncate">
+              {sellerProfile?.name || listing.pubkey.substring(0, 10) + "..."}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <span>{new Date(listing.createdAt * 1000).toLocaleDateString()}</span>
+            {zapTotal > 0 && (
+              <span className="text-yellow-500 font-medium">⚡ {zapTotal.toLocaleString()}</span>
+            )}
+          </div>
         </div>
       </div>
     </div>
