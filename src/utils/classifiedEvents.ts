@@ -14,6 +14,9 @@ import type {
   ClassifiedListing,
   ClassifiedListingInput,
   ListingPrice,
+  ListingCondition,
+  ListingShipping,
+  ShippingType,
 } from "@/types/classifieds";
 
 // ---- Whitelist helper (same pattern as committeeEvents.ts) ----
@@ -58,7 +61,6 @@ export function parseClassifiedEvent(event: any): ClassifiedListing | null {
     const title = event.tags?.find((t: string[]) => t[0] === "title")?.[1];
     if (!title) return null;
 
-    const summary = event.tags?.find((t: string[]) => t[0] === "summary")?.[1];
     const publishedAtRaw = event.tags?.find(
       (t: string[]) => t[0] === "published_at",
     )?.[1];
@@ -86,7 +88,7 @@ export function parseClassifiedEvent(event: any): ClassifiedListing | null {
       (t: string[]) => t[0] === "status",
     )?.[1];
     const status: ClassifiedListing["status"] =
-      statusRaw === "active" || statusRaw === "sold"
+      statusRaw === "active" || statusRaw === "sold" || statusRaw === "hidden"
         ? statusRaw
         : "unknown";
 
@@ -102,18 +104,61 @@ export function parseClassifiedEvent(event: any): ClassifiedListing | null {
         .map((t: string[]) => t[1])
         .filter(Boolean) || [];
 
+    // Condition: ["condition", "new"|"used"|"refurbished"]
+    const conditionRaw = event.tags?.find(
+      (t: string[]) => t[0] === "condition",
+    )?.[1];
+    const condition: ListingCondition | undefined =
+      conditionRaw === "new" || conditionRaw === "used" || conditionRaw === "refurbished"
+        ? conditionRaw
+        : undefined;
+
+    // Shipping: ["shipping", type, cost?, currency?]
+    const shippingTag = event.tags?.find(
+      (t: string[]) => t[0] === "shipping",
+    );
+    let shipping: ListingShipping | undefined;
+    if (shippingTag && shippingTag[1]) {
+      const validTypes: ShippingType[] = ["na", "free", "pickup", "free_pickup", "added_cost"];
+      const type = validTypes.includes(shippingTag[1] as ShippingType)
+        ? (shippingTag[1] as ShippingType)
+        : undefined;
+      if (type) {
+        shipping = {
+          type,
+          cost: shippingTag[2] || undefined,
+          currency: shippingTag[3] || undefined,
+        };
+      }
+    }
+
+    // Quantity: ["quantity", number]
+    const quantityRaw = event.tags?.find(
+      (t: string[]) => t[0] === "quantity",
+    )?.[1];
+    const quantity = quantityRaw ? parseInt(quantityRaw, 10) : undefined;
+
+    // Expiration: ["expiration", unix_timestamp]
+    const expirationRaw = event.tags?.find(
+      (t: string[]) => t[0] === "expiration",
+    )?.[1];
+    const expiration = expirationRaw ? parseInt(expirationRaw, 10) : undefined;
+
     return {
       id: event.id,
       pubkey: event.pubkey,
       dTag,
       title,
-      summary,
       description: event.content || "",
       publishedAt: publishedAt && !isNaN(publishedAt) ? publishedAt : undefined,
       location,
       geohash,
       price,
       status,
+      condition,
+      shipping,
+      quantity,
+      expiration: expiration && !isNaN(expiration) ? expiration : undefined,
       images,
       tags,
       coordinate: `30402:${event.pubkey}:${dTag}`,
@@ -138,7 +183,6 @@ export function buildClassifiedEvent(
     ["published_at", String(Math.floor(Date.now() / 1000))],
   ];
 
-  if (opts.summary) tags.push(["summary", opts.summary]);
   if (opts.location) tags.push(["location", opts.location]);
   if (opts.geohash) tags.push(["g", opts.geohash]);
 
@@ -151,6 +195,29 @@ export function buildClassifiedEvent(
 
   // Status: default "active"
   tags.push(["status", opts.status || "active"]);
+
+  // Condition: ["condition", "new"|"used"|"refurbished"]
+  if (opts.condition) tags.push(["condition", opts.condition]);
+
+  // Shipping: ["shipping", type, cost?, currency?]
+  if (opts.shippingType) {
+    const shippingTag = ["shipping", opts.shippingType];
+    if (opts.shippingCost) {
+      shippingTag.push(opts.shippingCost);
+      if (opts.shippingCurrency) shippingTag.push(opts.shippingCurrency);
+    }
+    tags.push(shippingTag);
+  }
+
+  // Quantity: ["quantity", number]
+  if (opts.quantity && opts.quantity > 0) {
+    tags.push(["quantity", String(opts.quantity)]);
+  }
+
+  // Expiration: ["expiration", unix_timestamp]
+  if (opts.expiration) {
+    tags.push(["expiration", String(opts.expiration)]);
+  }
 
   // Images (one tag per image URL)
   if (opts.images) {

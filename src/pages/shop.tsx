@@ -13,6 +13,16 @@ import { getEventHash, type NostrEvent } from "applesauce-core/helpers/event";
 import ListingCard from "@/components/ListingCard";
 import ListingForm from "@/components/ListingForm";
 import ListingDetailModal from "@/components/ListingDetailModal";
+import CartBadge from "@/components/CartBadge";
+import ZapModal from "@/components/ZapModal";
+import { CartProvider, useCart } from "@/contexts/CartContext";
+import type { CartItem } from "@/contexts/CartContext";
+
+/** Extended cart item with converted sats total for checkout */
+interface CheckoutItem extends CartItem {
+  satsTotal: number;
+}
+import { fiatToSats } from "@/utils/prices";
 import {
   fetchClassifiedListings,
 } from "@/utils/classifiedEvents";
@@ -78,8 +88,17 @@ type SortField = keyof NostrVendor | "submitterName" | "zaps";
 type SortDirection = "asc" | "desc";
 
 export default function ShopPage() {
+  return (
+    <CartProvider>
+      <ShopContent />
+    </CartProvider>
+  );
+}
+
+function ShopContent() {
   const { user, signEvent } = useNostr();
-  const [view, setView] = useState<"vendors" | "listings">("vendors");
+  const { addToCart, isInCart } = useCart();
+  const [view, setView] = useState<"vendors" | "listings">("listings");
   const [sortField, setSortField] = useState<SortField>("zaps");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [filters, setFilters] = useState<Record<string, string>>({
@@ -121,6 +140,67 @@ export default function ShopPage() {
     naddr: string;
   } | null>(null);
   const [selectedListing, setSelectedListing] = useState<ClassifiedListing | null>(null);
+
+  // Buy Now — zap target for instant purchase
+  const [zapTarget, setZapTarget] = useState<{
+    pubkey: string;
+    eventId: string;
+    amount: number;
+  } | null>(null);
+
+  // Cart checkout queue — items to zap sequentially
+  const [checkoutQueue, setCheckoutQueue] = useState<CheckoutItem[]>([]);
+  const { items: cartItems, removeFromCart } = useCart();
+
+  /** Start cart checkout: convert prices to sats and queue items */
+  const handleCheckout = useCallback(async () => {
+    if (cartItems.length === 0) return;
+    const queue: CheckoutItem[] = [];
+    for (const item of cartItems) {
+      if (!item.price) continue; // skip free items
+      const sats = await fiatToSats(
+        parseFloat(item.price.amount) * item.quantity,
+        item.price.currency,
+      );
+      queue.push({ ...item, satsTotal: sats });
+    }
+    setCheckoutQueue(queue);
+  }, [cartItems]);
+
+  // When checkout queue has items and no active zap, start the first one
+  useEffect(() => {
+    if (checkoutQueue.length > 0 && !zapTarget) {
+      const next = checkoutQueue[0];
+      setZapTarget({
+        pubkey: next.pubkey,
+        eventId: next.listingId,
+        amount: next.satsTotal,
+      });
+    }
+  }, [checkoutQueue, zapTarget]);
+
+  /** After a zap is confirmed during checkout, advance the queue */
+  const handleCheckoutZapConfirmed = useCallback(() => {
+    if (checkoutQueue.length > 0) {
+      // Remove paid item from cart and queue
+      removeFromCart(checkoutQueue[0].listingId);
+      const remaining = checkoutQueue.slice(1);
+      setCheckoutQueue(remaining);
+      setZapTarget(null);
+    }
+  }, [checkoutQueue, removeFromCart]);
+
+  /** Cancel checkout — clear queue and zap target */
+  const handleCheckoutCancel = useCallback(() => {
+    // Remove just the current item from queue, try next
+    if (checkoutQueue.length > 0) {
+      const remaining = checkoutQueue.slice(1);
+      setCheckoutQueue(remaining);
+      setZapTarget(null);
+    } else {
+      setZapTarget(null);
+    }
+  }, [checkoutQueue]);
 
   // Classifieds filter/sort state
   const [listingSearch, setListingSearch] = useState("");
@@ -720,13 +800,17 @@ export default function ShopPage() {
   const filteredListings = useMemo(() => {
     let result = [...listings];
 
-    // Search filter (title, summary, description, location)
+    // Hide hidden listings from everyone except the owner
+    result = result.filter(
+      (l) => l.status !== "hidden" || (user && l.pubkey === user.pubkey),
+    );
+
+    // Search filter (title, description, location)
     if (listingSearch.trim()) {
       const q = listingSearch.toLowerCase();
       result = result.filter(
         (l) =>
           l.title.toLowerCase().includes(q) ||
-          (l.summary && l.summary.toLowerCase().includes(q)) ||
           (l.description && l.description.toLowerCase().includes(q)) ||
           (l.location && l.location.toLowerCase().includes(q)),
       );
@@ -1638,6 +1722,31 @@ export default function ShopPage() {
                         }
                       : undefined
                   }
+                  onEdit={
+                    user && listing.pubkey === user.pubkey
+                      ? () => {
+                          setEditListing(listing);
+                          setIsEditListing(true);
+                          setShowListingForm(true);
+                        }
+                      : undefined
+                  }
+                  onAddToCart={() => addToCart(listing)}
+                  onBuyNow={
+                    listing.price
+                      ? async () => {
+                          const amount = await fiatToSats(
+                            parseFloat(listing.price!.amount),
+                            listing.price!.currency,
+                          );
+                          setZapTarget({
+                            pubkey: listing.pubkey,
+                            eventId: listing.id,
+                            amount,
+                          });
+                        }
+                      : undefined
+                  }
                   pubkey={user?.pubkey}
                 />
               ))}
@@ -1780,6 +1889,48 @@ export default function ShopPage() {
                     }
                   : undefined
               }
+              onEdit={
+                user && selectedListing.pubkey === user.pubkey
+                  ? () => {
+                      setEditListing(selectedListing);
+                      setIsEditListing(true);
+                      setShowListingForm(true);
+                      setSelectedListing(null);
+                    }
+                  : undefined
+              }
+              onAddToCart={() => addToCart(selectedListing)}
+              onBuyNow={
+                selectedListing.price
+                  ? async () => {
+                      const amount = await fiatToSats(
+                        parseFloat(selectedListing.price!.amount),
+                        selectedListing.price!.currency,
+                      );
+                      setZapTarget({
+                        pubkey: selectedListing.pubkey,
+                        eventId: selectedListing.id,
+                        amount,
+                      });
+                    }
+                  : undefined
+              }
+            />
+          )}
+
+          {/* Cart Badge (floating, shop pages only) */}
+          <CartBadge onCheckout={handleCheckout} />
+
+          {/* Zap Modal for Buy Now / Checkout */}
+          {zapTarget && (
+            <ZapModal
+              event={{ id: zapTarget.eventId, pubkey: zapTarget.pubkey, kind: 30402, content: "", tags: [], created_at: Math.floor(Date.now() / 1000) }}
+              isOpen={true}
+              defaultAmount={zapTarget.amount}
+              onClose={checkoutQueue.length > 0 ? handleCheckoutCancel : () => setZapTarget(null)}
+              signEvent={signEvent}
+              pubkey={user?.pubkey ?? null}
+              onZapConfirmed={checkoutQueue.length > 0 ? handleCheckoutZapConfirmed : () => setZapTarget(null)}
             />
           )}
         </>

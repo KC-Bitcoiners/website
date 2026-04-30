@@ -1,11 +1,42 @@
 import EventActions from "@/components/EventActions";
-import type { ClassifiedListing } from "@/types/classifieds";
+import type { ClassifiedListing, ListingCondition, ListingShipping } from "@/types/classifieds";
+
+/** Format shipping type for display */
+function formatShipping(shipping: ListingShipping): string {
+  const labels: Record<string, string> = {
+    na: "Digital/Service",
+    free: "Free Shipping",
+    pickup: "Local Pickup",
+    free_pickup: "Free + Pickup",
+    added_cost: `Shipping: ${shipping.cost || ""} ${shipping.currency || ""}`.trim(),
+  };
+  return labels[shipping.type] || shipping.type;
+}
+
+/** Format condition for display */
+function formatCondition(condition: ListingCondition): string {
+  const labels: Record<ListingCondition, string> = {
+    new: "New",
+    used: "Used",
+    refurbished: "Refurbished",
+  };
+  return labels[condition] || condition;
+}
+
+/** Check if a listing has expired */
+function isExpired(listing: ClassifiedListing): boolean {
+  if (!listing.expiration) return false;
+  return listing.expiration < Math.floor(Date.now() / 1000);
+}
 
 interface ListingCardProps {
   listing: ClassifiedListing;
   onClick: () => void;
   zapTotal?: number;
   onDelete?: () => void;
+  onEdit?: () => void;
+  onAddToCart?: () => void;
+  onBuyNow?: () => void;
   pubkey?: string | null;
 }
 
@@ -35,14 +66,34 @@ export default function ListingCard({
   onClick,
   zapTotal = 0,
   onDelete,
+  onEdit,
+  onAddToCart,
+  onBuyNow,
   pubkey,
 }: ListingCardProps) {
   const statusColor =
-    listing.status === "active"
-      ? "bg-green-100 text-green-800"
-      : listing.status === "sold"
-        ? "bg-gray-100 text-gray-600"
-        : "bg-gray-50 text-gray-500";
+    listing.status === "sold"
+      ? "bg-gray-100 text-gray-600"
+      : listing.status === "hidden"
+        ? "bg-red-100 text-red-700"
+        : isExpired(listing)
+          ? "bg-yellow-100 text-yellow-800"
+          : "bg-green-100 text-green-800";
+
+  const statusLabel =
+    listing.status === "sold"
+      ? "Sold"
+      : listing.status === "hidden"
+        ? "Hidden"
+        : isExpired(listing)
+          ? "Expired"
+          : listing.status;
+
+  const conditionColor: Record<ListingCondition, string> = {
+    new: "bg-blue-100 text-blue-700",
+    used: "bg-amber-100 text-amber-700",
+    refurbished: "bg-purple-100 text-purple-700",
+  };
 
   return (
     <div
@@ -83,11 +134,23 @@ export default function ListingCard({
               <span
                 className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${statusColor}`}
               >
-                {listing.status}
+                {statusLabel}
               </span>
+              {listing.condition && (
+                <span
+                  className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${conditionColor[listing.condition] || "bg-gray-100 text-gray-600"}`}
+                >
+                  {formatCondition(listing.condition)}
+                </span>
+              )}
               {listing.price && (
                 <span className="text-sm font-semibold text-bitcoin-orange">
                   {formatPrice(listing)}
+                </span>
+              )}
+              {listing.quantity && listing.quantity > 1 && (
+                <span className="text-xs text-gray-500">
+                  Qty: {listing.quantity}
                 </span>
               )}
             </div>
@@ -102,24 +165,26 @@ export default function ListingCard({
               <EventActions
                 event={listing.rawEvent}
                 onDelete={onDelete}
+                onEdit={onEdit}
                 pubkey={pubkey}
               />
             </div>
           )}
         </div>
 
-        {/* Summary */}
-        {listing.summary && (
-          <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-            {listing.summary}
-          </p>
-        )}
-
         {/* Location */}
         {listing.location && (
           <div className="flex items-center gap-1.5 text-sm text-gray-500 mb-3">
             <span>📍</span>
             <span className="truncate">{listing.location}</span>
+          </div>
+        )}
+
+        {/* Shipping */}
+        {listing.shipping && (
+          <div className="flex items-center gap-1.5 text-sm text-gray-500 mb-3">
+            <span>📦</span>
+            <span>{formatShipping(listing.shipping)}</span>
           </div>
         )}
 
@@ -144,6 +209,34 @@ export default function ListingCard({
 
         {/* Spacer to push footer down */}
         <div className="flex-1" />
+
+        {/* Action buttons for active, non-expired listings with price */}
+        {listing.status === "active" && !isExpired(listing) && listing.price && (
+          <div
+            className="flex gap-2 mb-3"
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            {onBuyNow && (
+              <button
+                data-testid="buy-now-btn"
+                onClick={onBuyNow}
+                className="flex-1 py-2 bg-bitcoin-orange text-white text-xs font-semibold rounded-lg hover:bg-orange-600 transition-colors"
+              >
+                Buy Now
+              </button>
+            )}
+            {onAddToCart && (
+              <button
+                data-testid="add-to-cart-btn"
+                onClick={onAddToCart}
+                className="flex-1 py-2 border border-bitcoin-orange text-bitcoin-orange text-xs font-semibold rounded-lg hover:bg-orange-50 transition-colors"
+              >
+                Add to Cart
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Footer: date + zaps */}
         <div className="pt-3 border-t border-gray-100 flex justify-between items-center text-xs text-gray-400">

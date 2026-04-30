@@ -21,6 +21,8 @@ interface ZapModalProps {
   signEvent?: SignerFn;
   pubkey: string | null;
   onZapConfirmed?: () => void;
+  /** Pre-fill the zap amount (in sats) instead of defaulting to 21 */
+  defaultAmount?: number;
 }
 
 export default function ZapModal({
@@ -30,6 +32,7 @@ export default function ZapModal({
   signEvent,
   pubkey,
   onZapConfirmed,
+  defaultAmount,
 }: ZapModalProps) {
   const [amount, setAmount] = useState(21);
   const [customInput, setCustomInput] = useState("");
@@ -58,7 +61,7 @@ export default function ZapModal({
   useEffect(() => {
     if (isOpen) {
       setStep("pick");
-      setAmount(21);
+      setAmount(defaultAmount || 21);
       setCustomInput("");
       setIsCustom(false);
       setInvoice(null);
@@ -68,7 +71,7 @@ export default function ZapModal({
       setSignedZapRequest(null);
       setIsAnonymous(false);
     }
-  }, [isOpen]);
+  }, [isOpen, defaultAmount]);
 
   // Clean up zap receipt subscription on unmount or close
   useEffect(() => {

@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import type { ClassifiedListing } from "@/types/classifieds";
+import type { ClassifiedListing, ListingCondition, ListingShipping } from "@/types/classifieds";
 import EventActions from "@/components/EventActions";
 import ReactMarkdown from "react-markdown";
 
@@ -20,21 +20,78 @@ function formatPrice(listing: ClassifiedListing): string {
   return `${sym}${num.toLocaleString()}${frequency ? `/${frequency}` : ""}`;
 }
 
+/** Format shipping type for display */
+function formatShipping(shipping: ListingShipping): string {
+  const labels: Record<string, string> = {
+    na: "Digital/Service (no shipping)",
+    free: "Free Shipping",
+    pickup: "Local Pickup",
+    free_pickup: "Free Shipping or Local Pickup",
+    added_cost: `Shipping: ${shipping.cost || "—"} ${shipping.currency || ""}`.trim(),
+  };
+  return labels[shipping.type] || shipping.type;
+}
+
+/** Format condition for display */
+function formatCondition(condition: ListingCondition): string {
+  const labels: Record<ListingCondition, string> = {
+    new: "New",
+    used: "Used",
+    refurbished: "Refurbished",
+  };
+  return labels[condition] || condition;
+}
+
+/** Check if a listing has expired */
+function isExpired(listing: ClassifiedListing): boolean {
+  if (!listing.expiration) return false;
+  return listing.expiration < Math.floor(Date.now() / 1000);
+}
+
 interface ListingDetailModalProps {
   listing: ClassifiedListing;
   onClose: () => void;
   onDelete?: () => void;
+  onEdit?: () => void;
+  onAddToCart?: () => void;
+  onBuyNow?: () => void;
 }
 
 export default function ListingDetailModal({
   listing,
   onClose,
   onDelete,
+  onEdit,
+  onAddToCart,
+  onBuyNow,
 }: ListingDetailModalProps) {
   const [currentImage, setCurrentImage] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
 
   const hasImages = listing.images.length > 0;
+  const expired = isExpired(listing);
+
+  // Status styling
+  const statusColor = listing.status === "sold"
+    ? "bg-gray-100 text-gray-600"
+    : listing.status === "hidden"
+      ? "bg-red-100 text-red-700"
+      : expired
+        ? "bg-yellow-100 text-yellow-800"
+        : "bg-green-100 text-green-800";
+  const statusLabel = listing.status === "sold"
+    ? "Sold"
+    : listing.status === "hidden"
+      ? "Hidden"
+      : expired
+        ? "Expired"
+        : listing.status;
+
+  const conditionColor: Record<ListingCondition, string> = {
+    new: "bg-blue-100 text-blue-700",
+    used: "bg-amber-100 text-amber-700",
+    refurbished: "bg-purple-100 text-purple-700",
+  };
 
   const nextImage = useCallback(() => {
     setCurrentImage((i) => (i + 1) % listing.images.length);
@@ -57,19 +114,25 @@ export default function ListingDetailModal({
               </h2>
               <div className="flex items-center gap-2 mt-1 flex-wrap">
                 <span
-                  className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${
-                    listing.status === "active"
-                      ? "bg-green-100 text-green-800"
-                      : listing.status === "sold"
-                        ? "bg-gray-100 text-gray-600"
-                        : "bg-gray-50 text-gray-500"
-                  }`}
+                  className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${statusColor}`}
                 >
-                  {listing.status}
+                  {statusLabel}
                 </span>
+                {listing.condition && (
+                  <span
+                    className={`inline-block px-2 py-0.5 text-xs font-medium rounded ${conditionColor[listing.condition] || "bg-gray-100 text-gray-600"}`}
+                  >
+                    {formatCondition(listing.condition)}
+                  </span>
+                )}
                 {listing.price && (
                   <span className="text-lg font-semibold text-bitcoin-orange">
                     {formatPrice(listing)}
+                  </span>
+                )}
+                {listing.quantity && listing.quantity > 1 && (
+                  <span className="text-xs text-gray-500">
+                    {listing.quantity} available
                   </span>
                 )}
               </div>
@@ -79,6 +142,7 @@ export default function ListingDetailModal({
                 <EventActions
                   event={listing.rawEvent}
                   onDelete={onDelete}
+                  onEdit={onEdit}
                 />
               )}
               <button
@@ -103,13 +167,13 @@ export default function ListingDetailModal({
                 <>
                   <button
                     onClick={prevImage}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-black/60"
+                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-black/60 text-lg"
                   >
                     ‹
                   </button>
                   <button
                     onClick={nextImage}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-black/60"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-black/60 text-lg"
                   >
                     ›
                   </button>
@@ -131,18 +195,36 @@ export default function ListingDetailModal({
 
           {/* Body */}
           <div className="p-6 space-y-4">
-            {/* Summary */}
-            {listing.summary && (
-              <p className="text-gray-600 text-lg">{listing.summary}</p>
-            )}
-
-            {/* Location */}
-            {listing.location && (
-              <div className="flex items-center gap-2 text-gray-500">
-                <span>📍</span>
-                <span>{listing.location}</span>
-              </div>
-            )}
+            {/* Details grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+              {listing.location && (
+                <div className="flex items-center gap-2 text-gray-500">
+                  <span>📍</span>
+                  <span>{listing.location}</span>
+                </div>
+              )}
+              {listing.shipping && (
+                <div className="flex items-center gap-2 text-gray-500">
+                  <span>📦</span>
+                  <span>{formatShipping(listing.shipping)}</span>
+                </div>
+              )}
+              {listing.quantity && listing.quantity > 0 && (
+                <div className="flex items-center gap-2 text-gray-500">
+                  <span>🔢</span>
+                  <span>{listing.quantity} available</span>
+                </div>
+              )}
+              {listing.expiration && (
+                <div className="flex items-center gap-2 text-gray-500">
+                  <span>⏰</span>
+                  <span className={expired ? "text-yellow-600 font-medium" : ""}>
+                    {expired ? "Expired " : "Expires "}
+                    {new Date(listing.expiration * 1000).toLocaleDateString()}
+                  </span>
+                </div>
+              )}
+            </div>
 
             {/* Tags */}
             {listing.tags.length > 0 && (
@@ -162,6 +244,30 @@ export default function ListingDetailModal({
             {listing.description && (
               <div className="prose prose-sm max-w-none">
                 <ReactMarkdown>{listing.description}</ReactMarkdown>
+              </div>
+            )}
+
+            {/* Buy Now / Add to Cart for active listings with price */}
+            {listing.status === "active" && !expired && listing.price && (
+              <div className="flex gap-3 pt-2">
+                {onBuyNow && (
+                  <button
+                    data-testid="buy-now-btn"
+                    onClick={onBuyNow}
+                    className="flex-1 py-3 bg-bitcoin-orange text-white font-semibold rounded-lg hover:bg-orange-600 transition-colors"
+                  >
+                    Buy Now — {formatPrice(listing)}
+                  </button>
+                )}
+                {onAddToCart && (
+                  <button
+                    data-testid="add-to-cart-btn"
+                    onClick={onAddToCart}
+                    className="flex-1 py-3 border-2 border-bitcoin-orange text-bitcoin-orange font-semibold rounded-lg hover:bg-orange-50 transition-colors"
+                  >
+                    Add to Cart
+                  </button>
+                )}
               </div>
             )}
 

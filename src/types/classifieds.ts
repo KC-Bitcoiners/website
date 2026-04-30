@@ -10,19 +10,35 @@ export interface ListingPrice {
   frequency?: string; // "hour", "day", "week", "month", "year"
 }
 
+/** Shipping options matching Shopstr */
+export type ShippingType = "na" | "free" | "pickup" | "free_pickup" | "added_cost";
+
+/** Shipping data parsed from ["shipping", type, cost?, currency?] */
+export interface ListingShipping {
+  type: ShippingType;
+  cost?: string;
+  currency?: string;
+}
+
+/** Condition options */
+export type ListingCondition = "new" | "used" | "refurbished";
+
 /** A parsed NIP-99 classified listing event */
 export interface ClassifiedListing {
   id: string; // event.id
   pubkey: string;
   dTag: string;
   title: string;
-  summary?: string;
   description: string; // event.content (markdown)
   publishedAt?: number; // published_at tag unix timestamp
   location?: string;
   geohash?: string; // g tag
   price?: ListingPrice;
-  status: "active" | "sold" | "unknown";
+  status: "active" | "sold" | "hidden" | "unknown";
+  condition?: ListingCondition;
+  shipping?: ListingShipping;
+  quantity?: number;
+  expiration?: number; // unix timestamp
   images: string[]; // all image tag values
   tags: string[]; // all t tag values (categories/hashtags)
   coordinate: string; // 30402:<pubkey>:<dTag>
@@ -34,13 +50,18 @@ export interface ClassifiedListing {
 export interface ClassifiedListingInput {
   dTag?: string; // auto-generated if absent
   title: string;
-  summary?: string;
   description: string;
   location?: string;
   priceAmount?: string;
   priceCurrency?: string;
   priceFrequency?: string;
-  status?: "active" | "sold";
+  status?: "active" | "sold" | "hidden";
+  condition?: ListingCondition;
+  shippingType?: ShippingType;
+  shippingCost?: string;
+  shippingCurrency?: string;
+  quantity?: number;
+  expiration?: number; // unix timestamp
   images?: string[];
   tags?: string[];
   geohash?: string;

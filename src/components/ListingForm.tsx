@@ -6,8 +6,10 @@ import {
   buildClassifiedEvent,
   publishClassified,
 } from "@/utils/classifiedEvents";
-import type { ClassifiedListing } from "@/types/classifieds";
+import type { ClassifiedListing, ListingCondition, ShippingType } from "@/types/classifieds";
 import { logger } from "@/utils/logger";
+import { pool } from "@/lib/nostr";
+import { nostrRelays } from "@/config";
 
 interface ListingFormProps {
   onClose: () => void;
@@ -18,12 +20,17 @@ interface ListingFormProps {
 
 interface ListingFormData {
   title: string;
-  summary: string;
   description: string;
   priceAmount: string;
   priceCurrency: string;
   priceFrequency: string;
-  status: "active" | "sold";
+  status: "active" | "sold" | "hidden";
+  condition: ListingCondition | "";
+  shippingType: ShippingType;
+  shippingCost: string;
+  shippingCurrency: string;
+  quantity: string;
+  expiration: string; // ISO date string for the date input
   location: string;
   images: string[];
   tags: string;
@@ -31,6 +38,12 @@ interface ListingFormData {
 
 const CURRENCIES = ["sats", "USD", "BTC", "EUR", "GBP"];
 const FREQUENCIES = ["", "hour", "day", "week", "month", "year"];
+const CONDITIONS: { value: ListingCondition | ""; label: string }[] = [
+  { value: "", label: "Not specified" },
+  { value: "new", label: "New" },
+  { value: "used", label: "Used" },
+  { value: "refurbished", label: "Refurbished" },
+];
 
 export default function ListingForm({
   onClose,
@@ -43,12 +56,17 @@ export default function ListingForm({
   const [newImageUrl, setNewImageUrl] = useState("");
   const [formData, setFormData] = useState<ListingFormData>({
     title: "",
-    summary: "",
     description: "",
     priceAmount: "",
     priceCurrency: "sats",
     priceFrequency: "",
     status: "active",
+    condition: "",
+    shippingType: "pickup" as ShippingType,
+    shippingCost: "",
+    shippingCurrency: "sats",
+    quantity: "",
+    expiration: "",
     location: "",
     images: [],
     tags: "",
@@ -57,14 +75,26 @@ export default function ListingForm({
   // Pre-fill form when editing
   useEffect(() => {
     if (isEdit && editListing) {
+      // Convert expiration unix timestamp to ISO date string for the date input
+      let expirationStr = "";
+      if (editListing.expiration) {
+        const d = new Date(editListing.expiration * 1000);
+        expirationStr = d.toISOString().split("T")[0]; // YYYY-MM-DD
+      }
+
       setFormData({
         title: editListing.title || "",
-        summary: editListing.summary || "",
         description: editListing.description || "",
         priceAmount: editListing.price?.amount || "",
         priceCurrency: editListing.price?.currency || "sats",
         priceFrequency: editListing.price?.frequency || "",
-        status: editListing.status === "sold" ? "sold" : "active",
+        status: editListing.status === "sold" ? "sold" : editListing.status === "hidden" ? "hidden" : "active",
+        condition: editListing.condition || "",
+        shippingType: editListing.shipping?.type || "pickup",
+        shippingCost: editListing.shipping?.cost || "",
+        shippingCurrency: editListing.shipping?.currency || "sats",
+        quantity: editListing.quantity?.toString() || "",
+        expiration: expirationStr,
         location: editListing.location || "",
         images: editListing.images || [],
         tags: editListing.tags?.join(", ") || "",
@@ -106,6 +136,22 @@ export default function ListingForm({
     return errors;
   };
 
+  /** Publish a kind 5 deletion event for the old listing event */
+  const deleteOldEvent = async (eventId: string) => {
+    try {
+      const unsigned = {
+        kind: 5,
+        content: "Editing classified listing — replacing with updated version",
+        tags: [["e", eventId]],
+        created_at: Math.floor(Date.now() / 1000),
+      };
+      const signed = await signEvent(unsigned as any);
+      await pool.publish(nostrRelays, signed as any);
+    } catch (e) {
+      logger.warn("Failed to publish deletion of old listing event:", e);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -128,10 +174,20 @@ export default function ListingForm({
         .map((t) => t.trim())
         .filter(Boolean);
 
+      // Convert expiration date to unix timestamp
+      let expirationTs: number | undefined;
+      if (formData.expiration) {
+        const d = new Date(formData.expiration);
+        if (!isNaN(d.getTime())) {
+          // Set to end of day (23:59:59 UTC)
+          d.setUTCHours(23, 59, 59);
+          expirationTs = Math.floor(d.getTime() / 1000);
+        }
+      }
+
       const opts = {
         dTag: isEdit && editListing ? editListing.dTag : undefined,
         title: formData.title.trim(),
-        summary: formData.summary.trim() || undefined,
         description: formData.description.trim(),
         location: formData.location.trim() || undefined,
         priceAmount: formData.priceAmount.trim() || undefined,
@@ -140,6 +196,12 @@ export default function ListingForm({
           : undefined,
         priceFrequency: formData.priceFrequency || undefined,
         status: formData.status,
+        condition: (formData.condition || undefined) as ListingCondition | undefined,
+        shippingType: (formData.shippingType || undefined) as ShippingType | undefined,
+        shippingCost: formData.shippingType === "added_cost" ? formData.shippingCost.trim() || undefined : undefined,
+        shippingCurrency: formData.shippingType === "added_cost" ? formData.shippingCurrency || undefined : undefined,
+        quantity: formData.quantity ? parseInt(formData.quantity, 10) : undefined,
+        expiration: expirationTs,
         images: formData.images.length > 0 ? formData.images : undefined,
         tags: tagsList.length > 0 ? tagsList : undefined,
       };
@@ -153,6 +215,11 @@ export default function ListingForm({
 
       if (!success) {
         throw new Error("Failed to publish to any relay");
+      }
+
+      // On edit, delete the old event to clean up
+      if (isEdit && editListing?.id) {
+        await deleteOldEvent(editListing.id);
       }
 
       const dTag =
@@ -226,38 +293,77 @@ export default function ListingForm({
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Summary
-              </label>
-              <input
-                type="text"
-                data-testid="listing-summary"
-                value={formData.summary}
-                onChange={(e) => updateField("summary", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
-                placeholder="Short tagline for your listing"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Status
+                </label>
+                <select
+                  data-testid="listing-status"
+                  value={formData.status}
+                  onChange={(e) =>
+                    updateField(
+                      "status",
+                      e.target.value as "active" | "sold" | "hidden",
+                    )
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
+                >
+                  <option value="active">Active</option>
+                  <option value="sold">Sold</option>
+                  <option value="hidden">Hidden</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Condition
+                </label>
+                <select
+                  data-testid="listing-condition"
+                  value={formData.condition}
+                  onChange={(e) => updateField("condition", e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
+                >
+                  {CONDITIONS.map((c) => (
+                    <option key={c.value} value={c.value}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
-              <select
-                data-testid="listing-status"
-                value={formData.status}
-                onChange={(e) =>
-                  updateField(
-                    "status",
-                    e.target.value as "active" | "sold",
-                  )
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
-              >
-                <option value="active">Active</option>
-                <option value="sold">Sold</option>
-              </select>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Quantity
+                </label>
+                <input
+                  type="number"
+                  data-testid="listing-quantity"
+                  value={formData.quantity}
+                  onChange={(e) => updateField("quantity", e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
+                  placeholder="Leave blank for unlimited"
+                  min="1"
+                  step="1"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Listing Expires
+                </label>
+                <input
+                  type="date"
+                  data-testid="listing-expiration"
+                  value={formData.expiration}
+                  onChange={(e) => updateField("expiration", e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
+                  min={new Date().toISOString().split("T")[0]}
+                />
+              </div>
             </div>
           </div>
 
@@ -324,6 +430,12 @@ export default function ListingForm({
                 </select>
               </div>
             </div>
+          </div>
+
+          {/* Shipping — local pickup only for now */}
+          <div className="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 rounded-md p-3">
+            <span>📦</span>
+            <span>All listings are <strong>Local Pickup</strong> by default. Arrange pickup with the buyer via Nostr DM.</span>
           </div>
 
           {/* Description */}

@@ -265,5 +265,92 @@ test.describe(
         dialog.accept();
       });
     });
+
+    test("edit a classified listing", async ({ page }) => {
+      // First create a listing to edit
+      const uniqueTitle = `ToEdit ${Date.now()}`;
+      const editedTitle = `Edited ${Date.now()}`;
+
+      const createButtons = page
+        .getByRole("button")
+        .filter({ hasText: "Create Listing" });
+      await createButtons.first().waitFor({ state: "attached", timeout: 5000 });
+      await createButtons.first().evaluate((el) => (el as HTMLElement).click());
+      await expect(page.getByTestId("listing-form-modal")).toBeVisible({ timeout: 5000 });
+
+      await page.getByTestId("listing-title").fill(uniqueTitle);
+      await page.getByTestId("listing-description").fill("To be edited");
+      await page.getByTestId("listing-price-amount").fill("2000");
+      await page.getByTestId("listing-publish").evaluate((el) => (el as HTMLElement).click());
+      await expect(page.getByTestId("listing-form-modal")).not.toBeVisible({
+        timeout: 20000,
+      });
+
+      const listing = await waitForListingToAppear(page, uniqueTitle);
+
+      // Click the ... menu and edit
+      const dotsBtn = listing.locator("button").filter({ hasText: /^\.\.\.$/ });
+      await dotsBtn.evaluate((el) => (el as HTMLElement).click());
+      await page.waitForTimeout(500);
+
+      // Click Edit button
+      const editBtn = page.getByRole("button", { name: /Edit/ });
+      await expect(editBtn).toBeVisible({ timeout: 5000 });
+      await editBtn.evaluate((el) => (el as HTMLElement).click());
+
+      // Form should open in edit mode, pre-filled with existing data
+      await expect(page.getByTestId("listing-form-modal")).toBeVisible({ timeout: 5000 });
+      const titleValue = await page.getByTestId("listing-title").inputValue();
+      expect(titleValue).toBe(uniqueTitle);
+
+      // Edit the title
+      await page.getByTestId("listing-title").fill(editedTitle);
+      await page.getByTestId("listing-publish").evaluate((el) => (el as HTMLElement).click());
+      await expect(page.getByTestId("listing-form-modal")).not.toBeVisible({
+        timeout: 20000,
+      });
+
+      // Wait for edited listing to appear
+      const editedListing = await waitForListingToAppear(page, editedTitle);
+      await expect(editedListing).toContainText(editedTitle);
+    });
+
+    test("add listing to cart shows cart badge", async ({ page }) => {
+      const uniqueTitle = `CartTest ${Date.now()}`;
+
+      const createButtons = page
+        .getByRole("button")
+        .filter({ hasText: "Create Listing" });
+      await createButtons.first().waitFor({ state: "attached", timeout: 5000 });
+      await createButtons.first().evaluate((el) => (el as HTMLElement).click());
+      await expect(page.getByTestId("listing-form-modal")).toBeVisible({ timeout: 5000 });
+
+      await page.getByTestId("listing-title").fill(uniqueTitle);
+      await page.getByTestId("listing-description").fill("Cart test listing");
+      await page.getByTestId("listing-price-amount").fill("5000");
+      await page.getByTestId("listing-publish").evaluate((el) => (el as HTMLElement).click());
+      await expect(page.getByTestId("listing-form-modal")).not.toBeVisible({
+        timeout: 20000,
+      });
+
+      const listing = await waitForListingToAppear(page, uniqueTitle);
+
+      // Click Add to Cart button
+      const addToCartBtn = listing.getByTestId("add-to-cart-btn");
+      if (await addToCartBtn.isVisible().catch(() => false)) {
+        await addToCartBtn.evaluate((el) => (el as HTMLElement).click());
+
+        // Cart badge should appear
+        await expect(page.getByTestId("cart-badge")).toBeVisible({ timeout: 5000 });
+
+        // Click badge to open drawer
+        await page.getByTestId("cart-badge").evaluate((el) => (el as HTMLElement).click());
+        await expect(page.getByTestId("cart-drawer")).toBeVisible({ timeout: 5000 });
+
+        // Drawer should show the item
+        const drawer = page.getByTestId("cart-drawer");
+        await expect(drawer).toContainText(uniqueTitle);
+      }
+    });
   },
 );

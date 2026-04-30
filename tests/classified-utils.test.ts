@@ -55,7 +55,6 @@ describe("parseClassifiedEvent", () => {
       tags: [
         ["d", "full-listing"],
         ["title", "Full Listing"],
-        ["summary", "A great deal"],
         ["published_at", "1699999999"],
         ["location", "Kansas City, MO"],
         ["g", "9yv0z"],
@@ -70,7 +69,7 @@ describe("parseClassifiedEvent", () => {
     });
     const result = parseClassifiedEvent(event)!;
 
-    expect(result.summary).toBe("A great deal");
+    expect(result.description).toBe("Test listing description");
     expect(result.publishedAt).toBe(1699999999);
     expect(result.location).toBe("Kansas City, MO");
     expect(result.geohash).toBe("9yv0z");
@@ -288,12 +287,10 @@ describe("buildClassifiedEvent", () => {
     const result = buildClassifiedEvent({
       title: "Test",
       description: "Desc",
-      summary: "Short desc",
       location: "Kansas City",
       geohash: "9yv0z",
     }) as any;
     const tagTypes = result.tags.map((t: string[]) => t[0]);
-    expect(tagTypes).toContain("summary");
     expect(tagTypes).toContain("location");
     expect(tagTypes).toContain("g");
   });
@@ -304,7 +301,6 @@ describe("buildClassifiedEvent", () => {
       description: "Desc",
     }) as any;
     const tagTypes = result.tags.map((t: string[]) => t[0]);
-    expect(tagTypes).not.toContain("summary");
     expect(tagTypes).not.toContain("location");
     expect(tagTypes).not.toContain("g");
   });
@@ -385,7 +381,6 @@ describe("build → parse roundtrip", () => {
     const built = buildClassifiedEvent({
       dTag: "roundtrip-test",
       title: "Roundtrip Listing",
-      summary: "A summary",
       description: "Full description here",
       location: "Kansas City",
       geohash: "9yv0z",
@@ -410,7 +405,6 @@ describe("build → parse roundtrip", () => {
     expect(parsed).not.toBeNull();
     expect(parsed.dTag).toBe("roundtrip-test");
     expect(parsed.title).toBe("Roundtrip Listing");
-    expect(parsed.summary).toBe("A summary");
     expect(parsed.description).toBe("Full description here");
     expect(parsed.location).toBe("Kansas City");
     expect(parsed.geohash).toBe("9yv0z");
