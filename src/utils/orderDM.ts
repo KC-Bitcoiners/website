@@ -16,6 +16,7 @@ import * as nip44 from "nostr-tools/nip44";
 import { pool } from "@/lib/nostr";
 import { nostrRelays } from "@/config";
 import { logger } from "@/utils/logger";
+import { npubEncode, naddrEncode } from "@/utils/bech32";
 
 interface OrderDMOptions {
   /** Seller's pubkey (hex) */
@@ -30,14 +31,22 @@ interface OrderDMOptions {
   amountSats: number;
   /** Unique order ID */
   orderId?: string;
+  /** Buyer's private key (hex) — fallback when NIP-07 nip44 not available */
+  buyerPrivkeyHex?: string;
 }
 
 /** Build a kind 14 rumor (unsigned DM) with order details */
 function buildOrderRumor(opts: OrderDMOptions) {
   const orderId = opts.orderId || `order-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const buyerNpub = npubEncode(opts.buyerPubkey);
+  // Parse coordinate "30402:pubkey:dtag" into parts for naddr
+  const coordParts = opts.listingCoordinate.split(":");
+  const dTag = coordParts[2] || "";
+  const sellerPubkey = coordParts[1] || opts.sellerPubkey;
+  const naddr = naddrEncode({ identifier: dTag, pubkey: sellerPubkey, kind: 30402, relays: nostrRelays.slice(0, 2) });
   return {
     kind: 14,
-    content: `New order for "${opts.listingTitle}" — ${opts.amountSats.toLocaleString()} sats paid. Buyer: ${opts.buyerPubkey.slice(0, 12)}... Arrange local pickup via DM.`,
+    content: `New order for "${opts.listingTitle}" — ${opts.amountSats.toLocaleString()} sats paid.\n\nBuyer: ${buyerNpub}\nListing: nostr:${naddr}\n\nArrange local pickup via DM.`,
     tags: [
       ["p", opts.sellerPubkey],
       ["order", orderId],
@@ -58,30 +67,53 @@ function buildOrderRumor(opts: OrderDMOptions) {
  */
 export async function sendOrderDM(opts: OrderDMOptions): Promise<boolean> {
   try {
+    console.log("[OrderDM] Starting sendOrderDM", { seller: opts.sellerPubkey.slice(0, 12), title: opts.listingTitle });
     const rumor = buildOrderRumor(opts);
     const sellerPubkey = opts.sellerPubkey;
 
     // Step 1: NIP-44 encrypt the rumor to create the seal content
-    // Use NIP-07 extension's nip44.encrypt if available
-    if (!window.nostr?.nip44?.encrypt) {
-      logger.warn("NIP-44 encryption not available via NIP-07 extension. Cannot send order DM.");
+    let sealContent: string;
+    let signedSeal: Record<string, unknown>;
+
+    if (window.nostr?.nip44?.encrypt) {
+      // Preferred: use NIP-07 extension's nip44.encrypt
+      sealContent = await window.nostr.nip44.encrypt(
+        sellerPubkey,
+        JSON.stringify(rumor),
+      );
+
+      // Step 2: Sign kind 13 seal via NIP-07
+      const sealTemplate = {
+        kind: 13,
+        content: sealContent,
+        tags: [["p", sellerPubkey]],
+        created_at: Math.floor(Date.now() / 1000),
+      };
+      signedSeal = await window.nostr.signEvent(sealTemplate) as Record<string, unknown>;
+    } else if (opts.buyerPrivkeyHex) {
+      // Fallback: encrypt + sign directly with buyer's private key
+      console.log("[OrderDM] NIP-07 nip44 unavailable, using direct key encryption");
+      const privBytes = new Uint8Array(opts.buyerPrivkeyHex.length / 2);
+      for (let i = 0; i < opts.buyerPrivkeyHex.length; i += 2) {
+        privBytes[i / 2] = parseInt(opts.buyerPrivkeyHex.substring(i, i + 2), 16);
+      }
+
+      const conversationKey = nip44.getConversationKey(privBytes, sellerPubkey);
+      sealContent = nip44.encrypt(JSON.stringify(rumor), conversationKey);
+
+      // Sign the seal locally
+      const sealEvent = {
+        kind: 13,
+        content: sealContent,
+        tags: [["p", sellerPubkey]],
+        created_at: Math.floor(Date.now() / 1000),
+      };
+      signedSeal = finalizeEvent(sealEvent, privBytes) as unknown as Record<string, unknown>;
+    } else {
+      console.warn("[OrderDM] No encryption method available", { hasNip44: !!window.nostr?.nip44?.encrypt, hasPrivkey: !!opts.buyerPrivkeyHex });
+      logger.warn("NIP-44 encryption not available. Cannot send order DM.");
       return false;
     }
-
-    const sealContent = await window.nostr.nip44.encrypt(
-      sellerPubkey,
-      JSON.stringify(rumor),
-    );
-
-    // Step 2: Build and sign kind 13 seal
-    const sealTemplate = {
-      kind: 13,
-      content: sealContent,
-      tags: [["p", sellerPubkey]],
-      created_at: Math.floor(Date.now() / 1000),
-    };
-
-    const signedSeal = await window.nostr.signEvent(sealTemplate);
 
     // Step 3: Generate random one-time keypair for gift wrap
     const randomPrivkey = generateSecretKey();

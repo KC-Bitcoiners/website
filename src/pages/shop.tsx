@@ -24,6 +24,7 @@ interface CheckoutItem extends CartItem {
 }
 import { fiatToSats } from "@/utils/prices";
 import { sendOrderDM } from "@/utils/orderDM";
+import { nsecDecode } from "@/utils/bech32";
 import {
   fetchClassifiedListings,
 } from "@/utils/classifiedEvents";
@@ -188,12 +189,14 @@ function ShopContent() {
       if (user?.pubkey) {
         const listing = listings.find((l) => l.id === paidItem.listingId);
         if (listing) {
+          const buyerPrivkeyHex = user.privateKey ? nsecDecode(user.privateKey) : undefined;
           sendOrderDM({
             sellerPubkey: paidItem.pubkey,
             buyerPubkey: user.pubkey,
             listingTitle: paidItem.title,
             listingCoordinate: `30402:${paidItem.pubkey}:${listings.find((l) => l.id === paidItem.listingId)?.dTag || ""}`,
             amountSats: paidItem.satsTotal,
+            buyerPrivkeyHex,
           });
         }
       }
@@ -2030,16 +2033,29 @@ function ShopContent() {
                   ? handleCheckoutZapConfirmed
                   : () => {
                       // Buy Now — send order DM to seller
+                      console.log("[Shop] onZapConfirmed fired", { zapTarget, userPubkey: user?.pubkey });
                       if (zapTarget && user?.pubkey) {
-                        // Find the listing for this zap target
                         const listing = listings.find((l) => l.id === zapTarget.eventId);
+                        console.log("[Shop] Found listing for zap:", listing?.title);
                         if (listing) {
+                          console.log("[Shop] Sending order DM...", {
+                            seller: listing.pubkey.slice(0, 12),
+                            buyer: user.pubkey.slice(0, 12),
+                            title: listing.title,
+                            amount: zapTarget.amount,
+                          });
+                          const buyerPrivkeyHex = user.privateKey ? nsecDecode(user.privateKey) : undefined;
                           sendOrderDM({
                             sellerPubkey: listing.pubkey,
                             buyerPubkey: user.pubkey,
                             listingTitle: listing.title,
                             listingCoordinate: listing.coordinate,
                             amountSats: zapTarget.amount,
+                            buyerPrivkeyHex,
+                          }).then((ok) => {
+                            console.log("[Shop] Order DM result:", ok);
+                          }).catch((err) => {
+                            console.error("[Shop] Order DM error:", err);
                           });
                         }
                       }
