@@ -197,10 +197,14 @@ export default function EducationPage() {
   );
 
   // Watch the event store for live streams and cast to Stream class
+  // Only show streams with status "live" — filter out "ended" and "planned"
   const livestreams = use$(() =>
-    eventStore.timeline(liveStreamFilters).pipe(castTimelineStream(Stream, eventStore)),
+    eventStore.timeline(liveStreamFilters).pipe(
+      castTimelineStream(Stream, eventStore),
+    ),
     [liveStreamFilters]
   )
+  const activeStreams = useMemo(() => (livestreams ?? []).filter(s => s.status === "live"), [livestreams]);
 
   const loadAll = useCallback(async () => {
     setLoadingFeatured(true);
@@ -412,7 +416,7 @@ export default function EducationPage() {
 
         {/* Active Livestreams */}
         <ErrorBoundary>
-          <LivestreamPlayer streams={livestreams ?? []} />
+          <LivestreamPlayer streams={activeStreams} />
         </ErrorBoundary>
 
         {/* Tab Navigation */}
