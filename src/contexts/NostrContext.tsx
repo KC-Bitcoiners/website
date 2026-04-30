@@ -112,13 +112,11 @@ export function NostrProvider({ children }: NostrProviderProps) {
       };
 
       setUser(userData);
-      // Persist only non-sensitive fields — private key stays in memory only
+      // Persist user data including private key (nsec) so sessions survive reloads.
+      // User explicitly provided their key — it's their responsibility to use a trusted device.
       localStorage.setItem(
         "nostr_user",
-        JSON.stringify({
-          pubkey: pubkeyHex,
-          npub,
-        }),
+        JSON.stringify(userData),
       );
 
       // Return nsec for newly generated accounts so UI can display it
@@ -253,9 +251,7 @@ export function NostrProvider({ children }: NostrProviderProps) {
       if (metadata) {
         const updatedUser = { ...user, metadata };
         setUser(updatedUser);
-        // Strip private key before persisting to localStorage
-        const { privateKey: _, ...safeUser } = updatedUser;
-        localStorage.setItem("nostr_user", JSON.stringify(safeUser));
+        localStorage.setItem("nostr_user", JSON.stringify(updatedUser));
       }
     } catch (error) {
       console.error("Failed to refresh metadata:", error);
