@@ -220,9 +220,12 @@ function ShopContent() {
   // Classifieds filter/sort state
   const [listingSearch, setListingSearch] = useState("");
   const [listingCategory, setListingCategory] = useState("");
+  const [listingSeller, setListingSeller] = useState("");
   const [listingStatus, setListingStatus] = useState<"all" | "active" | "sold">("all");
   const [listingSort, setListingSort] = useState<"newest" | "oldest" | "price_low" | "price_high" | "zaps">("newest");
   const [listingZapTotals, setListingZapTotals] = useState<Record<string, number>>({});
+  // Profile info for listing authors: pubkey → {name, picture}
+  const [listingProfiles, setListingProfiles] = useState<Record<string, { name?: string; picture?: string }>>({});
 
   // Fetch zap totals for Nostr vendors when they load
   useEffect(() => {
@@ -502,6 +505,44 @@ function ShopContent() {
     };
     fetchListings();
   }, [view, listingSuccess]);
+
+  // Fetch profiles for listing authors
+  useEffect(() => {
+    if (listings.length === 0) return;
+    const uniquePubkeys = [...new Set(listings.map((l) => l.pubkey))];
+    // Skip pubkeys we already fetched
+    const missing = uniquePubkeys.filter((pk) => !listingProfiles[pk]);
+    if (missing.length === 0) return;
+
+    let cancelled = false;
+    const profiles: Record<string, { name?: string; picture?: string }> = {};
+    Promise.all(
+      missing.map(async (pk) => {
+        try {
+          const events = await new Promise<NostrEvent[]>((resolve, reject) => {
+            const timeout = setTimeout(() => reject(new Error("timeout")), 8000);
+            const collected: NostrEvent[] = [];
+            pool.request(nostrRelays, { kinds: [0], authors: [pk], limit: 1 }).subscribe({
+              next: (e) => collected.push(e),
+              error: (err) => { clearTimeout(timeout); reject(err); },
+              complete: () => { clearTimeout(timeout); resolve(collected); },
+            });
+          });
+          if (events.length > 0) {
+            const meta = JSON.parse(events[0].content);
+            profiles[pk] = { name: meta.name || meta.display_name, picture: meta.picture };
+          }
+        } catch {
+          // Profile fetch failed, skip silently
+        }
+      }),
+    ).then(() => {
+      if (!cancelled && Object.keys(profiles).length > 0) {
+        setListingProfiles((prev) => ({ ...prev, ...profiles }));
+      }
+    });
+    return () => { cancelled = true; };
+  }, [listings]);
 
   // Fetch zap totals for classified listings
   useEffect(() => {
@@ -836,6 +877,11 @@ function ShopContent() {
       result = result.filter((l) => l.tags.includes(listingCategory));
     }
 
+    // Seller filter
+    if (listingSeller) {
+      result = result.filter((l) => l.pubkey === listingSeller);
+    }
+
     // Status filter
     if (listingStatus !== "all") {
       result = result.filter((l) => l.status === listingStatus);
@@ -868,7 +914,7 @@ function ShopContent() {
     });
 
     return result;
-  }, [listings, listingSearch, listingCategory, listingStatus, listingSort, listingZapTotals]);
+  }, [listings, listingSearch, listingCategory, listingSeller, listingStatus, listingSort, listingZapTotals, user]);
 
   // Extract unique categories from all listings
   const allListingCategories = useMemo(() => {
@@ -878,6 +924,17 @@ function ShopContent() {
     }
     return Array.from(cats).sort();
   }, [listings]);
+
+  // Unique seller pubkeys from all listings
+  const allListingSellers = useMemo(() => {
+    const sellers = new Set<string>();
+    for (const l of listings) sellers.add(l.pubkey);
+    return Array.from(sellers).sort((a, b) => {
+      const nameA = listingProfiles[a]?.name || a;
+      const nameB = listingProfiles[b]?.name || b;
+      return nameA.localeCompare(nameB);
+    });
+  }, [listings, listingProfiles]);
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -1625,7 +1682,7 @@ function ShopContent() {
           {/* Filter and Sort Controls */}
           {listings.length > 0 && (
             <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
                 {/* Search */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1656,6 +1713,26 @@ function ShopContent() {
                     {allListingCategories.map((cat) => (
                       <option key={cat} value={cat}>
                         {cat}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Seller Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Seller
+                  </label>
+                  <select
+                    data-testid="listing-seller-filter"
+                    value={listingSeller}
+                    onChange={(e) => setListingSeller(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-bitcoin-orange focus:border-transparent"
+                  >
+                    <option value="">All Sellers</option>
+                    {allListingSellers.map((pk) => (
+                      <option key={pk} value={pk}>
+                        {listingProfiles[pk]?.name || pk.substring(0, 12) + "..."}
                       </option>
                     ))}
                   </select>
@@ -1723,6 +1800,7 @@ function ShopContent() {
                   key={listing.id}
                   listing={listing}
                   zapTotal={listingZapTotals[listing.id] || 0}
+                  sellerProfile={listingProfiles[listing.pubkey]}
                   onClick={() => setSelectedListing(listing)}
                   onDelete={
                     user && listing.pubkey === user.pubkey
@@ -1779,6 +1857,7 @@ function ShopContent() {
                 onClick={() => {
                   setListingSearch("");
                   setListingCategory("");
+                  setListingSeller("");
                   setListingStatus("all");
                 }}
                 className="mt-3 text-bitcoin-orange hover:underline text-sm"
@@ -1889,6 +1968,7 @@ function ShopContent() {
           {selectedListing && (
             <ListingDetailModal
               listing={selectedListing}
+              sellerProfile={listingProfiles[selectedListing.pubkey]}
               onClose={() => setSelectedListing(null)}
               onDelete={
                 user && selectedListing.pubkey === user.pubkey
