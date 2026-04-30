@@ -55,7 +55,6 @@ interface ListingDetailModalProps {
   onEdit?: () => void;
   onAddToCart?: () => void;
   onBuyNow?: () => void;
-  sellerProfile?: { name?: string; picture?: string };
 }
 
 export default function ListingDetailModal({
@@ -65,7 +64,6 @@ export default function ListingDetailModal({
   onEdit,
   onAddToCart,
   onBuyNow,
-  sellerProfile,
 }: ListingDetailModalProps) {
   const [currentImage, setCurrentImage] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -275,26 +273,12 @@ export default function ListingDetailModal({
 
             {/* Footer */}
             <div className="pt-4 border-t border-gray-100 flex justify-between items-center text-xs text-gray-400">
-              <div className="flex items-center gap-2">
-                {sellerProfile?.picture ? (
-                  <img
-                    src={sellerProfile.picture}
-                    alt={sellerProfile.name || "Seller"}
-                    className="w-6 h-6 rounded-full"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-gray-400" style={{ fontSize: 10 }}>
-                    ?
-                  </div>
-                )}
-                <span>
-                  {sellerProfile?.name || listing.pubkey.substring(0, 12) + "..."}
-                </span>
-              </div>
               <span>
                 Published{" "}
                 {new Date(listing.publishedAt || listing.createdAt * 1000).toLocaleDateString()}
+              </span>
+              <span className="font-mono">
+                {listing.pubkey.substring(0, 12)}...
               </span>
             </div>
           </div>
