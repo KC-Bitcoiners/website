@@ -102,6 +102,8 @@ export function getDisplayType(pin: Pin): DisplayType {
   if (url.includes("rumble.com")) return "youtube";
   if (url.includes("spotify.com") && url.includes("/episode"))
     return "podcast-episode";
+  if (url.includes("fountain.fm/episode")) return "podcast-episode";
+  if (/\.(mp3|m4a|aac|ogg|wav|flac)(\?|$)/i.test(url)) return "podcast-episode";
   if (url.includes("spotify.com") || url.includes("podcast")) return "podcast";
   return "link";
 }
