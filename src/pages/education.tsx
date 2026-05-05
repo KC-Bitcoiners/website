@@ -108,7 +108,11 @@ function getPodcastFeedGuid(externalRef: string): string | null {
 }
 
 function isRssFeed(url: string): boolean {
-  return /\.(xml|rss)(\?|$)/i.test(url) || /\/feed\b/i.test(url);
+  return (
+    /\.(xml|rss)(\?|$)/i.test(url) ||
+    /\/feed\b/i.test(url) ||
+    /^https:\/\/feeds\.fountain\.fm\/[^/]+$/i.test(url)
+  );
 }
 
 function getPodcastIndexShowUrl(externalRef: string): string | null {
@@ -938,8 +942,26 @@ function PinCard({
       : null;
   const isSpotifyShow =
     dt === "podcast" && pin.externalRef?.includes("open.spotify.com");
+  const isFountainEpisode =
+    dt === "podcast-episode" &&
+    !!pin.externalRef?.includes("fountain.fm/episode");
+  // Direct audio file URL (mp3, m4a, etc.)
+  const directAudioUrl =
+    dt === "podcast-episode" &&
+    !spotifyEpisodeId &&
+    !isFountainEpisode &&
+    !podcastIndexEpisodeUrl &&
+    /\.(mp3|m4a|aac|ogg|wav|flac)(\?|$)/i.test(pin.externalRef || "")
+      ? pin.externalRef
+      : null;
+  // Derive RSS feed URL from Fountain-hosted audio (feeds.fountain.fm/{feedId}/items/...)
+  const derivedFeedUrl = directAudioUrl
+    ? (directAudioUrl.match(/^https:\/\/feeds\.fountain\.fm\/([^/]+)/)?.[0] || null)
+    : null;
   const feedMeta = usePodcastFeedMeta(
-    dt === "podcast" && !isSpotifyShow ? pin.externalRef || null : null,
+    dt === "podcast" && !isSpotifyShow
+      ? pin.externalRef || null
+      : derivedFeedUrl,
   );
   const cfg = DISPLAY_TYPE_CONFIG[dt];
   const bookIsbn =
@@ -1096,6 +1118,7 @@ function PinCard({
       {/* Podcast Episode fallback card (GUID-based, no Spotify) */}
       {dt === "podcast-episode" &&
         !spotifyEpisodeId &&
+        !isFountainEpisode &&
         podcastIndexEpisodeUrl && (
           <a
             href={podcastIndexEpisodeUrl}
@@ -1129,6 +1152,88 @@ function PinCard({
             </svg>
           </a>
         )}
+
+      {/* Fountain.fm episode card */}
+      {isFountainEpisode && (
+        <a
+          href={pin.externalRef}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-purple-50 to-indigo-50 hover:from-purple-100 hover:to-indigo-100 transition-colors"
+        >
+          <svg
+            className="w-8 h-8 text-purple-600 shrink-0"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path d="M12 1a9 9 0 0 0-9 9v7c0 1.66 1.34 3 3 3h3v-8H5v-2c0-3.87 3.13-7 7-7s7 3.13 7 7v2h-4v8h3c1.66 0 3-1.34 3-3v-7a9 9 0 0 0-9-9z" />
+          </svg>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-900 truncate">
+              {pin.title || "Podcast Episode"}
+            </p>
+            <p className="text-xs text-gray-500">Listen on Fountain</p>
+          </div>
+          <svg
+            className="w-4 h-4 text-gray-400 shrink-0"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fillRule="evenodd"
+              d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
+              clipRule="evenodd"
+            />
+          </svg>
+        </a>
+      )}
+
+      {/* Direct audio file player (MP3, etc.) */}
+      {directAudioUrl && (
+        <div className="w-full px-4 py-3 bg-gradient-to-r from-purple-50 to-indigo-50">
+          <div className="flex items-center gap-3 mb-2">
+            {feedMeta?.imageUrl ? (
+              <img
+                src={feedMeta.imageUrl}
+                alt={pin.title || "Podcast"}
+                className="w-10 h-10 rounded-lg object-cover shrink-0"
+                loading="lazy"
+              />
+            ) : (
+              <svg
+                className="w-8 h-8 text-purple-600 shrink-0"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path d="M12 1a9 9 0 0 0-9 9v7c0 1.66 1.34 3 3 3h3v-8H5v-2c0-3.87 3.13-7 7-7s7 3.13 7 7v2h-4v8h3c1.66 0 3-1.34 3-3v-7a9 9 0 0 0-9-9z" />
+              </svg>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900 truncate">
+                {pin.title || "Podcast Episode"}
+              </p>
+              {feedMeta?.websiteUrl && (
+                <a
+                  href={feedMeta.websiteUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-gray-500 hover:text-purple-600"
+                >
+                  {new URL(feedMeta.websiteUrl).hostname}
+                </a>
+              )}
+            </div>
+          </div>
+          <audio
+            controls
+            preload="metadata"
+            src={directAudioUrl}
+            className="w-full"
+          >
+            Your browser does not support audio playback.
+          </audio>
+        </div>
+      )}
 
       {/* Book cover */}
       {dt === "book" && bookIsbn && (
