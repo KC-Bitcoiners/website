@@ -152,7 +152,10 @@ export default function CalendarView({
       } else {
         // Timed event
         const eventStart = parseInt(event.start || "0");
-        const eventEnd = parseInt(event.end || eventStart.toString());
+        // Guard: if end is before start (bad data), treat end === start so the
+        // event only appears on its start date and never bleeds to an earlier cell.
+        const rawEnd = parseInt(event.end || eventStart.toString());
+        const eventEnd = rawEnd >= eventStart ? rawEnd : eventStart;
 
         // Check if event overlaps with the current day (using local timezone timestamps)
         return (

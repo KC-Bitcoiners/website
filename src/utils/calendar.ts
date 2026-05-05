@@ -16,13 +16,11 @@ export function generateAnonymousPubkey(): string {
   ).join("");
 }
 
-// Save events to localStorage (only local events, not meetup events)
+// Save events to localStorage (only truly local events — source === "local")
+// Never saves Nostr-fetched events; those live on the relay, not in localStorage.
 export function saveEvents(events: CalendarEvent[]): void {
   try {
-    // Filter out meetup events - only save user-created local events
-    const localEvents = events.filter(
-      (event) => event.pubkey !== "meetup" && !event.id.startsWith("meetup-"),
-    );
+    const localEvents = events.filter((event) => event.source === "local");
     localStorage.setItem(EVENTS_STORAGE_KEY, JSON.stringify(localEvents));
   } catch (error) {
     logger.error("Failed to save events:", error);
