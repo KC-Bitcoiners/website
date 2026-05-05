@@ -127,6 +127,22 @@ export default function EventForm({
       return;
     }
 
+    // Guard: end must not be before start
+    if (formData.eventType === "timed" && formData.endDate && formData.endTime) {
+      const start = new Date(`${formData.startDate}T${formData.startTime}`);
+      const end = new Date(`${formData.endDate}T${formData.endTime}`);
+      if (end < start) {
+        alert("End date/time cannot be before the start date/time.");
+        return;
+      }
+    }
+    if (formData.eventType === "all-day" && formData.endDate) {
+      if (formData.endDate < formData.startDate) {
+        alert("End date cannot be before the start date.");
+        return;
+      }
+    }
+
     onSubmit(formData);
   };
 
@@ -142,6 +158,14 @@ export default function EventForm({
     "Asia/Shanghai",
     "Australia/Sydney",
   ];
+
+  // When start date changes, advance end date if it would fall before the new start.
+  const handleStartDateChange = (date: string) => {
+    handleInputChange("startDate", date);
+    if (date && formData.endDate && formData.endDate < date) {
+      handleInputChange("endDate", date);
+    }
+  };
 
   // Auto-set end time to 1 hour after start time for timed events
   const handleStartTimeChange = (time: string) => {
@@ -267,9 +291,7 @@ export default function EventForm({
                   id="startDate"
                   type="date"
                   value={formData.startDate}
-                  onChange={(e) =>
-                    handleInputChange("startDate", e.target.value)
-                  }
+                  onChange={(e) => handleStartDateChange(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-bitcoin-orange"
                   required
                 />
@@ -355,14 +377,14 @@ export default function EventForm({
               >
                 Start Date *
               </label>
-              <input
-                id="startDateAllDay"
-                type="date"
-                value={formData.startDate}
-                onChange={(e) => handleInputChange("startDate", e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-bitcoin-orange"
-                required
-              />
+                <input
+                  id="startDateAllDay"
+                  type="date"
+                  value={formData.startDate}
+                  onChange={(e) => handleStartDateChange(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-bitcoin-orange"
+                  required
+                />
             </div>
             <div>
               <label

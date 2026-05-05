@@ -145,9 +145,18 @@ export default function CalendarPage({
       if (cancelled) return;
 
       try {
+        // One-time cleanup: remove any Nostr-fetched events that were
+        // previously swept into localStorage by the overly-greedy saveEvents
+        // call. After this runs they will never appear in localStorage again.
+        const storedRaw = loadEvents();
+        const trulyLocal = storedRaw.filter((e) => e.source === "local");
+        if (trulyLocal.length !== storedRaw.length) {
+          saveEvents(trulyLocal); // saveEvents now only writes source==="local"
+        }
+
         // Load all three sources concurrently
         const [localEvents, meetupEvents, nostrCalendarEvents] = await Promise.all([
-          Promise.resolve(loadEvents()),
+          Promise.resolve(trulyLocal),
           // Transform meetup events from props
           (async () => {
             if (!meetupGroup) return [];
@@ -208,8 +217,18 @@ export default function CalendarPage({
           });
         });
 
-        // Merge and deduplicate
-        const allEvents = sortEventsByTime([...localEvents, ...meetupEvents, ...nostrEvents]);
+        // Merge and deduplicate. Prefer relay events over local copies
+        // (strip the "nostr-" prefix when comparing so "nostr-abc" and "abc"
+        // are recognised as the same event and only the relay version is kept).
+        const seen = new Set<string>();
+        const merged = [...nostrEvents, ...localEvents, ...meetupEvents];
+        const deduped = merged.filter((e) => {
+          const key = e.id.startsWith("nostr-") ? e.id.slice(6) : e.id;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+        const allEvents = sortEventsByTime(deduped);
         if (!cancelled) setEvents(allEvents);
       } catch (error) {
         logger.error("Error loading events:", error);
@@ -265,48 +284,35 @@ export default function CalendarPage({
         newEvent.pubkey = user.pubkey; // Use actual user pubkey from Nostr extension
         newEvent.dTag = `event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`; // Match the dTag used in publishing
 
-        logger.debug("📝 Adding new event to local state:", {
-          id: newEvent.id,
-          title: newEvent.title,
-          start: newEvent.start,
-          dTag: newEvent.dTag,
-          pubkey: newEvent.pubkey,
-        });
+          logger.debug("📝 Adding new event to local state:", {
+            id: newEvent.id,
+            title: newEvent.title,
+            start: newEvent.start,
+            dTag: newEvent.dTag,
+            pubkey: newEvent.pubkey,
+          });
 
-        // Add to existing events without duplicates
-        setEvents((prevEvents) => {
-          // Check if this event already exists (by ID or dTag+pubkey combination)
-          const exists = prevEvents.some(
-            (e) =>
-              e.id === newEvent.id ||
-              (e.dTag === newEvent.dTag && e.pubkey === newEvent.pubkey),
-          );
-
-          if (exists) {
-            logger.debug(
-              "⚠️ Event already exists, skipping duplicate:",
-              newEvent.id,
+          // Add to current view state so the event appears immediately.
+          // Do NOT save to localStorage — the event is now on the relay and
+          // will be fetched from there on the next page load.  Saving relay
+          // events to localStorage was the root cause of calendar duplicates.
+          setEvents((prevEvents) => {
+            const exists = prevEvents.some(
+              (e) =>
+                e.id === newEvent.id ||
+                (e.dTag === newEvent.dTag && e.pubkey === newEvent.pubkey),
             );
-            return prevEvents;
-          }
-
-          const updatedEvents = sortEventsByTime([...prevEvents, newEvent]);
-          logger.debug("📅 Updated events count:", updatedEvents.length);
-
-          // Also save to localStorage as backup (but avoid duplicates)
-          const existingEvents = loadEvents();
-          const hasLocalDuplicate = existingEvents.some(
-            (e) =>
-              e.id === newEvent.id ||
-              (e.dTag === newEvent.dTag && e.pubkey === newEvent.pubkey),
-          );
-
-          if (!hasLocalDuplicate) {
-            saveEvents(updatedEvents);
-          }
-
-          return updatedEvents;
-        });
+            if (exists) {
+              logger.debug(
+                "⚠️ Event already exists, skipping duplicate:",
+                newEvent.id,
+              );
+              return prevEvents;
+            }
+            const updatedEvents = sortEventsByTime([...prevEvents, newEvent]);
+            logger.debug("📅 Updated events count:", updatedEvents.length);
+            return updatedEvents;
+          });
 
         setShowCreateForm(false);
         setSuccessMessage({

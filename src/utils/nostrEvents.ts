@@ -291,14 +291,15 @@ export async function publishNostrEvent(
         const startDateTime = new Date(
           `${formData.startDate}T${formData.startTime}`,
         );
-        tags.push([
-          "start",
-          Math.floor(startDateTime.getTime() / 1000).toString(),
-        ]);
-      }
-      if (formData.endDate && formData.endTime) {
-        const endDateTime = new Date(`${formData.endDate}T${formData.endTime}`);
-        tags.push(["end", Math.floor(endDateTime.getTime() / 1000).toString()]);
+        const startTs = Math.floor(startDateTime.getTime() / 1000);
+        tags.push(["start", startTs.toString()]);
+
+        if (formData.endDate && formData.endTime) {
+          const endDateTime = new Date(`${formData.endDate}T${formData.endTime}`);
+          const endTs = Math.floor(endDateTime.getTime() / 1000);
+          // Never publish an end that is before start — clamp to start if needed.
+          tags.push(["end", Math.max(endTs, startTs).toString()]);
+        }
       }
     }
 
