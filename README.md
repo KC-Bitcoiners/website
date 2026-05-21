@@ -148,7 +148,9 @@ The app uses Nostr relays as its database. All user-generated content (events, r
 | 30067       | Pinboards (resource collections) | [Custom NIP](https://nostrhub.io/naddr1qvzqqqrcvypzqr6k8l3vlhccpjcsgkrtjkrnx7dqc87ul0psr2qvsf2lx0g47quaqy2hwumn8ghj7un9d3shjtnyd968gmewwp6kyqqfwp5kucn0v9exgucdyp5hj) |
 | 39067       | Pins (resource links)            | [Custom NIP](https://nostrhub.io/naddr1qvzqqqrcvypzqr6k8l3vlhccpjcsgkrtjkrnx7dqc87ul0psr2qvsf2lx0g47quaqy2hwumn8ghj7un9d3shjtnyd968gmewwp6kyqqfwp5kucn0v9exgucdyp5hj) |
 | 31923       | Calendar events                  | NIP-52                      |
-| 39068-39071 | Committee structures             | Custom (community-specific) |
+| 30068       | Committees                       | [Custom NIP](https://nostrhub.io/naddr1qvzqqqrcvypzp4cd2qy32p9ejtgc8zpz4uj96hmt8gttstv30t9hjfxw7c0dft8wqy2hwumn8ghj7un9d3shjtnyv9kh2uewd9hj7qq2vdhk6mtfw36x2etn32mm2s) |
+| 39068       | Committee members                | [Custom NIP](https://nostrhub.io/naddr1qvzqqqrcvypzp4cd2qy32p9ejtgc8zpz4uj96hmt8gttstv30t9hjfxw7c0dft8wqy2hwumn8ghj7un9d3shjtnyv9kh2uewd9hj7qq2vdhk6mtfw36x2etn32mm2s) |
+| 39069       | Committee openings               | [Custom NIP](https://nostrhub.io/naddr1qvzqqqrcvypzp4cd2qy32p9ejtgc8zpz4uj96hmt8gttstv30t9hjfxw7c0dft8wqy2hwumn8ghj7un9d3shjtnyv9kh2uewd9hj7qq2vdhk6mtfw36x2etn32mm2s) |
 
 Users authenticate via a NIP-07 compatible browser extension (e.g., [nos2x](https://github.com/fiatjaf/nos2x), [Alby](https://getalby.com)). Publishing is restricted to whitelisted pubkeys defined in `config.json`.
 
