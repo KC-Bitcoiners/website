@@ -1,3 +1,5 @@
+![Bodarc Logo](public/repository-open-graph-template.png)
+
 # KC Bitcoiners — bodarc
 
 The community website for [KC Bitcoiners](https://kcbitcoiners.com), a Bitcoin-only meetup group in Kansas City. Built with Next.js as a fully static site that uses the Nostr protocol as its data layer for events, educational content, galleries, and committee management.
@@ -139,14 +141,14 @@ Terraform + Dreamhost provider (`dns.yml`) manages the `relay.kcbitcoiners.com` 
 
 The app uses Nostr relays as its database. All user-generated content (events, resources, gallery photos, committee data) is stored as Nostr events:
 
-| Kind        | Purpose                          | NIP       |
-| ----------- | -------------------------------- | --------- |
-| 0           | User profiles                    | NIP-01    |
-| 30023       | Long-form articles               | NIP-23    |
-| 30067       | Pinboards (resource collections) | Community |
-| 39067       | Pins (resource links)            | Community |
-| 31923       | Calendar events                  | NIP-52    |
-| 39068-39071 | Committee structures             | Community |
+| Kind        | Purpose                          | NIP                         |
+| ----------- | -------------------------------- | --------------------------- |
+| 0           | User profiles                    | NIP-01                      |
+| 30023       | Long-form articles               | NIP-23                      |
+| 30067       | Pinboards (resource collections) | Custom (community-specific) |
+| 39067       | Pins (resource links)            | Custom (community-specific) |
+| 31923       | Calendar events                  | NIP-52                      |
+| 39068-39071 | Committee structures             | Custom (community-specific) |
 
 Users authenticate via a NIP-07 compatible browser extension (e.g., [nos2x](https://github.com/fiatjaf/nos2x), [Alby](https://getalby.com)). Publishing is restricted to whitelisted pubkeys defined in `config.json`.
 
@@ -160,4 +162,4 @@ Users authenticate via a NIP-07 compatible browser extension (e.g., [nos2x](http
 
 ## License
 
-All rights reserved. KC Bitcoiners community project.
+[MIT](LICENSE)
