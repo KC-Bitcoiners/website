@@ -13,14 +13,13 @@ import {
   getUpcomingEvents,
   getPastEvents,
 } from "../utils/calendar";
-import { fetchMeetupEvents, getVenueAddress, MeetupGroup } from "../lib/meetup";
+import { fetchMeetupEvents, getVenueAddress } from "../lib/meetup";
 import {
   fetchNostrCalendarEvents,
   convertNostrEventToCalendar,
   publishNostrEvent,
 } from "../utils/nostrEvents";
 import { PlusIcon } from "../components/Icons";
-import { GetStaticProps, InferGetStaticPropsType } from "next";
 import {
   WHITELISTED_NPUBS,
   WHITELISTED_PUBKEYS,
@@ -34,38 +33,7 @@ import { logger } from "@/utils/logger";
 import { formatDate, formatTime, splitDescription } from "@/utils/formatting";
 import { fetchZapTotal } from "@/utils/zaps";
 
-interface CalendarPageProps {
-  meetupGroup: MeetupGroup | null;
-  meetupError?: string;
-}
-
-export const getStaticProps: GetStaticProps<CalendarPageProps> = async () => {
-  try {
-    // Fetch meetup events data
-    const group = await fetchMeetupEvents();
-
-    return {
-      props: {
-        meetupGroup: group,
-      },
-    };
-  } catch (error) {
-    logger.error("Error fetching meetup events:", error);
-
-    return {
-      props: {
-        meetupGroup: null,
-        meetupError:
-          error instanceof Error ? error.message : "Unknown error occurred",
-      },
-    };
-  }
-};
-
-export default function CalendarPage({
-  meetupGroup,
-  meetupError,
-}: InferGetStaticPropsType<typeof getStaticProps>) {
+export default function CalendarPage() {
   // Default to list view on mobile, month on desktop (deferred to avoid hydration mismatch)
   const [viewMode, setViewMode] = useState<"list" | "month" | "week" | "day">("month");
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -157,39 +125,44 @@ export default function CalendarPage({
         // Load all three sources concurrently
         const [localEvents, meetupEvents, nostrCalendarEvents] = await Promise.all([
           Promise.resolve(trulyLocal),
-          // Transform meetup events from props
+          // Fetch meetup events client-side
           (async () => {
-            if (!meetupGroup) return [];
-            return meetupGroup.events.edges.map((edge) => {
-              const event = edge.node;
-              const startTime = Math.floor(new Date(event.dateTime).getTime() / 1000);
-              const endTime = event.endTime
-                ? Math.floor(new Date(event.endTime).getTime() / 1000)
-                : startTime + 3600;
-              return {
-                id: `meetup-${event.id}`,
-                kind: 31923,
-                pubkey: "meetup",
-                tags: [],
-                content: event.description,
-                dTag: "meetup-event",
-                title: event.title,
-                summary: event.title,
-                description: event.description,
-                location: getVenueAddress(event.venues),
-                locations: event.venues?.map((v: any) => v.address) || [],
-                venueName: event.venues?.[0]?.name?.trim() || undefined,
-                start: startTime.toString(),
-                end: endTime.toString(),
-                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                image: event.venues?.[0]?.id
-                  ? `https://secure.meetupstatic.com/photos/event/${event.venues[0].id}/450x300.jpeg`
-                  : undefined,
-                hashtags: [],
-                references: [event.eventUrl],
-                created_at: Math.floor(Date.now() / 1000),
-              };
-            });
+            try {
+              const group = await fetchMeetupEvents();
+              return group.events.edges.map((edge) => {
+                const event = edge.node;
+                const startTime = Math.floor(new Date(event.dateTime).getTime() / 1000);
+                const endTime = event.endTime
+                  ? Math.floor(new Date(event.endTime).getTime() / 1000)
+                  : startTime + 3600;
+                return {
+                  id: `meetup-${event.id}`,
+                  kind: 31923,
+                  pubkey: "meetup",
+                  tags: [],
+                  content: event.description,
+                  dTag: "meetup-event",
+                  title: event.title,
+                  summary: event.title,
+                  description: event.description,
+                  location: getVenueAddress(event.venues),
+                  locations: event.venues?.map((v: any) => v.address) || [],
+                  venueName: event.venues?.[0]?.name?.trim() || undefined,
+                  start: startTime.toString(),
+                  end: endTime.toString(),
+                  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                  image: event.venues?.[0]?.id
+                    ? `https://secure.meetupstatic.com/photos/event/${event.venues[0].id}/450x300.jpeg`
+                    : undefined,
+                  hashtags: [],
+                  references: [event.eventUrl],
+                  created_at: Math.floor(Date.now() / 1000),
+                };
+              });
+            } catch (error) {
+              logger.warn("⚠️ Failed to load meetup events:", error);
+              return [];
+            }
           })(),
           // Fetch nostr events
           (async () => {
@@ -241,7 +214,7 @@ export default function CalendarPage({
 
     loadAllEvents();
     return () => { cancelled = true; };
-  }, [meetupGroup]);
+  }, []);
 
   // Switch to list view on mobile after hydration
   useEffect(() => {
