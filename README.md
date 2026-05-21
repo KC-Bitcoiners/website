@@ -145,8 +145,8 @@ The app uses Nostr relays as its database. All user-generated content (events, r
 | ----------- | -------------------------------- | --------------------------- |
 | 0           | User profiles                    | NIP-01                      |
 | 30023       | Long-form articles               | NIP-23                      |
-| 30067       | Pinboards (resource collections) | Custom (community-specific) |
-| 39067       | Pins (resource links)            | Custom (community-specific) |
+| 30067       | Pinboards (resource collections) | [Custom NIP](https://nostrhub.io/naddr1qvzqqqrcvypzqr6k8l3vlhccpjcsgkrtjkrnx7dqc87ul0psr2qvsf2lx0g47quaqy2hwumn8ghj7un9d3shjtnyd968gmewwp6kyqqfwp5kucn0v9exgucdyp5hj) |
+| 39067       | Pins (resource links)            | [Custom NIP](https://nostrhub.io/naddr1qvzqqqrcvypzqr6k8l3vlhccpjcsgkrtjkrnx7dqc87ul0psr2qvsf2lx0g47quaqy2hwumn8ghj7un9d3shjtnyd968gmewwp6kyqqfwp5kucn0v9exgucdyp5hj) |
 | 31923       | Calendar events                  | NIP-52                      |
 | 39068-39071 | Committee structures             | Custom (community-specific) |
 
